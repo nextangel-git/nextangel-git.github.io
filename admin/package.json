@@ -1,0 +1,19 @@
+{
+  "name": "jks-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Классическая админка сайта УК «Жилкомсервис»: логин/пароль + TOTP 2FA + капча, запись в src/data и git push",
+  "scripts": {
+    "start": "node server.mjs",
+    "add-user": "node server.mjs --add-user"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.4",
+    "svg-captcha": "^1.4.0"
+  }
+}
