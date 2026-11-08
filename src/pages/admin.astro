@@ -22,9 +22,9 @@ import Base from '../layouts/Base.astro';
       rootEl.innerHTML = `
         <div class="card" style="max-width:480px;margin:40px auto">
           <h1 style="font-size:1.3rem">Вход для сотрудников</h1>
-          <p class="disc-intro">Нужен персональный токен GitHub (fine-grained PAT) с правом <b>Contents: Read and write</b> на репозиторий сайта. Создаётся один раз: GitHub → Settings → Developer settings → Personal access tokens.</p>
-          <label style="display:block;font-weight:600;margin:12px 0 4px">Токен</label>
-          <input id="pat" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" placeholder="github_pat_…">
+          <p class="disc-intro">Введите пароль от админки (его выдаёт администратор сайта). Вводится один раз — браузер запомнит.</p>
+          <label style="display:block;font-weight:600;margin:12px 0 4px">Пароль</label>
+          <input id="pat" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" placeholder="Пароль от админки">
           <button class="btn btn--primary" style="margin-top:14px" onclick="doLogin()">Войти</button>
           ${msg ? `<p style="color:#dc2626;margin-top:10px">${esc(msg)}</p>` : ''}
         </div>`;
