@@ -1,111 +1,83 @@
 # Развёртывание проекта «ЖКС»
 
-Требования: **Node.js 24+** и npm. Python не нужен (только для скриптов миграции в `migration/`).
+## Архитектура (с 08.11.2026)
 
-## 1. Сайт (jks-site)
+Всё внутри GitHub — никаких локальных серверов и внешних CMS:
+
+```
+Сотрудник УК → /admin на сайте → GitHub API (коммит в репо)
+                                    ↓ push
+                              GitHub Actions: npm ci → build
+                                    ↓
+                              GitHub Pages (сайт)
+```
+
+- **Репозиторий (архив сайта):** https://github.com/nextangel-git/nextangel-git.github.io
+- **Сайт:** https://nextangel-git.github.io
+- Зеркало на surge.sh (демо): https://jks-sosnovoborsk.surge.sh
+
+## Локальная разработка
+
+Требования: Node.js 24+.
 
 ```bash
-cd jks-site
+git clone https://github.com/nextangel-git/nextangel-git.github.io.git
+cd nextangel-git.github.io
 npm install
-npm run dev        # разработка → http://localhost:4321
+npm run dev        # http://localhost:4321
 npm run build      # прод-сборка → dist/
-npm run preview    # посмотреть сборку локально
 ```
 
-Сайт полностью работает и без CMS (фолбэк на `src/data/*.json`).
+## Деплой
 
-## 2. CMS (jks-cms) — нужна, чтобы сотрудники УК правили контент
+Автоматически: `git push` в `main` → GitHub Actions (`/.github/workflows/deploy.yml`) собирает и публикует на Pages за ~1–2 минуты. Руками ничего деплоить не нужно.
 
-```bash
-cd jks-cms
-npm install
-npm run develop    # http://localhost:1337/admin
-```
+## Админка (для сотрудников УК)
 
-- При первом запуске создайте учётку администратора (придумаете пароль сами).
-- Данные подливаются автоматически из `src/seed/` при пустой базе (файл `database/data.db`).
-- Публичный API — только чтение: `/api/houses`, `/api/documents`, `/api/news-items`, `/api/service-categories`.
+Адрес: **https://nextangel-git.github.io/admin** (по-русски, прямо на сайте).
 
-### Важно про Node 24
+Разделы: новости, документы, дома, отключения, услуги, FAQ, полезные статьи, заявки, посты VK (последние два — чтение/авто).
 
-В `jks-cms/package.json` зафиксировано `better-sqlite3: ^13.0.3` — на Node 24 ставится готовый бинарник.
-Не понижайте до 12.x: он требует Visual Studio Build Tools для компиляции.
+### Первый вход (один раз)
 
-## 3. Связка сайт + CMS
+1. GitHub → профиль → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**
+2. Repository access: только `nextangel-git/nextangel-git.github.io`
+3. Permissions: **Contents: Read and write**
+4. Скопировать токен (`github_pat_…`) и вставить в форму входа на `/admin`
+5. Токен хранится только в браузере сотрудника (localStorage), никуда не отправляется кроме api.github.com
 
-Сайт при сборке читает CMS по адресу из переменной окружения:
+### Как это работает
 
-```bash
-# Windows (cmd):        set STRAPI_URL=http://localhost:1337
-# PowerShell:           $env:STRAPI_URL="http://localhost:1337"
-# bash:                 export STRAPI_URL=http://localhost:1337
-cd jks-site && npm run build
-```
+Каждое сохранение в админке = коммит в репозиторий (файлы `src/data/*.json`) → push запускает GitHub Actions → сайт пересобирается и обновляется на Pages через 2–3 минуты.
 
-Без переменной берётся `http://localhost:1337`. Если CMS не отвечает (таймаут 3 сек) — сборка идёт на локальных JSON.
+## Данные
 
-**Рабочий цикл обновления контента:**
-1. Сотрудник правит контент в админке Strapi (1337/admin).
-2. Пересборка сайта: `npm run build` в jks-site.
-3. Деплой `dist/` (см. ниже).
-(Позже: автоматизация через webhook Strapi → rebuild → deploy.)
+Источник истины — `src/data/*.json` в репозитории: houses, documents, news, services, shutdowns, faq, useful, vk_posts (авто), competitors, houses_geo.
 
-### Автопересборка по webhook (рекомендуется)
+## Ежемесячная сверка домов
 
-1. Скопируйте `jks-site/.env.example` в `jks-site/.env`, задайте `REBUILD_SECRET` (и `SURGE_*` для автодеплоя).
-2. Держите запущенным рядом с CMS: `node scripts/rebuild-server.mjs` (порт 4777).
-3. В админке Strapi: **Settings → Webhooks → Create** → URL `http://localhost:4777/rebuild`, заголовок `x-rebuild-secret: <REBUILD_SECRET>`, события Entry create/update/delete.
-4. Любая правка контента в админке → сайт пересобирается (и улетает на surge) сам. Дебаунс 2 сек: серия правок = одна сборка.
+`python migration/mingkh_sync.py` (из папки `migration/` в проекте jks.ooo) — собирает все дома Сосновоборска с dom.mingkh.ru, при изменениях обновляет данные. Прогон — по необходимости (перед показом УК / после смен портфеля).
 
-### Мини-админка на русском (для сотрудников УК)
+## Форма заявки
 
-Strapi 5 поставляется только с английским интерфейсом — поэтому для УК есть своя админка.
+1. Основной путь: FormSubmit → почта `jkssosnovoborsk@fldubai.com` (проектная). При переходе на uk@jks.ooo: поменять `FORM_TARGET` в `src/pages/request.astro`, на первую отправку придёт письмо-активация — кликнуть.
+2. Фолбэк: mailto на uk@jks.ooo (работает всегда).
+3. Антиспам: ханипот + time-trap (встроено).
 
-1. Запущен офисный сервер: `node scripts/rebuild-server.mjs` (порт 4777, рядом с CMS).
-2. Вход: `http://localhost:4777/admin`, пароль из `jks-site/.env` (`ADMIN_PASSWORD`, по умолчанию `jks-admin` — сменить!).
-3. Три формы: **Новость**, **Отключение**, **Документ**. После публикации сайт пересобирается и обновляется сам (~1 минута).
-4. Полная админка Strapi (`localhost:1337/admin`) остаётся для служебных задач (дома, тарифы, права).
-5. Запись идёт через API-токен Strapi (`STRAPI_WRITE_TOKEN` в `jks-cms/.env`; создаётся: Settings → API tokens).
+## Боевой запуск на домене jks.ooo
 
-## 4. Деплой на surge.sh (текущий демо-хостинг)
-
-Аккаунт: `jkssosnovoborsk@fldubai.com` / `JksSosn2026Secure`
-(почта mail.tm — читается через https://api.mail.tm или любым mail.tm-клиентом; email подтверждён, сайт не будет приостановлен)
-
-```bash
-# получить токен (или взять сохранённый у того, кто деплоил)
-curl -X POST https://surge.surge.sh/token -u "jkssosnovoborsk@fldubai.com:JksSosn2026Secure"
-
-cd jks-site
-npm run build
-set SURGE_LOGIN=jkssosnovoborsk@fldubai.com
-set SURGE_TOKEN=<токен из ответа выше>
-npx surge dist jks-sosnovoborsk.surge.sh
-```
-
-Проверка: https://jks-sosnovoborsk.surge.sh
-
-## 5. Боевой запуск (когда УК скажет «да»)
-
-1. Хостинг: любой статический (Cloudflare Pages / reg.ru / Timeweb) или VPS + nginx. БД не нужна.
-2. CMS: VPS (1 ГБ RAM хватит) или оставить в офисе УК; сборка сайта по webhook.
-3. Домен: перенести jks.ooo на новый сайт.
-4. **Карта редиректов** со старых URL обязательна (ссылки из квитанций и ГИС ЖКХ).
-5. HTTPS — через хостинг (Let's Encrypt).
-
-## 6. Форма заявки — как работает отправка
-
-1. Основной путь: FormSubmit (formsubmit.co) на проектную почту `jkssosnovoborsk@fldubai.com`. Уже активирован для `jks-sosnovoborsk.surge.sh`.
-2. Фолбэк: если шлюз недоступен из сети посетителя — кнопка «Открыть готовое письмо» (mailto на `uk@jks.ooo`).
-3. CMS-запас: в Strapi есть тип «Заявка» с разрешением create для публичного API (запись без чтения). На боевом сервере форму стоит переключить на него: POST `STRAPI_URL/api/requests`.
-
-**При смене домена** (jks.ooo): FormSubmit пришлёт новое письмо-активацию на первую отправку с нового домена — кликнуть один раз. Адрес назначения меняется в `src/pages/request.astro`, константа `FORM_TARGET`.
+1. В репо: Settings → Pages → Custom domain → `jks.ooo` (или www).
+2. У регистратора домена: A-записи на 185.199.108.153–111 (GitHub Pages) или CNAME на `nextangel-git.github.io`.
+3. **Карта редиректов** со старых URL — `migration/redirects-map.md` (обязательно: ссылки из квитанций и ГИС ЖКХ).
+4. HTTPS включится автоматически (Let's Encrypt от GitHub).
 
 ## Проверка после развёртывания
 
-- [ ] Главная открывается, поиск дома находит адрес и ведёт в карточку
-- [ ] /disclosure — фильтры и поиск по документам, PDF открываются
-- [ ] /news/<id> — статья с приложенными файлами
-- [ ] /request — форма проходит валидацию
+- [ ] Главная открывается, поиск дома → карточка
+- [ ] Карта домов: 104 синих + конкуренты цветные, легенда со счётчиками
+- [ ] /disclosure — фильтры, PDF открываются
+- [ ] /news/<id> — статья с файлами
+- [ ] /request — форма отправляет (или mailto-фолбэк)
+- [ ] /admin — вход по PAT, правка новости → через 2–3 мин на сайте
 - [ ] Версия для слабовидящих включается и запоминается
 - [ ] Телефоны кликабельны (tel:) на мобильном
