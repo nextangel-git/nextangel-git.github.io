@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import useful from '../../data/useful.json';
+
+export function getStaticPaths() {
+  return Object.entries(useful).map(([slug, a]) => ({ params: { slug }, props: { a } }));
+}
+
+const { a } = Astro.props;
+---
+<Base title={`${a.title} — УК «Жилкомсервис»`} description={a.title}>
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <a href="/useful">Полезное</a> → <span>{a.title}</span></nav>
+    <article class="article">
+      <h1 class="article__title">{a.title}</h1>
+      <div class="article__body" set:html={a.body} />
+    </article>
+  </div>
+</Base>

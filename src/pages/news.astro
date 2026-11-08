@@ -1,0 +1,58 @@
+---
+import Base from '../layouts/Base.astro';
+import { getNews } from '../lib/content.js';
+
+const news = await getNews();
+const years = [...new Set(news.map((n) => (n.date || '').split('.')[2]).filter(Boolean))].sort((a, b) => b - a);
+
+function tagFor(title) {
+  if (/уведомлени|прекращени/i.test(title)) return { cls: 'news-card--alert', tag: '', label: 'Важно' };
+  if (/мошеннич|кладитрубку/i.test(title)) return { cls: '', tag: 'news-card__tag--warn', label: 'Безопасность' };
+  return { cls: '', tag: 'news-card__tag--info', label: 'ЖКХ' };
+}
+---
+<Base title="Новости — УК «Жилкомсервис»"
+      description="Новости и уведомления ООО УК «Жилкомсервис», г. Сосновоборск.">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Новости</span></nav>
+    <h1>Новости и уведомления</h1>
+    <p class="disc-intro">Оперативная лента — также в нашей группе <a href="https://vk.ru/ooojks" target="_blank" rel="noopener">ВКонтакте</a>.</p>
+
+    <div class="disc-cats" id="news-years">
+      <button type="button" class="chip chip--active" data-year="">Все · {news.length}</button>
+      {years.map((y) => (
+        <button type="button" class="chip" data-year={y}>{y} · {news.filter((n) => (n.date || '').endsWith(y)).length}</button>
+      ))}
+    </div>
+
+    <div id="news-list" class="news-list">
+      {news.map((n) => {
+        const t = tagFor(n.title);
+        return (
+          <article class={`news-card news-card--row ${t.cls}`} data-year={(n.date || '').split('.')[2] || ''}>
+            <div class="news-card__rowhead">
+              <span class={`news-card__tag ${t.tag}`}>{t.label}</span>
+              <time datetime={(n.date || '').split('.').reverse().join('-')}>{n.date}</time>
+            </div>
+            <h3><a href={`/news/${n.slug}`}>{n.title}</a></h3>
+            {n.desc && <p>{n.desc}</p>}
+          </article>
+        );
+      })}
+    </div>
+    <p class="house__note">Прототип: ссылки ведут на архив старого сайта. После запуска новости будут открываться здесь же и подтягиваться из VK.</p>
+  </div>
+
+  <script>
+    const chips = document.querySelectorAll('#news-years .chip');
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => c.classList.toggle('chip--active', c === chip));
+        const year = chip.dataset.year;
+        document.querySelectorAll('#news-list .news-card').forEach((card) => {
+          card.style.display = !year || card.dataset.year === year ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</Base>

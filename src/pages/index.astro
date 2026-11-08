@@ -1,0 +1,328 @@
+---
+import Base from '../layouts/Base.astro';
+import { getHouses, getNews, getShutdowns } from '../lib/content.js';
+import { getOrgLegend } from '../lib/orgs.js';
+import vkPosts from '../data/vk_posts.json';
+
+const orgLegend = getOrgLegend();
+
+const houses = await getHouses();
+const latestNews = (await getNews()).slice(0, 4);
+const activeShutdowns = (await getShutdowns()).filter((s) => !s.until || new Date(s.until) >= new Date());
+
+function tagFor(title) {
+  if (/уведомлени|прекращени/i.test(title)) return { cls: 'news-card--alert', tag: '', label: 'Важно' };
+  if (/мошеннич|кладитрубку/i.test(title)) return { cls: '', tag: 'news-card__tag--warn', label: 'Безопасность' };
+  return { cls: '', tag: 'news-card__tag--info', label: 'ЖКХ' };
+}
+---
+<Base title="УК «Жилкомсервис» — управляющая компания Сосновоборска"
+      description="ООО Управляющая компания «Жилкомсервис» — обслуживание многоквартирных домов г. Сосновоборска. Личный кабинет, передача показаний, раскрытие информации.">
+  <!-- Hero -->
+  <section class="hero" id="houses">
+    <div class="container">
+      <h1>Ваш дом под<br />надёжным управлением</h1>
+      <p class="hero__sub">Обслуживаем <strong>104 многоквартирных дома</strong> Сосновоборска с 2007 года</p>
+
+      <div class="house-search" id="house-search">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5zm-6 0a4.5 4.5 0 1 1 4.5-4.5 4.5 4.5 0 0 1-4.5 4.5z"/></svg>
+        <input type="text" id="house-input" placeholder="Найдите свой дом: начните вводить улицу…" autocomplete="off" />
+        <div class="house-search__results" id="house-results" hidden></div>
+      </div>
+
+      <div class="tiles">
+        <a class="tile" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">
+          <span class="tile__icon tile__icon--blue"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg></span>
+          <span class="tile__name">Личный кабинет</span>
+          <span class="tile__desc">Квитанции, начисления, заявки</span>
+        </a>
+        <a class="tile" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">
+          <span class="tile__icon tile__icon--green"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7zm1 4h-2v6l5 3 1-1.7-4-2.3z"/></svg></span>
+          <span class="tile__name">Передать показания</span>
+          <span class="tile__desc">Счётчики воды и электроэнергии</span>
+        </a>
+        <a class="tile" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">
+          <span class="tile__icon tile__icon--orange"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5z"/></svg></span>
+          <span class="tile__name">Оплатить квитанцию</span>
+          <span class="tile__desc">Онлайн, без комиссии в ЛК</span>
+        </a>
+        <a class="tile" href="/request">
+          <span class="tile__icon tile__icon--red"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5z"/></svg></span>
+          <span class="tile__name">Оставить заявку</span>
+          <span class="tile__desc">Диспетчерская — круглосуточно</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Карта домов -->
+  <section class="section" id="map-section" style="padding-top:8px">
+    <div class="container">
+      <div class="section__head">
+        <h2>Дома на карте</h2>
+        <span class="section__note">нажмите на точку — откроется карточка дома</span>
+      </div>
+      <div class="map-legend">
+        {orgLegend.map((o) => (
+          <span class={o.ours ? 'legend--ours' : ''}>
+            <i class="dot" style={`background:${o.color}`}></i> {o.name} ({o.count})
+          </span>
+        ))}
+      </div>
+      <p class="map-note">Наши дома — по действующему перечню УК (минус договоры, прекращённые в марте 2026). Другие УК/ТСЖ — по открытым данным ГИС ЖКХ и сайтов УК, могут быть неактуальны.</p>
+      <div id="map" class="map" role="application" aria-label="Карта домов в управлении"></div>
+    </div>
+  </section>
+
+  {/* Отключения — блок появляется только при активных записях (CMS/файл shutdowns.json) */}
+  {activeShutdowns.length > 0 && (
+    <section class="section shutdowns" id="shutdowns">
+      <div class="container">
+        <div class="section__head"><h2>Отключения и аварии</h2></div>
+        <div class="shutdowns__list">
+          {activeShutdowns.map((s) => (
+            <div class="shutdown-card">
+              <strong>{s.what}</strong>
+              <span>{s.where}</span>
+              <small>{s.from} — {s.to}{s.reason ? ` · ${s.reason}` : ''}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Новости -->
+  <section class="section" id="news">
+    <div class="container">
+      <div class="section__head">
+        <h2>Новости и уведомления</h2>
+        <a href="/news" class="link-more">Все новости →</a>
+      </div>
+      <div class="news-grid">
+        {latestNews.map((n) => {
+          const t = tagFor(n.title);
+          return (
+            <a class={`news-card ${t.cls}`} href={`/news/${n.slug}`} style="display:flex;text-decoration:none">
+              <span class={`news-card__tag ${t.tag}`}>{t.label}</span>
+              <time datetime={(n.date || '').split('.').reverse().join('-')}>{n.date}</time>
+              <h3>{n.title}</h3>
+              {n.desc && <p>{n.desc}</p>}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- Раскрытие информации -->
+  <section class="section section--gray" id="disclosure">
+    <div class="container">
+      <div class="section__head">
+        <h2>Раскрытие информации</h2>
+        <span class="section__note">по Постановлению Правительства РФ № 731</span>
+      </div>
+      <div class="disc-grid">
+        <a href="/disclosure" class="disc-card"><h3>Общая информация</h3><p>Лицензия, устав, реквизиты, руководство</p></a>
+        <a href="/disclosure?cat=Отчёты по договору управления" class="disc-card"><h3>Отчёты по договору управления</h3><p>Ежегодные отчёты по каждому дому</p></a>
+        <a href="/disclosure?cat=Протоколы собраний" class="disc-card"><h3>Протоколы собраний</h3><p>Протоколы общих собраний собственников</p></a>
+        <a href="/disclosure?cat=Бухгалтерская отчётность" class="disc-card"><h3>Бухгалтерская отчётность</h3><p>Балансы и финансовые результаты</p></a>
+        <a href="/disclosure?cat=Сведения о выполняемых работах" class="disc-card"><h3>Сведения о работах</h3><p>Перечень и стоимость работ по содержанию</p></a>
+        <a href="/disclosure?cat=Нормативно-правовые акты" class="disc-card"><h3>Нормативные акты</h3><p>Законы и постановления в сфере ЖКХ</p></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Мы в VK -->
+  {vkPosts.length > 0 && (
+    <section class="section section--gray" id="vk">
+      <div class="container">
+        <div class="section__head">
+          <h2>Мы во ВКонтакте</h2>
+          <a href="https://vk.ru/ooojks" target="_blank" rel="noopener" class="link-more">vk.ru/ooojks →</a>
+        </div>
+        <div class="news-grid">
+          {vkPosts.slice(0, 4).map((p) => (
+            <a class="news-card" href={p.url} target="_blank" rel="noopener" style="display:flex;text-decoration:none">
+              <span class="news-card__tag news-card__tag--info">VK</span>
+              {p.date && <time>{p.date}</time>}
+              <p>{p.text.split('\n')[0]}</p>
+              {p.text.split('\n').length > 1 && <p style="color:var(--gray)">{p.text.split('\n').slice(1).join(' ').slice(0, 140)}…</p>}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Полезное -->
+  <section class="section" id="useful">    <div class="container">
+      <div class="section__head"><h2>Полезное жителям</h2></div>
+      <div class="useful-grid">
+        <a class="useful-card" href="/useful/pravila-prozhivaniya"><svg viewBox="0 0 24 24" class="icon"><path d="M12 3 2 12h3v8h14v-8h3L12 3zm0 2.8 6 5.4V18h-3v-5h-6v5H6v-6.8l6-5.4z"/></svg>Правила проживания в МКД</a>
+        <a class="useful-card" href="/useful/pozharnaya-bezopasnost"><svg viewBox="0 0 24 24" class="icon"><path d="M13.5.7s.8 2.7.8 4.8c0 2-1.4 3.7-3.4 3.7S7.6 7.5 7.6 5.5l.1-.8C4.9 6.7 3 9.6 3 13a9 9 0 0 0 18 0c0-5.4-4-9.6-7.5-12.3zM12 20a4 4 0 0 1-4-4c0-2 1.3-3.6 3.2-4.9-.1 1.2.4 2.4 1.4 2.4 1.3 0 2-1.2 1.9-2.9 1.5 1.3 2.5 3.2 2.5 5.4a4 4 0 0 1-4 4z"/></svg>Пожарная безопасность</a>
+        <a class="useful-card" href="/useful/prikazy"><svg viewBox="0 0 24 24" class="icon"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14H7v-2h5zm5-4H7v-2h10zm0-4H7V7h10z"/></svg>Приказы УК «Жилкомсервис»</a>
+        <a class="useful-card" href="/useful/obshchee-imushchestvo"><svg viewBox="0 0 24 24" class="icon"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>Общее имущество дома</a>
+        <a class="useful-card" href="/useful/administrativnaya-otvetstvennost"><svg viewBox="0 0 24 24" class="icon"><path d="M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-4z"/></svg>Административная ответственность</a>
+        <a class="useful-card" href="https://dom.gosuslugi.ru" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" class="icon"><path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H7V5h10z"/></svg>Приложение «Госуслуги Дом»</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Платные услуги -->
+  <section class="section section--gray" id="services">
+    <div class="container">
+      <div class="section__head">
+        <h2>Платные услуги</h2>
+        <a href="/services" class="link-more">Все услуги →</a>
+      </div>
+      <div class="useful-grid">
+        <a class="useful-card" href="/services"><svg viewBox="0 0 24 24" class="icon"><path d="M12 2a9 9 0 0 0-9 9c0 2.4 1 4.6 2.5 6.2L12 22l6.5-4.8A9 9 0 0 0 12 2zm0 13.5a4.5 4.5 0 1 1 4.5-4.5 4.5 4.5 0 0 1-4.5 4.5z"/></svg>Сантехника — от 600 ₽</a>
+        <a class="useful-card" href="/services"><svg viewBox="0 0 24 24" class="icon"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>Электрика — от 600 ₽</a>
+        <a class="useful-card" href="/services"><svg viewBox="0 0 24 24" class="icon"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7zm1 4h-2v6l5 3 1-1.7-4-2.3z"/></svg>Счётчики и поверка — от 1 500 ₽</a>
+        <a class="useful-card" href="/services"><svg viewBox="0 0 24 24" class="icon"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>Вызов мастера — 2 000 ₽</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Контакты -->
+  <section class="section section--dark" id="contacts">
+    <div class="container contacts">
+      <div class="contacts__main">
+        <h2>Контакты</h2>
+        <p class="contacts__addr">662501, Красноярский край,<br />г. Сосновоборск, ул. Ленинского Комсомола, 18</p>
+        <div class="contacts__phones">
+          <a href="tel:83913121374" class="contacts__phone"><small>Приёмная</small>8 (391-31) 2-13-74</a>
+          <a href="tel:83913120062" class="contacts__phone contacts__phone--alarm"><small>Аварийная · 24/7</small>8 (391-31) 2-00-62</a>
+          <a href="tel:83913120063" class="contacts__phone"><small>Диспетчерская</small>8 (391-31) 2-00-63</a>
+        </div>
+        <p><a href="mailto:uk@jks.ooo" class="contacts__mail">uk@jks.ooo</a></p>
+        <p class="contacts__social">
+          <a href="https://vk.ru/ooojks" target="_blank" rel="noopener">
+            <svg viewBox="0 0 30 30" class="icon"><path d="M15.7 3C9.2 3 4 8.2 4 14.7 4 21.2 9.2 26.4 15.7 26.4c6.5 0 11.7-5.2 11.7-11.7C27.4 8.2 22.2 3 15.7 3zm4.2 16h-1.4c-.5 0-.7-.4-1.6-1.4-1.2-1.3-1.8-1.4-2.1-1.4-.4 0-.5.1-.5.7v1.3c0 .3-.1.5-1 .5-1.5 0-3.1-.9-4.3-2.5-1.7-2.4-2.2-4.2-2.2-4.6 0-.2.1-.4.7-.4h1.4c.5 0 .7.2.9.8 1.1 3 2.8 5.7 3.6 5.7.3 0 .4-.1.4-.8v-2.9c-.1-1.5-.9-1.6-.9-2.1 0-.2.1-.4.4-.4h2.2c.4 0 .6.2.6.8v3.3c0 .7.3.8.5.8.4 0 .8-.1 1.6-1.1.5-.7.8-1.5 1.1-2.1.1-.3.4-.6.9-.6h1.4c.7 0 .8.3.7.8-.3.8-1.2 2-2.4 3.2-.4.4-.9.8-.3 1.6.4.4.9.8 1.3 1.3.8.8 1.5 1.5 1.6 2 .2.5-.1.8-.7.8z"/></svg>
+            Мы во ВКонтакте — vk.ru/ooojks
+          </a>
+        </p>
+        <p class="contacts__hours">Приёмная и бухгалтерия: пн–пт 8:00–17:00, перерыв 12:00–13:00<br />Диспетчерская служба: круглосуточно, без перерывов</p>
+      </div>
+      <div class="contacts__req">
+        <h3>Реквизиты</h3>
+        <dl>
+          <div><dt>Организация</dt><dd>ООО УК «Жилкомсервис»</dd></div>
+          <div><dt>ИНН / КПП</dt><dd>7703617600 / 245801001</dd></div>
+          <div><dt>ОГРН</dt><dd>1067760313180 · зарегистрирована 29.11.2006</dd></div>
+          <div><dt>ОКПО / ОКВЭД</dt><dd>98275450 / 68.32.1 — управление жилым фондом</dd></div>
+          <div><dt>Директор</dt><dd>Гриц Даниил Вячеславович</dd></div>
+          <div><dt>Юридический адрес</dt><dd>662501, Красноярский край, г. Сосновоборск, ул. Ленинского Комсомола, 18, пом. 3</dd></div>
+        </dl>
+      </div>
+      <div class="contacts__map">
+        <iframe
+          title="УК «Жилкомсервис» на карте"
+          src="https://yandex.ru/map-widget/v1/?ll=93.333847%2C56.119831&z=16&pt=93.333847,56.119831,pm2blm"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen></iframe>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Карта домов (Leaflet + OpenStreetMap)
+    import L from 'leaflet';
+    import 'leaflet/dist/leaflet.css';
+    import housesGeo from '../data/houses_geo.json';
+    import competitors from '../data/competitors.json';
+    import { orgColor, OURS_NAME } from '../lib/orgs.js';
+
+    const map = L.map('map', { scrollWheelZoom: false, attributionControl: false }).setView([56.1215, 93.334], 14);
+    // своя атрибуция без флага из стандартного префикса Leaflet
+    L.control.attribution({ prefix: 'Leaflet' }).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18,
+    }).addTo(map);
+
+    const markerIcon = (color, big) => L.divIcon({
+      className: 'map-marker',
+      html: `<span style="background:${color}"></span>`,
+      iconSize: big ? [22, 22] : [16, 16],
+      iconAnchor: big ? [11, 11] : [8, 8],
+    });
+
+    const bounds = [];
+    for (const h of housesGeo) {
+      if (h.lat == null) continue;
+      const addr = `ул. ${h.street}, ${h.num}`;
+      const url = `/house?street=${encodeURIComponent(h.street)}&num=${encodeURIComponent(h.num)}`;
+      L.marker([h.lat, h.lon], { icon: markerIcon(orgColor(OURS_NAME), true), title: addr })
+        .addTo(map)
+        .bindPopup(`<strong>${addr}</strong><br><a href="${url}">Карточка дома →</a>`);
+      bounds.push([h.lat, h.lon]);
+    }
+    for (const c of competitors) {
+      if (c.lat == null) continue;
+      L.marker([c.lat, c.lon], { icon: markerIcon(orgColor(c.uk), false), title: `${c.street}, ${c.num}` })
+        .addTo(map)
+        .bindPopup(`<strong>${c.street}, ${c.num}</strong><br><small>${c.uk}</small>`);
+    }
+    if (bounds.length) map.fitBounds(bounds, { padding: [24, 24] });
+  </script>
+
+  <script define:vars={{ houses }}>
+    const input = document.getElementById('house-input');
+    const resultsBox = document.getElementById('house-results');
+    let activeIdx = -1;
+
+    const normalize = (s) => s.toLowerCase().replace(/ё/g, 'е').trim();
+
+    function render(list) {
+      resultsBox.innerHTML = '';
+      activeIdx = -1;
+      if (!list.length) {
+        resultsBox.innerHTML = '<div class="house-search__empty">Дом не найден. Если вашего дома нет в списке — позвоните в приёмную: 8 (391-31) 2-13-74</div>';
+        resultsBox.hidden = false;
+        return;
+      }
+      for (const h of list.slice(0, 12)) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.innerHTML = `<span>ул. ${h.street}, ${h.num}</span><small>в управлении</small>`;
+        btn.addEventListener('click', () => selectHouse(h));
+        resultsBox.appendChild(btn);
+      }
+      resultsBox.hidden = false;
+    }
+
+    function selectHouse(h) {
+      input.value = `ул. ${h.street}, ${h.num}`;
+      resultsBox.hidden = true;
+      location.href = `/house?street=${encodeURIComponent(h.street)}&num=${encodeURIComponent(h.num)}`;
+    }
+
+    input.addEventListener('input', () => {
+      const q = normalize(input.value);
+      if (q.length < 2) { resultsBox.hidden = true; return; }
+      render(houses.filter((h) => normalize(`${h.street} ${h.num}`).includes(q)));
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const items = resultsBox.querySelectorAll('button');
+      if (resultsBox.hidden || !items.length) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIdx = (activeIdx + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items.forEach((b, i) => b.classList.toggle('active', i === activeIdx));
+        items[activeIdx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter' && activeIdx >= 0) {
+        items[activeIdx].click();
+      } else if (e.key === 'Escape') {
+        resultsBox.hidden = true;
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('house-search').contains(e.target)) resultsBox.hidden = true;
+    });
+  </script>
+</Base>

@@ -1,0 +1,167 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Админка — УК «Жилкомсервис»">
+  <div class="container house__wrap">
+    <div id="admin-root">Загрузка…</div>
+  </div>
+
+  <script>
+    import { COLLECTIONS } from '../lib/collections.mjs';
+    import { getToken, setToken, clearToken, readDataFile, writeDataFile, checkToken } from '../lib/github-admin.js';
+
+    const rootEl = document.getElementById('admin-root');
+    let CURRENT = null;
+    let FILESHA = {};
+    let CACHE = {};
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    /* ---------- вход по PAT ---------- */
+    function showLogin(msg = '') {
+      rootEl.innerHTML = `
+        <div class="card" style="max-width:480px;margin:40px auto">
+          <h1 style="font-size:1.3rem">Вход для сотрудников</h1>
+          <p class="disc-intro">Нужен персональный токен GitHub (fine-grained PAT) с правом <b>Contents: Read and write</b> на репозиторий сайта. Создаётся один раз: GitHub → Settings → Developer settings → Personal access tokens.</p>
+          <label style="display:block;font-weight:600;margin:12px 0 4px">Токен</label>
+          <input id="pat" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" placeholder="github_pat_…">
+          <button class="btn btn--primary" style="margin-top:14px" onclick="doLogin()">Войти</button>
+          ${msg ? `<p style="color:#dc2626;margin-top:10px">${esc(msg)}</p>` : ''}
+        </div>`;
+    }
+    window.doLogin = async () => {
+      setToken(document.getElementById('pat').value.trim());
+      try { await checkToken(); boot(); }
+      catch (e) { clearToken(); showLogin(e.message); }
+    };
+
+    /* ---------- дашборд ---------- */
+    async function boot() {
+      const cards = [];
+      for (const [name, cfg] of Object.entries(COLLECTIONS)) {
+        const { data, sha } = await readDataFile(cfg.file);
+        FILESHA[name] = sha; CACHE[name] = data;
+        const n = cfg.nested ? data.reduce((s, c) => s + (c.items || []).length, 0) : (Array.isArray(data) ? data.length : Object.keys(data).length);
+        cards.push(`<div class="ccard" onclick="openCol('${name}')"><b>${n}</b><span>${esc(cfg.label)}</span>${cfg.readonly ? '<div class="ro">только чтение</div>' : ''}</div>`);
+      }
+      rootEl.innerHTML = `<h1 style="font-size:1.3rem">Что редактируем?</h1>
+        <p class="disc-intro">Сохранение = коммит в GitHub → сайт пересобирается сам (~2–3 минуты).</p>
+        <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">${cards.join('')}</div>`;
+    }
+
+    /* ---------- список ---------- */
+    window.openCol = (name) => {
+      CURRENT = name;
+      const cfg = COLLECTIONS[name];
+      const data = CACHE[name];
+      let rows = '';
+      if (cfg.nested) {
+        data.forEach((cat, ci) => {
+          rows += `<tr style="background:#eff6ff"><td colspan="2"><b>${esc(cat.cat)}</b></td></tr>`;
+          (cat.items || []).forEach((item, ii) => {
+            rows += `<tr><td>${esc(item.name)}${item.price ? ` — ${item.price} ₽` : ''}</td><td style="white-space:nowrap">${cfg.readonly ? '' : `<button class="btn btn--ghost" style="padding:4px 12px;font-size:.8rem" onclick="editRec('${ci}.${ii}')">Изменить</button> <button class="btn btn--primary" style="padding:4px 12px;font-size:.8rem;background:#dc2626" onclick="delRec('${ci}.${ii}')">✕</button>`}</td></tr>`;
+          });
+        });
+      } else {
+        const list = cfg.dict ? Object.entries(data) : data.map((x, i) => [i, x]);
+        list.forEach(([idx, x]) => {
+          const disp = x.title || x.name || x.q || x.what || (x.street ? `ул. ${x.street}, ${x.num}` : '') || (x.text || '').slice(0, 60) || JSON.stringify(x).slice(0, 60);
+          rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap">${cfg.readonly ? '' : `<button class="btn btn--ghost" style="padding:4px 12px;font-size:.8rem" onclick="editRec('${idx}')">Изменить</button> <button class="btn btn--primary" style="padding:4px 12px;font-size:.8rem;background:#dc2626" onclick="delRec('${idx}')">✕</button>`}</td></tr>`;
+        });
+      }
+      rootEl.innerHTML = `<h1 style="font-size:1.3rem">${esc(cfg.label)}</h1>
+        <p class="disc-intro">${cfg.readonly ? 'Только чтение (обновляется синком).' : ''}</p>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <input id="q" placeholder="Поиск…" oninput="filterRows()" style="flex:1;min-width:200px;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px">
+          ${cfg.readonly ? '' : `<button class="btn btn--primary" onclick="editRec()">+ Добавить ${esc(cfg.singular || 'запись')}</button>`}
+          <button class="btn btn--ghost" onclick="boot()">← Все разделы</button>
+        </div>
+        <table style="width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:12px;border-collapse:collapse" id="tbl">
+          <tbody>${rows || '<tr><td style="padding:12px">пусто</td></tr>'}</tbody></table>
+        <style>td{padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:.88rem}</style>`;
+    };
+    window.filterRows = () => {
+      const q = document.getElementById('q').value.toLowerCase();
+      document.querySelectorAll('#tbl tr').forEach(tr => { tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none'; });
+    };
+
+    /* ---------- редактор ---------- */
+    function fieldHtml(f, val) {
+      if (f.type === 'textarea') return `<label>${esc(f.label)}</label><textarea id="f_${f.key}" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;min-height:90px">${esc(val ?? '')}</textarea>`;
+      if (f.type === 'select') return `<label>${esc(f.label)}</label><select id="f_${f.key}" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px">${f.options.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+      if (f.type === 'checkbox') return `<label style="display:flex;gap:8px;align-items:center;margin:12px 0 4px"><input type="checkbox" id="f_${f.key}" ${val ? 'checked' : ''} style="width:auto"> ${esc(f.label)}</label>`;
+      return `<label>${esc(f.label)}</label><input id="f_${f.key}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(val ?? '')}" placeholder="${esc(f.placeholder || '')}" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px">`;
+    }
+
+    window.editRec = (idx) => {
+      const cfg = COLLECTIONS[CURRENT];
+      const data = CACHE[CURRENT];
+      let rec = {};
+      if (idx !== undefined) {
+        if (cfg.nested) { const [ci, ii] = idx.split('.'); rec = data[+ci].items[+ii]; }
+        else rec = cfg.dict ? data[idx] : data[+idx];
+      }
+      const fields = cfg.nested ? cfg.itemFields : cfg.fields;
+      rootEl.innerHTML = `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px;max-width:640px">
+        <h1 style="font-size:1.2rem">${idx === undefined ? 'Добавить' : 'Изменить'}: ${esc(cfg.singular || cfg.label)}</h1>
+        ${CURRENT === 'useful' && idx === undefined ? '<label>Slug (адрес страницы)</label><input id="f_slug" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px" placeholder="napример: pravila-doma">' : ''}
+        <style>label{display:block;font-size:.85rem;font-weight:600;margin:12px 0 4px;color:#334155}</style>
+        ${fields.map(f => fieldHtml(f, rec[f.key])).join('')}
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn--primary" onclick="saveRec('${idx ?? ''}')">Сохранить</button>
+          <button class="btn btn--ghost" onclick="openCol('${CURRENT}')">Отмена</button>
+        </div>
+        <p id="e-msg" style="margin-top:10px"></p></div>`;
+    };
+
+    window.saveRec = async (idx) => {
+      const cfg = COLLECTIONS[CURRENT];
+      const fields = cfg.nested ? cfg.itemFields : cfg.fields;
+      const out = {};
+      for (const f of fields) {
+        const el = document.getElementById('f_' + f.key);
+        if (f.type === 'checkbox') out[f.key] = el.checked;
+        else if (f.type === 'number') out[f.key] = el.value === '' ? null : Number(el.value);
+        else out[f.key] = el.value.trim();
+      }
+      const msg = document.getElementById('e-msg');
+      msg.textContent = 'Сохраняю в GitHub…';
+      try {
+        const data = CACHE[CURRENT];
+        if (cfg.nested) {
+          if (idx === '') { msg.textContent = 'Добавление услуг — пока через редактирование категории'; return; }
+          const [ci, ii] = idx.split('.').map(Number);
+          data[ci].items[ii] = out;
+        } else if (cfg.dict) {
+          const slug = idx === '' ? document.getElementById('f_slug').value.trim() : idx;
+          data[slug] = { ...(idx === '' ? {} : data[idx]), ...out };
+        } else {
+          if (idx === '') data.unshift(out); else data[+idx] = { ...data[+idx], ...out };
+        }
+        await writeDataFile(cfg.file, data, FILESHA[CURRENT], `${idx === '' ? 'Добавлено' : 'Изменено'}: ${cfg.singular || cfg.label} (${cfg.label})`);
+        msg.textContent = 'Сохранено. Сайт обновится через ~2–3 минуты (GitHub Actions).';
+        msg.style.color = '#166534';
+        const fresh = await readDataFile(cfg.file);
+        FILESHA[CURRENT] = fresh.sha; CACHE[CURRENT] = fresh.data;
+      } catch (e) {
+        msg.textContent = 'Ошибка: ' + e.message;
+        msg.style.color = '#dc2626';
+      }
+    };
+
+    window.delRec = async (idx) => {
+      if (!confirm('Удалить? Сайт пересоберётся без этой записи.')) return;
+      const cfg = COLLECTIONS[CURRENT];
+      const data = CACHE[CURRENT];
+      if (cfg.nested) { const [ci, ii] = idx.split('.').map(Number); data[ci].items.splice(ii, 1); }
+      else if (cfg.dict) delete data[idx];
+      else data.splice(+idx, 1);
+      await writeDataFile(cfg.file, data, FILESHA[CURRENT], `Удалено из ${cfg.label}`);
+      const fresh = await readDataFile(cfg.file);
+      FILESHA[CURRENT] = fresh.sha; CACHE[CURRENT] = fresh.data;
+      openCol(CURRENT);
+    };
+
+    if (!getToken()) showLogin(); else boot().catch((e) => { clearToken(); showLogin(e.message); });
+  </script>
+</Base>

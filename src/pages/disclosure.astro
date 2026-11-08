@@ -1,0 +1,96 @@
+---
+import Base from '../layouts/Base.astro';
+import { getDocuments } from '../lib/content.js';
+
+const docs = await getDocuments();
+const CATS = [...new Set(docs.map((d) => d.cat))];
+const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].sort((a, b) => b - a);
+---
+<Base title="Раскрытие информации — УК «Жилкомсервис»"
+      description="Раскрытие информации ООО УК «Жилкомсервис» по Постановлению Правительства РФ № 731: отчёты, протоколы, бухгалтерская отчётность, тарифы.">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Раскрытие информации</span></nav>
+    <h1>Раскрытие информации</h1>
+    <p class="disc-intro">
+      В соответствии с Постановлением Правительства РФ № 731 от 23.09.2010
+      и ст. 165 ЖК РФ. Также информация размещается в
+      <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a>.
+    </p>
+
+    <div class="disc-controls">
+      <div class="house-search disc-search">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5zm-6 0a4.5 4.5 0 1 1 4.5-4.5 4.5 4.5 0 0 1-4.5 4.5z"/></svg>
+        <input type="text" id="doc-search" placeholder="Поиск по документам: улица, год, название…" autocomplete="off" />
+      </div>
+      <select id="doc-year" class="disc-year">
+        <option value="">Все годы</option>
+        {YEARS.map((y) => <option value={String(y)}>{y} год</option>)}
+      </select>
+    </div>
+
+    <div class="disc-cats" id="doc-cats">
+      <button type="button" class="chip chip--active" data-cat="">Все документы · {docs.length}</button>
+      {CATS.map((c) => (
+        <button type="button" class="chip" data-cat={c}>{c} · {docs.filter((d) => d.cat === c).length}</button>
+      ))}
+    </div>
+    <p class="disc-count" id="doc-count"></p>
+    <div id="doc-list"></div>
+  </div>
+
+  <script define:vars={{ docs }}>
+    const searchInput = document.getElementById('doc-search');
+    const yearSelect = document.getElementById('doc-year');
+    const chips = document.querySelectorAll('#doc-cats .chip');
+    const listBox = document.getElementById('doc-list');
+    const countEl = document.getElementById('doc-count');
+
+    let activeCat = new URLSearchParams(location.search).get('cat') || '';
+    chips.forEach((c) => c.classList.toggle('chip--active', c.dataset.cat === activeCat));
+
+    const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е');
+    const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    function renderList() {
+      const q = norm(searchInput.value);
+      const year = yearSelect.value;
+      const filtered = docs.filter((d) =>
+        (!activeCat || d.cat === activeCat) &&
+        (!year || String(d.year) === year) &&
+        (!q || norm(d.name).includes(q))
+      );
+      countEl.textContent = filtered.length
+        ? `Найдено документов: ${filtered.length}`
+        : 'Ничего не найдено — попробуйте изменить запрос или позвоните в приёмную: 8 (391-31) 2-13-74';
+
+      const groups = {};
+      for (const d of filtered) (groups[d.cat] ??= []).push(d);
+
+      listBox.innerHTML = Object.entries(groups)
+        .map(([cat, items]) => `
+          <section class="doc-group">
+            <h3>${esc(cat)} <span class="doc-group__n">${items.length}</span></h3>
+            <ul class="doc-list">
+              ${items.map((d) => `
+                <li>
+                  <a class="doc-item" href="${d.url}" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
+                    <span class="doc-item__name">${esc(d.name)}</span>
+                    <span class="doc-item__meta">${d.year ? d.year + ' · ' : ''}${d.ext}</span>
+                  </a>
+                </li>`).join('')}
+            </ul>
+          </section>`)
+        .join('');
+    }
+
+    chips.forEach((chip) => chip.addEventListener('click', () => {
+      activeCat = chip.dataset.cat;
+      chips.forEach((c) => c.classList.toggle('chip--active', c === chip));
+      renderList();
+    }));
+    searchInput.addEventListener('input', renderList);
+    yearSelect.addEventListener('change', renderList);
+    renderList();
+  </script>
+</Base>

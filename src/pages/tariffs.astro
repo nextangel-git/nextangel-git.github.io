@@ -1,0 +1,41 @@
+---
+import Base from '../layouts/Base.astro';
+import { getDocuments } from '../lib/content.js';
+
+const docs = await getDocuments();
+const tariffs = docs.filter((d) => d.cat === 'Тарифы на коммунальные ресурсы');
+const byYear = {};
+for (const d of tariffs) (byYear[d.year || 'без года'] ??= []).push(d);
+const groups = Object.entries(byYear).sort((a, b) => String(b[0]).localeCompare(String(a[0])));
+---
+<Base title="Тарифы — УК «Жилкомсервис»"
+      description="Тарифы на содержание жилья и коммунальные ресурсы — ООО УК «Жилкомсервис», Сосновоборск.">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Тарифы</span></nav>
+    <h1>Тарифы</h1>
+    <p class="disc-intro">
+      Плата за содержание жилого помещения устанавливается решением общего собрания собственников —
+      смотрите документы конкретного дома в его карточке (поиск на <a href="/#houses">главной</a>).
+      Ниже — тарифы на коммунальные ресурсы, утверждённые РЭК Красноярского края.
+    </p>
+
+    {groups.map(([year, items]) => (
+      <section class="doc-group">
+        <h3>{year === 'без года' ? 'Документы' : `${year} год`} <span class="doc-group__n">{items.length}</span></h3>
+        <ul class="doc-list">
+          {items.map((d) => (
+            <li>
+              <a class="doc-item" href={d.url} target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
+                <span class="doc-item__name">{d.name}</span>
+                <span class="doc-item__meta">{d.ext}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    <p class="house__note" style="margin-top:24px">Все документы также доступны в разделе <a href="/disclosure?cat=Тарифы на коммунальные ресурсы">«Раскрытие информации»</a>.</p>
+  </div>
+</Base>

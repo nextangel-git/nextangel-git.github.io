@@ -1,0 +1,117 @@
+---
+import Base from '../layouts/Base.astro';
+import { getHouses } from '../lib/content.js';
+
+const houses = await getHouses();
+import housesGeo from '../data/houses_geo.json';
+---
+<Base title="Карточка дома — УК «Жилкомсервис»"
+      description="Карточка многоквартирного дома в управлении ООО УК «Жилкомсервис»: документы, протоколы собраний, отчёты, тарифы.">
+  <div id="house-root"></div>
+
+  <script define:vars={{ houses, housesGeo }}>
+    const root = document.getElementById('house-root');
+    const params = new URLSearchParams(location.search);
+    const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
+    const house = houses.find(
+      (h) => norm(h.street) === norm(params.get('street')) && norm(h.num) === norm(params.get('num'))
+    );
+    const geo = housesGeo.find(
+      (h) => norm(h.street) === norm(params.get('street')) && norm(h.num) === norm(params.get('num'))
+    );
+    if (house && geo) Object.assign(house, { year: geo.year, floors: geo.floors, flats: geo.flats, ukSince: geo.ukSince, area: geo.area, entrances: geo.entrances });
+
+    const DOC_GROUPS = [
+      { title: 'Договор и отчёты', items: [
+        { name: 'Договор управления МКД', meta: 'PDF · действующий' },
+        { name: 'Отчёт о выполнении договора управления за 2025 год', meta: 'PDF' },
+        { name: 'Отчёт о выполнении договора управления за 2024 год', meta: 'PDF' },
+      ]},
+      { title: 'Протоколы собраний', items: [
+        { name: 'Протокол общего собрания собственников', meta: 'PDF · 2025' },
+        { name: 'Протокол общего собрания собственников', meta: 'PDF · 2024' },
+      ]},
+      { title: 'Тарифы и начисления', items: [
+        { name: 'Размер платы за содержание жилого помещения', meta: 'PDF · текущий' },
+        { name: 'Тарифы на коммунальные ресурсы', meta: 'PDF · текущий' },
+      ]},
+    ];
+
+    const docIcon = '<svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>';
+
+    const docGroupHtml = (g) => `
+      <section class="doc-group">
+        <h3>${g.title}</h3>
+        <ul class="doc-list">
+          ${g.items.map((d) => `
+            <li class="doc-item">${docIcon}
+              <span class="doc-item__name">${d.name}</span>
+              <span class="doc-item__meta">${d.meta}</span>
+            </li>`).join('')}
+        </ul>
+      </section>`;
+
+    if (!house) {
+      document.title = 'Дом не найден — УК «Жилкомсервис»';
+      root.innerHTML = `
+        <div class="container house__wrap">
+          <nav class="crumbs"><a href="/">Главная</a> → <a href="/#houses">Дома</a></nav>
+          <h1>Дом не найден</h1>
+          <p class="house__sub">Возможно, он не в управлении УК «Жилкомсервис». Проверьте адрес в поиске на <a href="/">главной странице</a> или позвоните в приёмную: 8 (391-31) 2-13-74.</p>
+        </div>`;
+    } else {
+      const addr = `ул. ${house.street}, ${house.num}`;
+      document.title = `${addr} — карточка дома — УК «Жилкомсервис»`;
+      const reqUrl = `/request?street=${encodeURIComponent(house.street)}&num=${encodeURIComponent(house.num)}`;
+      root.innerHTML = `
+        <div class="container house__wrap">
+          <nav class="crumbs"><a href="/">Главная</a> → <a href="/#houses">Дома</a> → <span>${addr}</span></nav>
+          <div class="house__head">
+            <div>
+              <h1>${addr}</h1>
+              <p class="house__sub"><span class="badge badge--ok">В управлении УК «Жилкомсервис»</span></p>
+              <div class="house-facts">
+                ${house.year ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14z"/></svg><b>${house.year}</b><span>год постройки</span></div>` : ''}
+                ${house.floors ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M3 21h18v-2H5V5H3zM7 17h10v-2H7zm0-5h10V9H7z"/></svg><b>${house.floors}</b><span>этажей</span></div>` : ''}
+                ${house.entrances ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-6h6v6h6V10z"/></svg><b>${house.entrances}</b><span>подъезд${house.entrances === 1 ? '' : house.entrances < 5 ? 'а' : 'ов'}</span></div>` : ''}
+                ${house.flats ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><b>${house.flats}</b><span>квартир</span></div>` : ''}
+                ${house.area ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zm2 2v10h14V7z"/></svg><b>${Math.round(house.area).toLocaleString('ru-RU')}</b><span>м² площади</span></div>` : ''}
+                ${house.ukSince ? `<div class="stat stat--wide"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 10.6 4.2 2.5-.8 1.3-4.9-3V7h1.5z"/></svg><span>в управлении с <b>${house.ukSince}</b></span></div>` : ''}
+              </div>
+            </div>
+            <div class="house__actions">
+              <a class="btn btn--primary" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">Передать показания</a>
+              <a class="btn btn--ghost" href="${reqUrl}">Оставить заявку</a>
+            </div>
+          </div>
+          <div class="house__grid">
+            <div class="house__docs">
+              <h2>Документы по дому</h2>
+              <p class="house__note">Структура раздела — демонстрационная. Реальные файлы будут загружаться из CMS и привязываться к адресу.</p>
+              ${DOC_GROUPS.map(docGroupHtml).join('')}
+            </div>
+            <aside class="house__side">
+              <div class="side-card">
+                <h3>Аварийная служба</h3>
+                <p>Прорыв, затопление, нет света или отопления:</p>
+                <a class="side-card__phone" href="tel:83913120062">8 (391-31) 2-00-62</a>
+                <a class="side-card__phone" href="tel:83913120063">8 (391-31) 2-00-63</a>
+                <p class="side-card__note">круглосуточно, без выходных</p>
+              </div>
+              <div class="side-card">
+                <h3>Вопросы по дому</h3>
+                <p>Приёмная: пн–пт 8:00–17:00, перерыв 12:00–13:00</p>
+                <a class="side-card__phone" href="tel:83913121374">8 (391-31) 2-13-74</a>
+                <p><a href="mailto:uk@jks.ooo">uk@jks.ooo</a></p>
+              </div>
+              <div class="side-card side-card--accent">
+                <h3>Квитанции и оплата</h3>
+                <p>Начисления, баланс и оплата — в личном кабинете:</p>
+                <a class="btn btn--primary" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">Открыть личный кабинет</a>
+              </div>
+            </aside>
+          </div>
+        </div>`;
+    }
+  </script>
+</Base>

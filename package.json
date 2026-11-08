@@ -1,0 +1,17 @@
+{
+  "name": "jks-site",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Новый сайт ООО УК «Жилкомсервис», г. Сосновоборск (Astro + Strapi)",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.4.4",
+    "leaflet": "^1.9.4"
+  }
+}

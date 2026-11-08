@@ -1,0 +1,192 @@
+---
+import Base from '../layouts/Base.astro';
+import { getHouses } from '../lib/content.js';
+
+const houses = await getHouses();
+---
+<Base title="Оставить заявку — УК «Жилкомсервис»"
+      description="Онлайн-заявка в управляющую компанию «Жилкомсервис», Сосновоборск.">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Оставить заявку</span></nav>
+    <div class="request-grid">
+      <div>
+        <h1>Оставить заявку</h1>
+        <p class="disc-intro">Опишите проблему — передадим диспетчеру. Если аварийная ситуация (прорыв, затопление, запах газа) — звоните сразу: <strong>8 (391-31) 2-00-62</strong> (круглосуточно).</p>
+
+        <form id="request-form" class="form" novalidate>
+          <label class="form__field">
+            <span>ФИО *</span>
+            <input type="text" name="fio" required placeholder="Иванова Мария Петровна" />
+          </label>
+          <label class="form__field">
+            <span>Телефон *</span>
+            <input type="tel" name="phone" required placeholder="+7 (___) ___-__-__" />
+          </label>
+          <label class="form__field form__field--house">
+            <span>Ваш дом *</span>
+            <input type="text" id="req-house" required placeholder="Начните вводить улицу…" autocomplete="off" />
+            <div class="house-search__results" id="req-house-results" hidden></div>
+          </label>
+          <label class="form__field">
+            <span>Квартира</span>
+            <input type="text" name="flat" placeholder="№ квартиры (необязательно)" />
+          </label>
+          <label class="form__field">
+            <span>Тема *</span>
+            <select name="topic" required>
+              <option value="">— выберите —</option>
+              <option>Сантехника</option>
+              <option>Электрика</option>
+              <option>Отопление</option>
+              <option>Уборка подъезда / территории</option>
+              <option>Шум / соседи</option>
+              <option>Вопрос по квитанции</option>
+              <option>Заказ платной услуги</option>
+              <option>Другое</option>
+            </select>
+          </label>
+          <label class="form__field form__field--wide">
+            <span>Описание проблемы *</span>
+            <textarea name="text" rows="5" required placeholder="Что случилось, где, когда началось…"></textarea>
+          </label>
+          <label class="form__check form__field--wide">
+            <input type="checkbox" name="pdn" required />
+            <span>Согласен на обработку персональных данных в соответствии с <a href="/privacy">политикой конфиденциальности</a> *</span>
+          </label>
+          <!-- ханипот: людям не видно, боты заполняют -->
+          <input type="text" name="company" id="req-company" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true" />
+          <div class="form__field--wide">
+            <button type="submit" class="btn btn--primary">Отправить заявку</button>
+          </div>
+        </form>
+
+        <div id="request-done" class="form-done" hidden>
+          <h2>Заявка сформирована</h2>
+          <p>Номер заявки: <strong id="request-num"></strong>. Диспетчер свяжется с вами. Статус можно отслеживать в личном кабинете.</p>
+          <p class="house__note"></p>
+          <p><a id="request-mailto" class="btn btn--primary" href="#" hidden>Открыть готовое письмо</a></p>
+        </div>
+      </div>
+
+      <aside class="house__side">
+        <div class="side-card side-card--accent">
+          <h3>Аварийная ситуация?</h3>
+          <p>Не ждите ответа на форму — звоните:</p>
+          <a class="side-card__phone" href="tel:83913120062">8 (391-31) 2-00-62</a>
+          <a class="side-card__phone" href="tel:83913120063">8 (391-31) 2-00-63</a>
+          <p class="side-card__note">круглосуточно, без выходных</p>
+        </div>
+        <div class="side-card">
+          <h3>Через личный кабинет</h3>
+          <p>Заявки с фото и отслеживанием статуса:</p>
+          <a class="btn btn--ghost" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">Открыть личный кабинет</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script define:vars={{ houses }}>
+    const houseInput = document.getElementById('req-house');
+    const houseResults = document.getElementById('req-house-results');
+    const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('street') && params.get('num')) {
+      houseInput.value = `ул. ${params.get('street')}, ${params.get('num')}`;
+    }
+
+    houseInput.addEventListener('input', () => {
+      const q = norm(houseInput.value);
+      if (q.length < 2) { houseResults.hidden = true; return; }
+      const list = houses.filter((h) => norm(`${h.street} ${h.num}`).includes(q)).slice(0, 8);
+      houseResults.innerHTML = '';
+      for (const h of list) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = `ул. ${h.street}, ${h.num}`;
+        b.addEventListener('click', () => {
+          houseInput.value = `ул. ${h.street}, ${h.num}`;
+          houseResults.hidden = true;
+        });
+        houseResults.appendChild(b);
+      }
+      houseResults.hidden = !list.length;
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.form__field--house')) houseResults.hidden = true;
+    });
+
+    const form = document.getElementById('request-form');
+    const formShownAt = Date.now();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      // антиспам: ханипот + время заполнения (< 3 сек — бот)
+      const isBot = form.elements.company.value !== '' || Date.now() - formShownAt < 3000;
+      const num = 'ЖКС-' + new Date().toISOString().slice(2, 10).replaceAll('-', '') + '-' + String(Math.floor(Math.random() * 900) + 100);
+      if (isBot) {
+        // боту отвечаем «успехом», но ничего не отправляем
+        form.hidden = true;
+        document.getElementById('request-num').textContent = num;
+        document.getElementById('request-done').hidden = false;
+        return;
+      }
+      const btn = form.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.textContent = 'Отправляем…';
+
+      // Реальная отправка на почту УК через FormSubmit (без бэкенда).
+      // Адрес назначения — проектный; при запуске заменить на почту УК (первая заявка = письмо-подтверждение).
+      const FORM_TARGET = 'jkssosnovoborsk@fldubai.com';
+      const fd = new FormData(form);
+      const payload = {
+        _subject: `Заявка ${num} с сайта: ${fd.get('topic')}`,
+        'Номер заявки': num,
+        'ФИО': fd.get('fio'),
+        'Телефон': fd.get('phone'),
+        'Дом': fd.get('req-house') || houseInput.value,
+        'Квартира': fd.get('flat') || '—',
+        'Тема': fd.get('topic'),
+        'Описание': fd.get('text'),
+        _template: 'table',
+      };
+      let sent = false;
+      try {
+        const res = await fetch(`https://formsubmit.co/ajax/${FORM_TARGET}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => null);
+        sent = res.ok && data && String(data.success) === 'true';
+      } catch { sent = false; }
+
+      form.hidden = true;
+      const done = document.getElementById('request-done');
+      document.getElementById('request-num').textContent = num;
+      const note = done.querySelector('.house__note');
+      const mailtoBtn = document.getElementById('request-mailto');
+      if (sent) {
+        note.textContent = 'Заявка ушла в управляющую компанию по электронной почте.';
+        note.style.background = '';
+        mailtoBtn.hidden = true;
+      } else {
+        // запасной путь: письмо через почтовый клиент жителя (работает всегда)
+        note.textContent = 'Автоотправка недоступна из вашей сети. Нажмите кнопку ниже — откроется готовое письмо в вашей почте, останется нажать «Отправить». Или позвоните: 8 (391-31) 2-13-74.';
+        note.style.background = '#fffbeb';
+        const body = [
+          `Номер заявки: ${num}`, `ФИО: ${fd.get('fio')}`, `Телефон: ${fd.get('phone')}`,
+          `Дом: ${houseInput.value}`, `Квартира: ${fd.get('flat') || '—'}`,
+          `Тема: ${fd.get('topic')}`, '', fd.get('text'),
+        ].join('\n');
+        mailtoBtn.href = `mailto:uk@jks.ooo?subject=${encodeURIComponent('Заявка ' + num + ': ' + fd.get('topic'))}&body=${encodeURIComponent(body)}`;
+        mailtoBtn.hidden = false;
+      }
+      done.hidden = false;
+      done.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  </script>
+</Base>

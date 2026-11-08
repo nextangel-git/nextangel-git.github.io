@@ -1,0 +1,14 @@
+{
+	"pid": 22584,
+	"port": 5199,
+	"url": "http://localhost:5199",
+	"urls": {
+		"local": [
+			"http://localhost:5199/"
+		],
+		"network": [],
+		"networkInterfaceNames": []
+	},
+	"background": false,
+	"startedAt": "2026-11-05T19:15:28.416Z"
+}

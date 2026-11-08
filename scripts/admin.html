@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>УК «Жилкомсервис» — админка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+  .top { background: #1f304f; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  .top img { height: 30px; background: #fff; border-radius: 6px; padding: 2px 6px; }
+  .top .back { color: #93c5fd; text-decoration: none; margin-left: auto; font-size: .9rem; cursor: pointer; }
+  .wrap { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 1.25rem; margin-bottom: 4px; }
+  .sub { color: #64748b; font-size: .88rem; margin-bottom: 20px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .ccard { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; cursor: pointer; transition: .12s; }
+  .ccard:hover { border-color: #3856a3; transform: translateY(-2px); }
+  .ccard b { font-size: 1.5rem; color: #3856a3; display: block; }
+  .ccard span { color: #64748b; font-size: .85rem; }
+  .ccard .ro { color: #b45309; font-size: .72rem; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: .88rem; }
+  th { background: #f1f5f9; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .toolbar input { flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; }
+  button, .btn { background: #3856a3; color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+  button:hover { background: #2c468a; }
+  .btn-sm { padding: 5px 12px; font-size: .8rem; }
+  .btn-danger { background: #dc2626; }
+  .btn-ghost { background: #fff; color: #3856a3; border: 1px solid #3856a3; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; }
+  label { display: block; font-size: .85rem; font-weight: 600; margin: 12px 0 4px; color: #334155; }
+  input, select, textarea { width: 100%; font: inherit; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
+  textarea { resize: vertical; min-height: 90px; }
+  input[type=checkbox] { width: auto; }
+  .msg { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: .9rem; display: none; }
+  .ok { display: block; background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+  .err { display: block; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+  .login { max-width: 380px; margin: 80px auto; }
+  .actions { display: flex; gap: 8px; }
+  .cathead { background: #eff6ff; font-weight: 700; color: #1e3a8a; }
+</style>
+</head>
+<body>
+<div class="top">
+  <img src="/logo.svg" alt="ЖКС" onerror="this.style.display='none'"><strong>Админка сайта</strong>
+  <span style="color:#93c5fd;font-size:.85rem">jks.ooo</span>
+  <a class="back" id="back" style="display:none">← назад</a>
+</div>
+<div class="wrap" id="app">…</div>
+
+<script>
+const app = document.getElementById('app');
+const backBtn = document.getElementById('back');
+let CONFIG = null;
+let CURRENT = null;
+
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function api(path, method = 'GET', body) {
+  const res = await fetch(path, { method, headers: body ? {'Content-Type': 'application/json'} : {}, body: body ? JSON.stringify(body) : undefined });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) { if (res.status === 401) { showLogin(); throw new Error('401'); } throw new Error(json.error || 'Ошибка ' + res.status); }
+  return json;
+}
+
+function toast(el, msg, ok) { el.textContent = msg; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
+
+/* ---------- вход ---------- */
+function showLogin() {
+  backBtn.style.display = 'none';
+  app.innerHTML = `<div class="card login"><h1>Вход для сотрудников</h1>
+    <p class="sub">УК «Жилкомсервис» — управление сайтом</p>
+    <label>Пароль</label><input id="pw" type="password" autofocus onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()" style="width:100%;margin-top:14px">Войти</button>
+    <div class="msg" id="l-msg"></div></div>`;
+}
+async function login() {
+  try { await api('/admin/api/login', 'POST', { password: document.getElementById('pw').value }); boot(); }
+  catch (e) { toast(document.getElementById('l-msg'), 'Неверный пароль', false); }
+}
+
+/* ---------- дашборд ---------- */
+async function boot() {
+  const check = await fetch('/admin/api/check');
+  if (check.status === 401) { showLogin(); return; }
+  CONFIG = (await api('/admin/api/config'));
+  backBtn.style.display = 'none';
+  CURRENT = null;
+  const cards = [];
+  for (const [name, cfg] of Object.entries(CONFIG)) {
+    const data = await api('/admin/api/col/' + name);
+    const n = cfg.nested ? data.reduce((s, c) => s + (c.items || []).length, 0) : (Array.isArray(data) ? data.length : Object.keys(data).length);
+    cards.push(`<div class="ccard" onclick="openCol('${name}')"><b>${n}</b><span>${esc(cfg.label)}</span>${cfg.readonly ? '<div class="ro">только чтение</div>' : ''}</div>`);
+  }
+  app.innerHTML = `<h1>Что редактируем?</h1><p class="sub">Сайт пересобирается сам через ~1 минуту после сохранения.</p><div class="cards">${cards.join('')}</div>`;
+}
+
+/* ---------- список записей ---------- */
+async function openCol(name) {
+  CURRENT = name;
+  const cfg = CONFIG[name];
+  backBtn.style.display = '';
+  const data = await api('/admin/api/col/' + name);
+  let rows = '';
+  if (cfg.nested) {
+    data.forEach((cat, ci) => {
+      rows += `<tr class="cathead"><td colspan="2">${esc(cat.cat)}</td></tr>`;
+      (cat.items || []).forEach((item, ii) => {
+        rows += `<tr><td>${esc(item.name)}${item.price ? ` — ${item.price} ₽` : ''}</td><td class="actions">${cfg.readonly ? '' : `<button class="btn-sm btn-ghost" onclick="editNested(${ci},${ii})">Изменить</button><button class="btn-sm btn-danger" onclick="delNested(${ci},${ii})">✕</button>`}</td></tr>`;
+      });
+    });
+  } else {
+    const list = cfg.dict ? Object.entries(data) : data.map((x, i) => [i, x]);
+    list.forEach(([idx, x]) => {
+      const disp = x.title || x.name || x.q || x.what || (x.street ? `ул. ${x.street}, ${x.num}` : '') || x.text?.slice(0, 60) || JSON.stringify(x).slice(0, 60);
+      rows += `<tr><td>${esc(disp)}</td><td class="actions">${cfg.readonly ? '' : `<button class="btn-sm btn-ghost" onclick="editRec('${idx}')">Изменить</button><button class="btn-sm btn-danger" onclick="delRec('${idx}')">✕</button>`}</td></tr>`;
+    });
+  }
+  app.innerHTML = `<h1>${esc(cfg.label)}</h1><p class="sub">${cfg.readonly ? 'Только чтение (обновляется автоматически).' : ''}</p>
+    <div class="toolbar">
+      <input id="q" placeholder="Поиск…" oninput="filterRows()">
+      ${cfg.readonly ? '' : `<button onclick="editRec()">+ Добавить ${esc(cfg.singular || 'запись')}</button>`}
+    </div>
+    <table id="tbl"><tbody>${rows || '<tr><td>пусто</td></tr>'}</tbody></table>`;
+  window.__data = data;
+}
+function filterRows() {
+  const q = document.getElementById('q').value.toLowerCase();
+  document.querySelectorAll('#tbl tr').forEach(tr => { tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none'; });
+}
+
+/* ---------- редактор ---------- */
+function fieldHtml(f, val) {
+  if (f.type === 'textarea') return `<label>${esc(f.label)}${f.required ? ' *' : ''}</label><textarea id="f_${f.key}">${esc(val ?? '')}</textarea>`;
+  if (f.type === 'select') return `<label>${esc(f.label)}${f.required ? ' *' : ''}</label><select id="f_${f.key}">${f.options.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  if (f.type === 'checkbox') return `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="f_${f.key}" ${val ? 'checked' : ''} style="width:auto"> ${esc(f.label)}</label>`;
+  return `<label>${esc(f.label)}${f.required ? ' *' : ''}</label><input id="f_${f.key}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(val ?? '')}" placeholder="${esc(f.placeholder || '')}">`;
+}
+
+function editRec(idx) {
+  const cfg = CONFIG[CURRENT];
+  const data = window.__data;
+  const rec = idx === undefined ? {} : (cfg.dict ? data[idx] : data[idx]);
+  const fields = cfg.nested ? cfg.itemFields : cfg.fields;
+  app.innerHTML = `<div class="card"><h1>${idx === undefined ? 'Добавить' : 'Изменить'}: ${esc(cfg.singular || cfg.label)}</h1>
+    ${CURRENT === 'useful' && idx === undefined ? '<label>Slug (адрес страницы, латиницей)</label><input id="f_slug" placeholder="napример: pravila-doma">' : ''}
+    ${fields.map(f => fieldHtml(f, rec[f.key])).join('')}
+    <div style="display:flex;gap:10px"><button onclick="saveRec('${idx ?? ''}')">Сохранить</button><button class="btn-ghost" onclick="openCol('${CURRENT}')">Отмена</button></div>
+    <div class="msg" id="e-msg"></div></div>`;
+  backBtn.style.display = 'none';
+}
+async function saveRec(idx) {
+  const cfg = CONFIG[CURRENT];
+  const fields = cfg.nested ? cfg.itemFields : cfg.fields;
+  const out = {};
+  for (const f of fields) {
+    const el = document.getElementById('f_' + f.key);
+    if (f.type === 'checkbox') out[f.key] = el.checked;
+    else if (f.type === 'number') out[f.key] = el.value === '' ? null : Number(el.value);
+    else out[f.key] = el.value.trim();
+  }
+  if (CURRENT === 'useful' && idx === '') {
+    const slugEl = document.getElementById('f_slug');
+    if (!slugEl.value.trim()) { toast(document.getElementById('e-msg'), 'Нужен slug', false); return; }
+    out.slug = slugEl.value.trim();
+  }
+  try {
+    if (idx === '' || idx === 'undefined') await api('/admin/api/col/' + CURRENT, 'POST', out);
+    else await api('/admin/api/col/' + CURRENT + '/' + idx, 'PUT', out);
+    await openCol(CURRENT);
+  } catch (e) { toast(document.getElementById('e-msg'), e.message, false); }
+}
+async function delRec(idx) {
+  if (!confirm('Удалить запись? Сайт пересоберётся без неё.')) return;
+  await api('/admin/api/col/' + CURRENT + '/' + idx, 'DELETE');
+  await openCol(CURRENT);
+}
+
+/* ---------- услуги (вложенные) ---------- */
+function editNested(ci, ii) {
+  const cat = window.__data[ci];
+  const rec = ii === undefined ? {} : cat.items[ii];
+  const fields = CONFIG[CURRENT].itemFields;
+  app.innerHTML = `<div class="card"><h1>${ii === undefined ? 'Добавить' : 'Изменить'} услугу — ${esc(cat.cat)}</h1>
+    ${fields.map(f => fieldHtml(f, rec[f.key])).join('')}
+    <div style="display:flex;gap:10px"><button onclick="saveNested(${ci},${ii})">Сохранить</button><button class="btn-ghost" onclick="openCol('${CURRENT}')">Отмена</button></div>
+    <div class="msg" id="e-msg"></div></div>`;
+}
+async function saveNested(ci, ii) {
+  const fields = CONFIG[CURRENT].itemFields;
+  const out = {};
+  for (const f of fields) {
+    const el = document.getElementById('f_' + f.key);
+    out[f.key] = f.type === 'number' ? (el.value === '' ? null : Number(el.value)) : el.value.trim();
+  }
+  const data = window.__data;
+  if (ii === undefined || isNaN(ii)) data[ci].items.push(out); else data[ci].items[ii] = out;
+  // вложенные сохраняем целиком как PUT по индексу категории нельзя — шлём весь файл
+  await api('/admin/api/col/' + CURRENT + '/0', 'PUT', { __replaceAll: true, data });
+  await openCol(CURRENT);
+}
+async function delNested(ci, ii) {
+  if (!confirm('Удалить услугу?')) return;
+  window.__data[ci].items.splice(ii, 1);
+  await api('/admin/api/col/' + CURRENT + '/0', 'PUT', { __replaceAll: true, data: window.__data });
+  await openCol(CURRENT);
+}
+
+document.getElementById('back').addEventListener('click', () => { CURRENT ? (CURRENT = null, boot()) : boot(); });
+boot();
+</script>
+</body>
+</html>

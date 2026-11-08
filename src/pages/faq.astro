@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import faq from '../data/faq.json';
+---
+<Base title="Вопросы и ответы — УК «Жилкомсервис»"
+      description="Ответы на частые вопросы жителей: показания, оплата, заявки, отключения — УК «Жилкомсервис», Сосновоборск.">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Вопросы и ответы</span></nav>
+    <h1>Вопросы и ответы</h1>
+    <p class="disc-intro">Собрали то, о чём чаще всего спрашивают в приёмной. Не нашли ответ — звоните: 8 (391-31) 2-13-74.</p>
+    <div class="faq">
+      {faq.map((f, i) => (
+        <details class="faq__item">
+          <summary>{f.q}</summary>
+          <p>{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</Base>

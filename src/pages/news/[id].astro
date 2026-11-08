@@ -1,0 +1,50 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getNews } from '../../lib/content.js';
+
+export async function getStaticPaths() {
+  const news = await getNews();
+  return news.map((n) => ({ params: { id: n.slug }, props: { n } }));
+}
+
+const { n } = Astro.props;
+
+function tagFor(title) {
+  if (/уведомлени|прекращени/i.test(title)) return { tag: '', label: 'Важно' };
+  if (/мошеннич|кладитрубку/i.test(title)) return { tag: 'news-card__tag--warn', label: 'Безопасность' };
+  return { tag: 'news-card__tag--info', label: 'ЖКХ' };
+}
+const t = tagFor(n.title);
+---
+<Base title={`${n.title} — УК «Жилкомсервис»`} description={n.desc || n.title}>
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <a href="/news">Новости</a> → <span>{n.date}</span></nav>
+    <article class="article">
+      <div class="news-card__rowhead" style="margin-bottom:12px">
+        <span class={`news-card__tag ${t.tag}`}>{t.label}</span>
+        <time datetime={(n.date || '').split('.').reverse().join('-')}>{n.date}</time>
+      </div>
+      <h1 class="article__title">{n.title}</h1>
+      {n.body
+        ? <div class="article__body" set:html={n.body} />
+        : n.desc && <div class="article__body"><p>{n.desc}</p></div>}
+      {n.files && n.files.length > 0 && (
+        <div class="article__files">
+          <h3>Приложенные документы</h3>
+          <ul class="doc-list">
+            {n.files.map((f) => (
+              <li>
+                <a class="doc-item" href={f.url} target="_blank" rel="noopener">
+                  <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
+                  <span class="doc-item__name">{f.name}</span>
+                  <span class="doc-item__meta">скачать</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p style="margin-top:28px"><a href="/news" class="link-more">← Все новости</a></p>
+    </article>
+  </div>
+</Base>

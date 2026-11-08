@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro';
+import useful from '../../data/useful.json';
+
+const entries = Object.entries(useful);
+---
+<Base title="Полезное жителям — УК «Жилкомсервис»"
+      description="Правила проживания, пожарная безопасность, приказы и документы ООО УК «Жилкомсервис».">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Полезное жителям</span></nav>
+    <h1>Полезное жителям</h1>
+    <p class="disc-intro">Инструкции, правила и документы, которые чаще всего нужны жителям.</p>
+    <div class="disc-grid">
+      {entries.map(([slug, a]) => (
+        <a href={`/useful/${slug}`} class="disc-card"><h3>{a.title}</h3></a>
+      ))}
+      <a href="/faq" class="disc-card"><h3>Вопросы и ответы</h3><p>Частые вопросы жителей</p></a>
+      <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener" class="disc-card"><h3>Приложение «Госуслуги Дом»</h3><p>Показания, оплата и голосования — в приложении</p></a>
+    </div>
+  </div>
+</Base>

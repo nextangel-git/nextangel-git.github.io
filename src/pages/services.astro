@@ -1,0 +1,56 @@
+---
+import Base from '../layouts/Base.astro';
+import { getServices } from '../lib/content.js';
+
+const services = await getServices();
+const fmt = (n) => n.toLocaleString('ru-RU');
+---
+<Base title="Платные услуги — УК «Жилкомсервис»"
+      description="Платные услуги ООО УК «Жилкомсервис» для жителей Сосновоборска: сантехника, электрика, счётчики, отопление.">
+  <div class="container house__wrap">
+    <nav class="crumbs"><a href="/">Главная</a> → <span>Платные услуги</span></nav>
+    <h1>Платные услуги</h1>
+    <p class="disc-intro">Мастера УК выполняют работы в квартирах и помещениях. Заказ — через форму или по телефону приёмной.</p>
+    <p class="house__note">Цены ориентировочные (средние по рынку УК) — будут заменены на действующий прайс ООО УК «Жилкомсервис».</p>
+
+    <div class="disc-cats" id="svc-cats">
+      <button type="button" class="chip chip--active" data-cat="">Все услуги · {services.reduce((s, c) => s + c.items.length, 0)}</button>
+      {services.map((c) => (
+        <button type="button" class="chip" data-cat={c.cat}>{c.cat} · {c.items.length}</button>
+      ))}
+    </div>
+
+    <div id="svc-list">
+      {services.map((g) => (
+        <section class="doc-group svc-group" data-cat={g.cat}>
+          <h3>{g.cat} <span class="doc-group__n">{g.items.length}</span></h3>
+          <div class="svc-grid">
+            {g.items.map((s) => (
+              <div class="svc-card">
+                <span class="svc-card__name">{s.name}</span>
+                <span class="svc-card__price">
+                  {s.price ? `от ${fmt(s.price)} ₽` : 'по запросу'}
+                  {s.price && <small> / {s.unit}</small>}
+                </span>
+                <a class="btn btn--ghost svc-card__btn" href="/request">Заказать</a>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </div>
+
+  <script>
+    const chips = document.querySelectorAll('#svc-cats .chip');
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => c.classList.toggle('chip--active', c === chip));
+        const cat = chip.dataset.cat;
+        document.querySelectorAll('.svc-group').forEach((g) => {
+          g.style.display = !cat || g.dataset.cat === cat ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</Base>

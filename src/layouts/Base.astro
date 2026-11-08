@@ -1,0 +1,178 @@
+---
+import '../style.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = '' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovoborsk.surge.sh');
+---
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:site_name" content="УК «Жилкомсервис» — Сосновоборск" />
+  <meta name="theme-color" content="#1f304f" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "ООО УК «Жилкомсервис»",
+      "legalName": "ООО Управляющая компания «Жилкомсервис»",
+      "url": "https://jks-sosnovoborsk.surge.sh",
+      "logo": "https://jks-sosnovoborsk.surge.sh/logo.svg",
+      "email": "uk@jks.ooo",
+      "telephone": "+7-39131-2-13-74",
+      "taxID": "7703617600",
+      "foundingDate": "2006-11-29",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "ул. Ленинского Комсомола, 18, пом. 3",
+        "addressLocality": "Сосновоборск",
+        "addressRegion": "Красноярский край",
+        "postalCode": "662501",
+        "addressCountry": "RU"
+      },
+      "sameAs": ["https://vk.ru/ooojks"]
+    }
+  </script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container topbar__inner">
+      <div class="topbar__contacts">
+        <a href="tel:83913121374" class="topbar__item">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M6.6 10.8a15.9 15.9 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"/></svg>
+          Приёмная: 8 (391-31) 2-13-74
+        </a>
+        <a href="tel:83913120062" class="topbar__item topbar__item--alarm">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M12 2 1 21h22L12 2zm0 6 7.5 13h-15L12 8zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z"/></svg>
+          Аварийная 24/7: 8 (391-31) 2-00-62
+        </a>
+      </div>
+      <div class="topbar__right">
+        <a href="https://vk.ru/ooojks" target="_blank" rel="noopener" class="topbar__item topbar__vk" title="Мы во ВКонтакте">
+          <svg viewBox="0 0 30 30" class="icon"><path d="M15.7 3C9.2 3 4 8.2 4 14.7 4 21.2 9.2 26.4 15.7 26.4c6.5 0 11.7-5.2 11.7-11.7C27.4 8.2 22.2 3 15.7 3zm4.2 16h-1.4c-.5 0-.7-.4-1.6-1.4-1.2-1.3-1.8-1.4-2.1-1.4-.4 0-.5.1-.5.7v1.3c0 .3-.1.5-1 .5-1.5 0-3.1-.9-4.3-2.5-1.7-2.4-2.2-4.2-2.2-4.6 0-.2.1-.4.7-.4h1.4c.5 0 .7.2.9.8 1.1 3 2.8 5.7 3.6 5.7.3 0 .4-.1.4-.8v-2.9c-.1-1.5-.9-1.6-.9-2.1 0-.2.1-.4.4-.4h2.2c.4 0 .6.2.6.8v3.3c0 .7.3.8.5.8.4 0 .8-.1 1.6-1.1.5-.7.8-1.5 1.1-2.1.1-.3.4-.6.9-.6h1.4c.7 0 .8.3.7.8-.3.8-1.2 2-2.4 3.2-.4.4-.9.8-.3 1.6.4.4.9.8 1.3 1.3.8.8 1.5 1.5 1.6 2 .2.5-.1.8-.7.8z"/></svg>
+          Мы в VK
+        </a>
+        <button id="vi-toggle" class="topbar__item topbar__vi" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M12 5C5 5 1.7 10.1 1 12c.7 1.9 4 7 11 7s10.3-5.1 11-7c-.7-1.9-4-7-11-7zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5zm0-7A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5z"/></svg>
+          Версия для слабовидящих
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="vi-panel" id="vi-panel" hidden>
+    <div class="container vi-panel__inner">
+      <span class="vi-panel__label">Шрифт:</span>
+      <button type="button" data-vi-font="1">A</button>
+      <button type="button" data-vi-font="2">A+</button>
+      <button type="button" data-vi-font="3">A++</button>
+      <span class="vi-panel__sep"></span>
+      <button type="button" id="vi-img">Изображения: вкл</button>
+      <span class="vi-panel__sep"></span>
+      <button type="button" id="vi-off">Обычная версия</button>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a href="/" class="logo">
+        <img src="/logo.svg" alt="УК «Жилкомсервис»" class="logo__img" />
+        <span class="logo__text"><small>управляющая компания · Сосновоборск</small></span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="/about">О компании</a>
+        <a href="/#houses">Дома</a>
+        <a href="/services">Услуги</a>
+        <a href="/disclosure">Раскрытие информации</a>
+        <a href="/tariffs">Тарифы</a>
+        <a href="/news">Новости</a>
+        <a href="/#contacts">Контакты</a>
+      </nav>
+      <a class="btn btn--primary header__lk" href="https://vss.krasinform.ru/login/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" class="icon"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
+        <span class="header__lk-text">Личный кабинет</span>
+      </a>
+      <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p>© 2017–2026 ООО Управляющая компания «Жилкомсервис»</p>
+      <div class="footer__links">
+        <a href="https://vk.ru/ooojks" target="_blank" rel="noopener">Мы в VK</a>
+        <a href="/privacy">Политика конфиденциальности</a>
+        <a href="/faq">Вопросы и ответы</a>
+        <a href="/disclosure">Раскрытие информации</a>
+        <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">Госуслуги Дом</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Версия для слабовидящих: режим + размер шрифта + отключение изображений
+    const VI_KEY = 'jks-vi';
+    const root = document.documentElement;
+    const viPanel = document.getElementById('vi-panel');
+    const imgBtn = document.getElementById('vi-img');
+
+    function viState() {
+      try { return JSON.parse(localStorage.getItem(VI_KEY)) || {}; } catch { return {}; }
+    }
+    function viSave(s) { localStorage.setItem(VI_KEY, JSON.stringify(s)); }
+    function viApply() {
+      const s = viState();
+      const on = s.on === true || s.on === '1';
+      root.classList.toggle('vi', on);
+      root.dataset.viFont = s.font || 1;
+      root.classList.toggle('vi-noimg', !!s.noimg);
+      document.getElementById('vi-toggle').setAttribute('aria-pressed', String(on));
+      viPanel.hidden = !on;
+      imgBtn.textContent = s.noimg ? 'Изображения: выкл' : 'Изображения: вкл';
+    }
+
+    document.getElementById('vi-toggle').addEventListener('click', () => {
+      const s = viState();
+      s.on = !(s.on === true || s.on === '1');
+      viSave(s); viApply();
+    });
+    document.getElementById('vi-off').addEventListener('click', () => {
+      viSave({}); viApply();
+    });
+    document.querySelectorAll('[data-vi-font]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const s = viState(); s.on = true; s.font = b.dataset.viFont;
+        viSave(s); viApply();
+      })
+    );
+    imgBtn.addEventListener('click', () => {
+      const s = viState(); s.on = true; s.noimg = !s.noimg;
+      viSave(s); viApply();
+    });
+    viApply();
+
+    // Мобильное меню
+    const nav = document.getElementById('nav');
+    document.getElementById('burger').addEventListener('click', () => nav.classList.toggle('open'));
+    nav.addEventListener('click', (e) => { if (e.target.tagName === 'A') nav.classList.remove('open'); });
+  </script>
+</body>
+</html>
