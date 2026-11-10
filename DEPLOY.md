@@ -1,24 +1,19 @@
 # Развёртывание проекта «ЖКС»
 
-## Архитектура (с 08.11.2026)
+Два состояния проекта:
 
-Всё внутри GitHub — никаких локальных серверов и внешних CMS:
+| | Сейчас (временно) | Целевое (прод) |
+|---|---|---|
+| Сайт | GitHub Pages: https://nextangel-git.github.io | Beget VPS: https://jks.ooo |
+| Админка | локально: http://127.0.0.1:4777 | Beget VPS: https://admin.jks.ooo |
+| Демо-зеркало | https://jks-sosnovoborsk.surge.sh | отключается |
+| Репозиторий (код + данные + бэкап) | https://github.com/nextangel-git/nextangel-git.github.io | тот же |
 
-```
-Сотрудник УК → /admin на сайте → GitHub API (коммит в репо)
-                                    ↓ push
-                              GitHub Actions: npm ci → build
-                                    ↓
-                              GitHub Pages (сайт)
-```
-
-- **Репозиторий (архив сайта):** https://github.com/nextangel-git/nextangel-git.github.io
-- **Сайт:** https://nextangel-git.github.io
-- Зеркало на surge.sh (демо): https://jks-sosnovoborsk.surge.sh
+**Инструкция по переезду на Beget — в [DEPLOY-BEGET.md](DEPLOY-BEGET.md).** Ниже — текущее развёртывание и общие вещи.
 
 ## Локальная разработка
 
-Требования: Node.js 24+.
+Требования: Node.js 22+.
 
 ```bash
 git clone https://github.com/nextangel-git/nextangel-git.github.io.git
@@ -28,11 +23,11 @@ npm run dev        # http://localhost:4321
 npm run build      # прод-сборка → dist/
 ```
 
-## Деплой
+## Деплой сайта (сейчас, GitHub Pages)
 
 Автоматически: `git push` в `main` → GitHub Actions (`/.github/workflows/deploy.yml`) собирает и публикует на Pages за ~1–2 минуты. Руками ничего деплоить не нужно.
 
-## Админка (для сотрудников УК)
+## Админка
 
 Классическая серверная админка `admin/` (Express): **логин/пароль (bcrypt) + TOTP 2FA (Google Authenticator / Яндекс Ключ) + SVG-капча**, сессии 8 часов, защита от перебора (5 неудач → пауза 10 минут).
 
@@ -48,10 +43,10 @@ npm install   # один раз
 npm start     # http://127.0.0.1:4777
 ```
 
-### Пользователи (через консоль сервера)
+### Пользователи (через консоль)
 
 ```bash
-node server.mjs --add-user ivan "Иван (УК)" 'Пароль123!'   # создать
+node server.mjs --add-user ivan "Иван (УК)" 'Пароль123!'   # создать (первый = админ)
 node server.mjs --passwd ivan 'НовыйПароль'                 # сменить пароль
 node server.mjs --reset-totp ivan                           # сбросить 2FA
 ```
@@ -60,19 +55,15 @@ node server.mjs --reset-totp ivan                           # сбросить 2
 
 ### Как это работает
 
-Каждое сохранение = запись `src/data/*.json` → `git commit` + `git push` с сервера (PAT живёт в credential manager git на сервере, в браузер не отдаётся) → GitHub Actions → сайт обновляется через 2–3 минуты.
+Каждое сохранение = запись `src/data/*.json` → `git commit` + `git push` (PAT живёт в credential manager git на машине, в браузер не отдаётся) → GitHub Actions → сайт обновляется через 2–3 минуты. На VPS-режиме (`REBUILD=1`) сайт пересобирается прямо на сервере — см. DEPLOY-BEGET.md.
 
 ### Резервная админка на GitHub Pages
 
-`https://nextangel-git.github.io/admin` — статичная версия через GitHub API (вход токеном PAT). Оставлена как запасной вариант, когда серверная админка недоступна.
-
-### Перенос админки на сервер (для постоянной работы УК)
-
-Серверной админке нужен постоянно работающий Node.js: VPS (Timeweb/Selectel, от ~250 ₽/мес) или любой компьютер в офисе УК. На сервере: клон репо + `admin/npm install` + `npm start` (под pm2/systemd), наружу смотрит только HTTPS-порт админки (admin.jks.ooo). Сайт при этом остаётся на бесплатном GitHub Pages.
+`https://nextangel-git.github.io/admin` — статичная версия через GitHub API (вход токеном PAT). Запасной вариант, когда серверная админка недоступна.
 
 ## Данные
 
-Источник истины — `src/data/*.json` в репозитории: houses, documents, news, services, shutdowns, faq, useful, vk_posts (авто), competitors, houses_geo.
+Источник истины — `src/data/*.json` в репозитории: houses, documents, news, services, shutdowns, faq, useful, vk_posts (авто), competitors, houses_geo, requests.
 
 ## Ежемесячная сверка домов
 
@@ -84,13 +75,6 @@ node server.mjs --reset-totp ivan                           # сбросить 2
 2. Фолбэк: mailto на uk@jks.ooo (работает всегда).
 3. Антиспам: ханипот + time-trap (встроено).
 
-## Боевой запуск на домене jks.ooo
-
-1. В репо: Settings → Pages → Custom domain → `jks.ooo` (или www).
-2. У регистратора домена: A-записи на 185.199.108.153–111 (GitHub Pages) или CNAME на `nextangel-git.github.io`.
-3. **Карта редиректов** со старых URL — `migration/redirects-map.md` (обязательно: ссылки из квитанций и ГИС ЖКХ).
-4. HTTPS включится автоматически (Let's Encrypt от GitHub).
-
 ## Проверка после развёртывания
 
 - [ ] Главная открывается, поиск дома → карточка
@@ -98,6 +82,6 @@ node server.mjs --reset-totp ivan                           # сбросить 2
 - [ ] /disclosure — фильтры, PDF открываются
 - [ ] /news/<id> — статья с файлами
 - [ ] /request — форма отправляет (или mailto-фолбэк)
-- [ ] /admin — вход по PAT, правка новости → через 2–3 мин на сайте
+- [ ] Админка: вход (пароль + капча + 2FA), правка новости → через 2–3 мин на сайте
 - [ ] Версия для слабовидящих включается и запоминается
 - [ ] Телефоны кликабельны (tel:) на мобильном
