@@ -16,7 +16,7 @@ import QRCode from 'qrcode';
 import svgCaptcha from 'svg-captcha';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
 
@@ -25,7 +25,12 @@ const REPO = path.resolve(__dirname, '..');
 const DATA = path.join(REPO, 'src', 'data');
 const USERS_FILE = path.join(__dirname, 'users.json');
 const PORT = process.env.PORT || 4777;
+const HOST = process.env.HOST || '127.0.0.1';
 const DEV = process.env.NODE_ENV !== 'production';
+// Режим хостинга: REBUILD=1 → после каждого сохранения пересобираем сайт локально (astro build),
+// GIT_PUSH=0 → не пушить в GitHub (репо тогда просто бэкап). На GitHub Pages: REBUILD=0, GIT_PUSH=1.
+const REBUILD = process.env.REBUILD === '1';
+const GIT_PUSH = process.env.GIT_PUSH !== '0';
 
 /* ---------------- пользователи ---------------- */
 function loadUsers() {
@@ -342,22 +347,44 @@ function adminOnly(req, res, next) {
 app.get('/logo.svg', (req, res) => res.sendFile(path.join(REPO, 'public', 'logo.svg')));
 app.get('/favicon.svg', (req, res) => res.sendFile(path.join(REPO, 'public', 'favicon.svg'), (e) => { if (e) res.redirect('/logo.svg'); }));
 
-/* ---------------- данные + git ---------------- */
+/* ---------------- данные + git + пересборка ---------------- */
 const readData = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
 const writeData = (file, data) => fs.writeFileSync(path.join(DATA, file), JSON.stringify(data, null, 1) + '\n');
+
+let buildState = { running: false, last: null, ok: null };
+let buildTimer = null;
+function scheduleRebuild() {
+  if (!REBUILD) return;
+  clearTimeout(buildTimer);
+  buildTimer = setTimeout(() => {
+    if (buildState.running) { scheduleRebuild(); return; } // подождём окончания текущей сборки
+    buildState = { running: true, last: new Date(), ok: null };
+    const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const p = spawn(npm, ['run', 'build'], { cwd: REPO, shell: false });
+    const log = fs.createWriteStream(path.join(__dirname, 'build.log'));
+    p.stdout.pipe(log); p.stderr.pipe(log);
+    p.on('close', (code) => { buildState = { running: false, last: new Date(), ok: code === 0 }; });
+  }, 5000); // дебаунс 5 сек — серия правок = одна сборка
+}
 
 function gitSync(message) {
   try {
     execFileSync('git', ['add', 'src/data'], { cwd: REPO, stdio: 'pipe' });
     execFileSync('git', ['commit', '-m', message], { cwd: REPO, stdio: 'pipe' });
-    execFileSync('git', ['push', 'origin', 'main'], { cwd: REPO, stdio: 'pipe', timeout: 60000 });
+    if (GIT_PUSH) execFileSync('git', ['push', 'origin', 'main'], { cwd: REPO, stdio: 'pipe', timeout: 60000 });
+    scheduleRebuild();
     return null;
   } catch (e) {
     const out = String(e.stderr || e.message || '');
-    if (out.includes('nothing to commit') || out.includes('no changes added')) return null;
-    return 'Сохранено локально, но push не удался: ' + out.slice(0, 300);
+    if (out.includes('nothing to commit') || out.includes('no changes added')) { scheduleRebuild(); return null; }
+    return 'Сохранено локально, но git не удался: ' + out.slice(0, 300);
   }
 }
+
+// текст-подсказка после сохранения зависит от режима
+const savedText = () => REBUILD
+  ? 'Сохранено. Сайт пересобирается прямо на сервере (~1–2 минуты).'
+  : 'Сохранено. Сайт обновится через ~2–3 минуты (GitHub Actions).';
 
 /* ---------------- дашборд ---------------- */
 app.get('/', auth, (req, res) => {
@@ -368,7 +395,8 @@ app.get('/', auth, (req, res) => {
       <span><b>${n[name] ?? '—'}</b><small>${esc(cfg.label)}</small>${cfg.readonly ? '<span class="ro">ТОЛЬКО ЧТЕНИЕ</span>' : ''}</span>
     </a>`).join('');
   res.send(page('Дашборд', `
-    <p class="muted" style="margin-top:0">Изменения сохраняются коммитом в GitHub — сайт пересобирается автоматически за 2–3 минуты.</p>
+    <p class="muted" style="margin-top:0">${REBUILD ? 'Изменения сохраняются и сайт пересобирается прямо на этом сервере за ~1–2 минуты.' : 'Изменения сохраняются коммитом в GitHub — сайт пересобирается автоматически за 2–3 минуты.'}</p>
+    ${REBUILD ? `<p class="muted" style="margin-top:-6px;font-size:.8rem">Сборка: ${buildState.running ? 'идёт…' : buildState.last ? (buildState.ok ? 'успешно ' : 'ошибка (см. admin/build.log) ') + buildState.last.toLocaleString('ru-RU') : 'ещё не запускалась'}</p>` : ''}
     <div class="grid">${cards}</div>`, req.user, 'dash', req));
 });
 
@@ -475,7 +503,7 @@ app.post('/c/:name/save/:idx', auth, (req, res) => {
   }
   writeData(cfg.file, data);
   const warn = gitSync(`admin: ${isNew ? 'добавлено' : 'изменено'} — ${cfg.label}`);
-  const msg = warn || 'Сохранено. Сайт обновится через ~2–3 минуты.';
+  const msg = warn || savedText();
   res.redirect(`/c/${req.params.name}?${warn ? 'err' : 'ok'}=` + encodeURIComponent(msg));
 });
 
@@ -506,7 +534,7 @@ app.post('/c/:name/del/:idx', auth, (req, res) => {
   else data.splice(+req.params.idx, 1);
   writeData(cfg.file, data);
   const warn = gitSync(`admin: удалено — ${cfg.label}`);
-  res.redirect(`/c/${req.params.name}?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || 'Удалено. Сайт обновится через ~2–3 минуты.'));
+  res.redirect(`/c/${req.params.name}?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || savedText().replace('Сохранено', 'Удалено')));
 });
 
 /* ---------------- смена своего пароля ---------------- */
@@ -543,7 +571,7 @@ app.get('/users', auth, adminOnly, (req, res) => {
     <div class="mono">node server.mjs --add-user ivan "Иван (УК)" 'Пароль123!'<br>node server.mjs --passwd ivan 'НовыйПароль'<br>node server.mjs --reset-totp ivan</div></div>`, req.user, 'users', req));
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Админка ЖКС: http://127.0.0.1:${PORT}  (${DEV ? 'dev' : 'prod'})`);
+app.listen(PORT, HOST, () => {
+  console.log(`Админка ЖКС: http://${HOST}:${PORT}  (${DEV ? 'dev' : 'prod'}, rebuild=${REBUILD ? 'on' : 'off'}, push=${GIT_PUSH ? 'on' : 'off'})`);
   if (!loadUsers().length) console.log('Пользователей нет. Создайте: node server.mjs --add-user <login> "<Имя>" <пароль>');
 });
