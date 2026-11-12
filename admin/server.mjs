@@ -471,20 +471,24 @@ app.get('/c/:name', auth, (req, res) => {
 
 /* ---------------- форма редактирования ---------------- */
 let HOUSES_CACHE = null;
+let HOUSES_AT = 0;
 function houseOptions(current) {
-  if (!HOUSES_CACHE) {
+  if (!HOUSES_CACHE || Date.now() - HOUSES_AT > 10 * 60 * 1000) {
     try {
       HOUSES_CACHE = readData('houses.json').filter(h => !h.archived).map(h => `ул. ${h.street}, ${h.num}`).sort((a, b) => a.localeCompare(b, 'ru'));
     } catch { HOUSES_CACHE = []; }
+    HOUSES_AT = Date.now();
   }
   return `<option value="">— общий документ (все дома) —</option>` +
     HOUSES_CACHE.map(h => `<option value="${esc(h)}" ${h === current ? 'selected' : ''}>${esc(h)}</option>`).join('');
 }
 
 // справочник «улица → номера домов» из полного реестра города (наши + конкуренты, источник mingkh/ГИС ЖКХ)
+// кэш на 10 минут — после синка с mingkh/правок домов список подхватится сам
 let STREETS_CACHE = null;
+let STREETS_AT = 0;
 function streetMap() {
-  if (STREETS_CACHE) return STREETS_CACHE;
+  if (STREETS_CACHE && Date.now() - STREETS_AT < 10 * 60 * 1000) return STREETS_CACHE;
   const map = {};
   const add = (street, num) => {
     if (!street || !num) return;
@@ -496,6 +500,7 @@ function streetMap() {
   STREETS_CACHE = Object.fromEntries(
     Object.entries(map).sort(([a], [b]) => nat(a, b)).map(([s, ns]) => [s, [...ns].sort(nat)])
   );
+  STREETS_AT = Date.now();
   return STREETS_CACHE;
 }
 
