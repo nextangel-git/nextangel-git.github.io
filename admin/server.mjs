@@ -11,6 +11,7 @@
 import express from 'express';
 import session from 'express-session';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import svgCaptcha from 'svg-captcha';
@@ -27,6 +28,8 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 const PORT = process.env.PORT || 4777;
 const HOST = process.env.HOST || '127.0.0.1';
 const DEV = process.env.NODE_ENV !== 'production';
+// TOTP: принимаем код из соседних 30-секундных окон (рассинхрон часов телефона)
+authenticator.options = { window: 1 };
 // Режим хостинга: REBUILD=1 → после каждого сохранения пересобираем сайт локально (astro build),
 // GIT_PUSH=0 → не пушить в GitHub (репо тогда просто бэкап). На GitHub Pages: REBUILD=0, GIT_PUSH=1.
 const REBUILD = process.env.REBUILD === '1';
@@ -180,6 +183,7 @@ tr.cat td{background:#f1f5ff;font-weight:700;color:#1e3a8a;font-size:.82rem;text
 .badge{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:20px;background:#dcfce7;color:#166534}
 .badge.off{background:#fee2e2;color:#b91c1c}
 .mono{font-family:ui-monospace,Consolas,monospace;background:#f1f5f9;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:.83rem;overflow:auto}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:#fafbfe}
 @media(max-width:900px){.side{width:66px}.brand b,.brand span,.snav .cap,.snav a .n,.snav a span.t{display:none}.snav a{justify-content:center;padding:11px}.main{padding:18px}}
 `;
 
@@ -323,6 +327,7 @@ app.post('/totp', (req, res) => {
   if (!u) return res.redirect('/login');
   if (!authenticator.check(String(req.body.code || '').replace(/\s/g, ''), u.totpSecret)) {
     fail(ip);
+    if (DEV) console.log(`[dev] totp FAIL: got="${req.body.code}" expected="${authenticator.generate(u.totpSecret)}" user=${u.login} pending=${req.session.pendingUser}`);
     return res.redirect('/totp?err=' + encodeURIComponent('Неверный код'));
   }
   okFail(ip);
@@ -347,6 +352,20 @@ function adminOnly(req, res, next) {
 app.get('/logo.svg', (req, res) => res.sendFile(path.join(REPO, 'public', 'logo.svg')));
 app.get('/favicon.svg', (req, res) => res.sendFile(path.join(REPO, 'public', 'favicon.svg'), (e) => { if (e) res.redirect('/logo.svg'); }));
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 МБ на документ
+  defParamCharset: 'utf8', // иначе busboy ломает кириллицу в полях формы (latin1 по умолчанию)
+});
+
+// транслитерация имени файла: кириллица → латиница, безопасное имя для URL
+const TR = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya' };
+function safeName(name) {
+  const base = name.toLowerCase().split('').map(c => TR[c] ?? c).join('')
+    .replace(/[^a-z0-9.]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return base || 'file';
+}
+
 /* ---------------- данные + git + пересборка ---------------- */
 const readData = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
 const writeData = (file, data) => fs.writeFileSync(path.join(DATA, file), JSON.stringify(data, null, 1) + '\n');
@@ -369,7 +388,7 @@ function scheduleRebuild() {
 
 function gitSync(message) {
   try {
-    execFileSync('git', ['add', 'src/data'], { cwd: REPO, stdio: 'pipe' });
+    execFileSync('git', ['add', 'src/data', 'public/documents'], { cwd: REPO, stdio: 'pipe' });
     execFileSync('git', ['commit', '-m', message], { cwd: REPO, stdio: 'pipe' });
     if (GIT_PUSH) execFileSync('git', ['push', 'origin', 'main'], { cwd: REPO, stdio: 'pipe', timeout: 60000 });
     scheduleRebuild();
@@ -445,11 +464,40 @@ app.get('/c/:name', auth, (req, res) => {
 });
 
 /* ---------------- форма редактирования ---------------- */
+let HOUSES_CACHE = null;
+function houseOptions(current) {
+  if (!HOUSES_CACHE) {
+    try {
+      HOUSES_CACHE = readData('houses.json').map(h => `ул. ${h.street}, ${h.num}`).sort((a, b) => a.localeCompare(b, 'ru'));
+    } catch { HOUSES_CACHE = []; }
+  }
+  return `<option value="">— общий документ (все дома) —</option>` +
+    HOUSES_CACHE.map(h => `<option value="${esc(h)}" ${h === current ? 'selected' : ''}>${esc(h)}</option>`).join('');
+}
+
 function fieldHtml(f, val) {
   const v = val ?? f.defaults ?? '';
   if (f.type === 'textarea') return `<textarea name="${esc(f.key)}">${esc(v)}</textarea>`;
   if (f.type === 'checkbox') return `<label style="display:flex;align-items:center;gap:9px;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" value="1" style="width:18px;height:18px" ${v ? 'checked' : ''}> да</label>`;
   if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  if (f.type === 'house') return `<select name="${esc(f.key)}">${houseOptions(v)}</select>`;
+  if (f.type === 'file') return `
+    <div class="drop" id="drop">
+      <input type="file" id="__file" name="__file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none">
+      <div id="drop-txt" style="padding:8px 0">Перетащите файл сюда или <a href="#" onclick="document.getElementById('__file').click();return false">выберите на диске</a><br>
+      <span class="muted">PDF, DOCX, XLSX, картинки — до 25 МБ</span></div>
+    </div>
+    <input type="hidden" name="${esc(f.key)}" id="${esc(f.key)}_url" value="${esc(v)}">
+    ${v ? `<p class="muted" style="margin-top:6px">Текущий файл: <a href="https://nextangel-git.github.io${esc(v)}" target="_blank">${esc(v)}</a> — если не выбирать новый, останется он.</p>` : ''}
+    <script>
+    (function(){const dz=document.getElementById('drop'),fi=document.getElementById('__file'),tx=document.getElementById('drop-txt'),hid=document.getElementById('${esc(f.key)}_url');
+      const show=n=>{tx.innerHTML='<b>'+n+'</b><br><span class="muted">будет загружен при сохранении</span>';dz.style.borderColor='var(--green)';};
+      dz.onclick=()=>fi.click();
+      fi.onchange=()=>{if(fi.files[0])show(fi.files[0].name)};
+      dz.ondragover=e=>{e.preventDefault();dz.style.borderColor='var(--blue2)';dz.style.background='#eff6ff'};
+      dz.ondragleave=()=>{dz.style.borderColor='';dz.style.background=''};
+      dz.ondrop=e=>{e.preventDefault();if(e.dataTransfer.files[0]){fi.files=e.dataTransfer.files;show(e.dataTransfer.files[0].name)}};
+    })();</script>`;
   return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}" ${f.required ? 'required' : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}>`;
 }
 
@@ -471,14 +519,14 @@ app.get('/c/:name/edit/:idx', auth, (req, res) => {
   const catField = (cfg.nested && isNew) ? `<label>Категория</label><select name="__cat">${data.map((c, i) => `<option value="${i}">${esc(c.cat)}</option>`).join('')}</select>` : '';
   res.send(page((isNew ? 'Новая запись' : 'Изменение') + ' · ' + cfg.label, `
     <div class="card" style="max-width:720px">
-    <form method="post" action="/c/${req.params.name}/save/${req.params.idx}">
+    <form method="post" action="/c/${req.params.name}/save/${req.params.idx}" enctype="multipart/form-data">
       ${keyField}${catField}
       ${fields.map(f => `<label>${esc(f.label)}${f.required ? ' <span style="color:var(--red)">*</span>' : ''}${f.placeholder ? `<span class="hint">напр. ${esc(f.placeholder)}</span>` : ''}</label>${fieldHtml(f, rec ? rec[f.key] : undefined)}`).join('')}
       <div class="row" style="margin-top:22px"><button class="btn" type="submit">Сохранить</button><a class="btn ghost" href="/c/${req.params.name}">Отмена</a></div>
     </form></div>`, req.user, req.params.name, req));
 });
 
-app.post('/c/:name/save/:idx', auth, (req, res) => {
+app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
   const cfg = COLLECTIONS[req.params.name];
   if (!cfg || cfg.readonly) return res.redirect('/');
   const data = readData(cfg.file);
@@ -490,6 +538,25 @@ app.post('/c/:name/save/:idx', auth, (req, res) => {
     else if (f.type === 'number') rec[f.key] = req.body[f.key] === '' ? null : Number(req.body[f.key]);
     else rec[f.key] = String(req.body[f.key] ?? '');
   }
+  // загрузка файла: поле типа 'file' — сохраняем в public/documents, url подставляем сами
+  const urlField = fields.find(f => f.type === 'file');
+  if (req.file && urlField) {
+    const dir = path.join(REPO, 'public', 'documents');
+    fs.mkdirSync(dir, { recursive: true });
+    let fname = safeName(req.file.originalname);
+    while (fs.existsSync(path.join(dir, fname))) fname = fname.replace(/(\.[^.]+)$/, `-${Date.now() % 100000}$1`);
+    fs.writeFileSync(path.join(dir, fname), req.file.buffer);
+    rec[urlField.key] = '/documents/' + fname;
+  }
+  // формат документа определяем сами из расширения файла/ссылки
+  if (urlField && rec[urlField.key]) {
+    const e = (rec[urlField.key].split('?')[0].split('.').pop() || '').toUpperCase();
+    if (e && e.length <= 5) rec.ext = e;
+  }
+  // пустые необязательные поля не храним
+  for (const k of Object.keys(rec)) if (rec[k] === '' || rec[k] === null) delete rec[k];
+  if (fields.some(f => f.type === 'file') && !rec[fields.find(f => f.type === 'file').key])
+    return res.redirect(`/c/${req.params.name}?err=` + encodeURIComponent('Нужно выбрать файл (или у записи должна быть ссылка)'));
   if (isNew && cfg.defaults && !cfg.nested) Object.assign(rec, cfg.defaults(), rec);
   if (cfg.nested) {
     if (isNew) data[+req.body.__cat || 0].items.push(rec);

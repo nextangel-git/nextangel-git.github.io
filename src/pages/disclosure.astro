@@ -57,7 +57,7 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
       const filtered = docs.filter((d) =>
         (!activeCat || d.cat === activeCat) &&
         (!year || String(d.year) === year) &&
-        (!q || norm(d.name).includes(q))
+        (!q || norm(d.name).includes(q) || norm(d.house || '').includes(q))
       );
       countEl.textContent = filtered.length
         ? `Найдено документов: ${filtered.length}`
@@ -76,7 +76,7 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
                   <a class="doc-item" href="${d.url}" target="_blank" rel="noopener">
                     <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
                     <span class="doc-item__name">${esc(d.name)}</span>
-                    <span class="doc-item__meta">${d.year ? d.year + ' · ' : ''}${d.ext}</span>
+                    <span class="doc-item__meta">${d.house ? esc(d.house) + ' · ' : ''}${d.year ? d.year + ' · ' : ''}${d.ext}</span>
                   </a>
                 </li>`).join('')}
             </ul>

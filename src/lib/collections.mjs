@@ -18,12 +18,12 @@ export const COLLECTIONS = {
     fields: [
       { key: 'name', label: 'Название', type: 'text', required: true },
       { key: 'cat', label: 'Категория', type: 'select', required: true, options: ['Отчёты по договору управления', 'Протоколы собраний', 'Бухгалтерская отчётность', 'Тарифы на коммунальные ресурсы', 'Сведения о выполняемых работах', 'Нормативно-правовые акты'] },
+      { key: 'house', label: 'Дом (для протоколов собраний)', type: 'house' },
       { key: 'year', label: 'Год', type: 'number' },
-      { key: 'url', label: 'Ссылка на файл', type: 'url', required: true },
-      { key: 'ext', label: 'Формат', type: 'select', options: ['PDF', 'DOCX', 'XLS', 'XLSX'], defaults: 'PDF' },
+      { key: 'url', label: 'Файл', type: 'file' },
     ],
     defaults: () => ({ ext: 'PDF', date: new Date().toLocaleDateString('ru-RU') }),
-    display: (x) => `[${x.cat}] ${x.name}`,
+    display: (x) => `[${x.cat}] ${x.name}${x.house ? ` — ${x.house}` : ''}`,
   },
   houses: {
     label: 'Дома', file: 'houses.json', singular: 'дом',
