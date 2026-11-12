@@ -231,9 +231,11 @@ function tagFor(title) {
     // Карта домов (Leaflet + OpenStreetMap)
     import L from 'leaflet';
     import 'leaflet/dist/leaflet.css';
-    import housesGeo from '../data/houses_geo.json';
+    import housesGeoAll from '../data/houses_geo.json';
     import competitors from '../data/competitors.json';
     import { orgColor, OURS_NAME } from '../lib/orgs.js';
+
+    const housesGeo = housesGeoAll.filter((h) => !h.archived); // архивные не рисуем
 
     const map = L.map('map', { scrollWheelZoom: false, attributionControl: false }).setView([56.1215, 93.334], 14);
     // своя атрибуция без флага из стандартного префикса Leaflet

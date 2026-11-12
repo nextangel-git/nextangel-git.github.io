@@ -4,7 +4,7 @@ import competitors from '../data/competitors.json';
 import houses from '../data/houses.json';
 
 export const OURS_NAME = 'УК «Жилкомсервис»';
-export const OURS_COUNT = houses.length;
+export const OURS_COUNT = houses.filter((h) => !h.archived).length;
 
 const PALETTE = [
   '#e07b00', // оранжевый

@@ -3,7 +3,8 @@ import Base from '../layouts/Base.astro';
 import { getHouses } from '../lib/content.js';
 
 const houses = await getHouses();
-import housesGeo from '../data/houses_geo.json';
+import housesGeoAll from '../data/houses_geo.json';
+const housesGeo = housesGeoAll.filter((h) => !h.archived); // архивные не показываем
 ---
 <Base title="Карточка дома — УК «Жилкомсервис»"
       description="Карточка многоквартирного дома в управлении ООО УК «Жилкомсервис»: документы, протоколы собраний, отчёты, тарифы.">

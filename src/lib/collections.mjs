@@ -28,8 +28,8 @@ export const COLLECTIONS = {
   houses: {
     label: 'Дома', file: 'houses.json', singular: 'дом',
     fields: [
-      { key: 'street', label: 'Улица', type: 'text', required: true },
-      { key: 'num', label: 'Номер дома', type: 'text', required: true },
+      { key: 'street', label: 'Улица', type: 'street', required: true },
+      { key: 'num', label: 'Номер дома', type: 'housenum', required: true },
     ],
     display: (x) => `ул. ${x.street}, ${x.num}`,
   },

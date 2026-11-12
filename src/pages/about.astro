@@ -1,8 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
-import housesGeo from '../data/houses_geo.json';
+import housesGeoAll from '../data/houses_geo.json';
 
-// точные цифры — считаются из данных по домам, а не пишутся руками
+// точные цифры — считаются из данных по домам, а не пишутся руками; архивные (ушли из управления) не считаем
+const housesGeo = housesGeoAll.filter((h) => !h.archived);
 const houseCount = housesGeo.length;
 const totalArea = Math.round(housesGeo.reduce((s, h) => s + (h.area || 0), 0));
 const totalFlats = housesGeo.reduce((s, h) => s + (h.flats || 0), 0);

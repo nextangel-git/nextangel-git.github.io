@@ -434,6 +434,12 @@ app.get('/c/:name', auth, (req, res) => {
         rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%;text-align:right">${cfg.readonly ? '' : btn(`/c/${req.params.name}/edit/${ci}.${ii}`, 'Изменить') + ' ' + btn(`/c/${req.params.name}/del/${ci}.${ii}`, '✕', 'red')}</td></tr>`;
       });
     });
+  } else if (req.params.name === 'houses') {
+    const act = [], arch = [];
+    data.forEach((x, i) => (x.archived ? arch : act).push([i, x]));
+    rows = act.map(([idx, x]) => `<tr><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%;text-align:right">${btn(`/c/houses/edit/${idx}`, 'Изменить') + ' ' + btn(`/c/houses/del/${idx}`, 'В архив', 'red')}</td></tr>`).join('');
+    if (arch.length) rows += `<tr class="cat"><td colspan="2">Архив — ушли из управления (${arch.length})</td></tr>` +
+      arch.map(([idx, x]) => `<tr style="opacity:.6"><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%;text-align:right">${btn(`/c/houses/restore/${idx}`, 'Вернуть из архива')}</td></tr>`).join('');
   } else {
     const list = cfg.dict ? Object.entries(data) : data.map((x, i) => [i, x]);
     list.forEach(([idx, x]) => {
@@ -468,11 +474,29 @@ let HOUSES_CACHE = null;
 function houseOptions(current) {
   if (!HOUSES_CACHE) {
     try {
-      HOUSES_CACHE = readData('houses.json').map(h => `ул. ${h.street}, ${h.num}`).sort((a, b) => a.localeCompare(b, 'ru'));
+      HOUSES_CACHE = readData('houses.json').filter(h => !h.archived).map(h => `ул. ${h.street}, ${h.num}`).sort((a, b) => a.localeCompare(b, 'ru'));
     } catch { HOUSES_CACHE = []; }
   }
   return `<option value="">— общий документ (все дома) —</option>` +
     HOUSES_CACHE.map(h => `<option value="${esc(h)}" ${h === current ? 'selected' : ''}>${esc(h)}</option>`).join('');
+}
+
+// справочник «улица → номера домов» из полного реестра города (наши + конкуренты, источник mingkh/ГИС ЖКХ)
+let STREETS_CACHE = null;
+function streetMap() {
+  if (STREETS_CACHE) return STREETS_CACHE;
+  const map = {};
+  const add = (street, num) => {
+    if (!street || !num) return;
+    (map[String(street).trim()] ??= new Set()).add(String(num).trim());
+  };
+  try { readData('houses_geo.json').forEach(h => add(h.street, h.num)); } catch { }
+  try { readData('competitors.json').forEach(h => add(h.street, h.num)); } catch { }
+  const nat = (a, b) => a.localeCompare(b, 'ru', { numeric: true });
+  STREETS_CACHE = Object.fromEntries(
+    Object.entries(map).sort(([a], [b]) => nat(a, b)).map(([s, ns]) => [s, [...ns].sort(nat)])
+  );
+  return STREETS_CACHE;
 }
 
 function fieldHtml(f, val) {
@@ -481,6 +505,21 @@ function fieldHtml(f, val) {
   if (f.type === 'checkbox') return `<label style="display:flex;align-items:center;gap:9px;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" value="1" style="width:18px;height:18px" ${v ? 'checked' : ''}> да</label>`;
   if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   if (f.type === 'house') return `<select name="${esc(f.key)}">${houseOptions(v)}</select>`;
+  if (f.type === 'street') {
+    const map = streetMap();
+    const cur = String(v || '');
+    return `<select name="street" id="fld_street">
+      <option value="">— выберите улицу —</option>
+      ${Object.keys(map).map(s => `<option ${s === cur ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+      ${cur && !map[cur] ? `<option selected>${esc(cur)}</option>` : ''}
+      <option value="__other">➕ Другая улица (нет в реестре)…</option>
+    </select>
+    <input name="street_other" id="fld_street_other" placeholder="Название улицы" style="display:none;margin-top:8px">`;
+  }
+  if (f.type === 'housenum') {
+    return `<select name="num" id="fld_num" data-cur="${esc(v || '')}"><option value="">— сначала выберите улицу —</option></select>
+    <input name="num_other" id="fld_num_other" placeholder="Номер дома" style="display:none;margin-top:8px">`;
+  }
   if (f.type === 'file') return `
     <div class="drop" id="drop">
       <input type="file" id="__file" name="__file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none">
@@ -523,7 +562,29 @@ app.get('/c/:name/edit/:idx', auth, (req, res) => {
       ${keyField}${catField}
       ${fields.map(f => `<label>${esc(f.label)}${f.required ? ' <span style="color:var(--red)">*</span>' : ''}${f.placeholder ? `<span class="hint">напр. ${esc(f.placeholder)}</span>` : ''}</label>${fieldHtml(f, rec ? rec[f.key] : undefined)}`).join('')}
       <div class="row" style="margin-top:22px"><button class="btn" type="submit">Сохранить</button><a class="btn ghost" href="/c/${req.params.name}">Отмена</a></div>
-    </form></div>`, req.user, req.params.name, req));
+    </form></div>
+    ${req.params.name === 'houses' ? `
+    <script>
+    (function(){
+      const MAP=${JSON.stringify(streetMap())};
+      const st=document.getElementById('fld_street'),nm=document.getElementById('fld_num'),
+            so=document.getElementById('fld_street_other'),no=document.getElementById('fld_num_other');
+      const cur=nm.dataset.cur||'';
+      function fillNums(){
+        const nums=MAP[st.value]||[];
+        let h='<option value="">— выберите номер —</option>';
+        if(st.value==='__other'){nm.innerHTML=h;nm.value='__other';no.style.display='block';return;}
+        no.style.display='none';
+        h+=nums.map(n=>'<option '+(n===cur?'selected':'')+'>'+n+'</option>').join('');
+        if(cur&&!nums.includes(cur)&&cur)h+='<option selected>'+cur+'</option>';
+        h+='<option value="__other">➕ Другой номер…</option>';
+        nm.innerHTML=h;
+      }
+      st.onchange=()=>{so.style.display=st.value==='__other'?'block':'none';fillNums();};
+      nm.onchange=()=>{no.style.display=nm.value==='__other'?'block':'none'};
+      if(st.value)fillNums();
+    })();
+    </script>` : ''}`, req.user, req.params.name, req));
 });
 
 app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
@@ -552,6 +613,20 @@ app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
   if (urlField && rec[urlField.key]) {
     const e = (rec[urlField.key].split('?')[0].split('.').pop() || '').toUpperCase();
     if (e && e.length <= 5) rec.ext = e;
+  }
+  // дома: разрешение «другой» улицы/номера и защита от дублей
+  if (req.params.name === 'houses') {
+    rec.street = (rec.street === '__other' ? String(req.body.street_other || '') : String(rec.street || '')).trim();
+    rec.num = (rec.num === '__other' ? String(req.body.num_other || '') : String(rec.num || '')).trim();
+    if (!rec.street || !rec.num)
+      return res.redirect('/c/houses?err=' + encodeURIComponent('Нужно выбрать улицу и номер дома'));
+    const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+    const dupIdx = data.findIndex(h => norm(h.street) === norm(rec.street) && norm(String(h.num)) === norm(rec.num));
+    if (dupIdx >= 0 && (isNew || dupIdx !== +req.params.idx))
+      return res.redirect('/c/houses?err=' + encodeURIComponent(data[dupIdx].archived
+        ? 'Такой дом уже есть в архиве (ушёл из управления) — восстановите его кнопкой «Вернуть» внизу списка'
+        : 'Такой дом уже есть в списке'));
+    if (isNew && !rec.src) rec.src = 'добавлен вручную через админку';
   }
   // пустые необязательные поля не храним
   for (const k of Object.keys(rec)) if (rec[k] === '' || rec[k] === null) delete rec[k];
@@ -583,12 +658,15 @@ app.get('/c/:name/del/:idx', auth, (req, res) => {
     if (cfg.nested) { const [ci, ii] = req.params.idx.split('.').map(Number); disp = data[ci].items[ii].name; }
     else disp = cfg.dict ? req.params.idx : cfg.display(data[+req.params.idx]);
   } catch { }
-  res.send(page('Подтверждение удаления', `
+  const isHouse = req.params.name === 'houses';
+  res.send(page(isHouse ? 'Перенос дома в архив' : 'Подтверждение удаления', `
     <div class="card" style="max-width:480px">
-      <p style="font-size:1.05rem">Удалить запись <b>${esc(disp)}</b>?</p>
-      <p class="muted">Сайт пересоберётся без этой записи. Отменить можно только через git-историю.</p>
+      <p style="font-size:1.05rem">${isHouse ? 'Перенести в архив дом' : 'Удалить запись'} <b>${esc(disp)}</b>?</p>
+      <p class="muted">${isHouse
+        ? 'Дом исчезнет с сайта и с карты (ушёл в другую УК), но останется в базе внизу списка. Если дом вернётся к нам — восстановите его кнопкой «Вернуть из архива».'
+        : 'Сайт пересоберётся без этой записи. Отменить можно только через git-историю.'}</p>
       <form method="post" action="/c/${req.params.name}/del/${req.params.idx}">
-        <div class="row" style="margin-top:18px"><button class="btn red" type="submit">Да, удалить</button><a class="btn ghost" href="/c/${req.params.name}">Отмена</a></div>
+        <div class="row" style="margin-top:18px"><button class="btn red" type="submit">${isHouse ? 'Да, в архив' : 'Да, удалить'}</button><a class="btn ghost" href="/c/${req.params.name}">Отмена</a></div>
       </form></div>`, req.user, req.params.name, req));
 });
 
@@ -596,12 +674,58 @@ app.post('/c/:name/del/:idx', auth, (req, res) => {
   const cfg = COLLECTIONS[req.params.name];
   if (!cfg || cfg.readonly) return res.redirect('/');
   const data = readData(cfg.file);
+  // дома не удаляем — переносим в архив (и помечаем в гео-данных, чтобы исчез с карты)
+  if (req.params.name === 'houses') {
+    const h = data[+req.params.idx];
+    if (h) {
+      h.archived = true;
+      writeData(cfg.file, data);
+      try {
+        const geo = readData('houses_geo.json');
+        const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+        const g = geo.find(x => norm(x.street) === norm(h.street) && norm(String(x.num)) === norm(String(h.num)));
+        if (g) { g.archived = true; writeData('houses_geo.json', geo); }
+      } catch { }
+    }
+    const warn = gitSync(`admin: дом в архив — ${h ? cfg.display(h) : req.params.idx}`);
+    return res.redirect(`/c/houses?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || 'Дом перенесён в архив. Сайт обновится через ~2–3 минуты.'));
+  }
   if (cfg.nested) { const [ci, ii] = req.params.idx.split('.').map(Number); data[ci].items.splice(ii, 1); }
   else if (cfg.dict) delete data[req.params.idx];
   else data.splice(+req.params.idx, 1);
   writeData(cfg.file, data);
   const warn = gitSync(`admin: удалено — ${cfg.label}`);
   res.redirect(`/c/${req.params.name}?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || savedText().replace('Сохранено', 'Удалено')));
+});
+
+/* ---------------- дома: восстановление из архива ---------------- */
+app.get('/c/houses/restore/:idx', auth, (req, res) => {
+  const data = readData('houses.json');
+  const h = data[+req.params.idx];
+  if (!h) return res.redirect('/c/houses?err=' + encodeURIComponent('Запись не найдена'));
+  res.send(page('Восстановление дома', `
+    <div class="card" style="max-width:480px">
+      <p style="font-size:1.05rem">Вернуть дом <b>ул. ${esc(h.street)}, ${esc(h.num)}</b> из архива?</p>
+      <p class="muted">Дом снова появится на сайте, на карте и в поиске — например, дом вернулся в наше управление.</p>
+      <form method="post" action="/c/houses/restore/${req.params.idx}">
+        <div class="row" style="margin-top:18px"><button class="btn" type="submit">Да, вернуть</button><a class="btn ghost" href="/c/houses">Отмена</a></div>
+      </form></div>`, req.user, 'houses', req));
+});
+
+app.post('/c/houses/restore/:idx', auth, (req, res) => {
+  const data = readData('houses.json');
+  const h = data[+req.params.idx];
+  if (!h) return res.redirect('/c/houses?err=' + encodeURIComponent('Запись не найдена'));
+  delete h.archived;
+  writeData('houses.json', data);
+  try {
+    const geo = readData('houses_geo.json');
+    const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+    const g = geo.find(x => norm(x.street) === norm(h.street) && norm(String(x.num)) === norm(String(h.num)));
+    if (g) { delete g.archived; writeData('houses_geo.json', geo); }
+  } catch { }
+  const warn = gitSync(`admin: дом возвращён из архива — ул. ${h.street}, ${h.num}`);
+  res.redirect(`/c/houses?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || 'Дом восстановлен. Сайт обновится через ~2–3 минуты.'));
 });
 
 /* ---------------- смена своего пароля ---------------- */

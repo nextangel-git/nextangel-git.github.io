@@ -7,7 +7,7 @@ import servicesLocal from '../data/services.json';
 import shutdownsLocal from '../data/shutdowns.json';
 
 export async function getHouses() {
-  return housesLocal;
+  return housesLocal.filter((h) => !h.archived); // архив (ушли из управления) на сайте не показываем
 }
 
 export async function getDocuments() {
