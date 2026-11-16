@@ -14,7 +14,7 @@ from reportlab.platypus.tableofcontents import TableOfContents
 SRC = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SRC, 'Документация-ЖКС.pdf')
 DOCS = [('DEPLOY.md', 'Развёртывание проекта'),
-        ('DEPLOY-BEGET.md', 'Переезд на Beget VPS'),
+        ('DEPLOY-VPS.md', 'Переезд на свой VPS'),
         ('ADMIN-GUIDE.md', 'Инструкция по админке для сотрудников УК')]
 
 # Шрифты Windows с кириллицей

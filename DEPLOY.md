@@ -4,12 +4,12 @@
 
 | | Сейчас (временно) | Целевое (прод) |
 |---|---|---|
-| Сайт | GitHub Pages: https://nextangel-git.github.io | Beget VPS: https://jks.ooo |
-| Админка | локально: http://127.0.0.1:4777 | Beget VPS: https://admin.jks.ooo |
+| Сайт | GitHub Pages: https://nextangel-git.github.io | свой VPS: https://jks.ooo |
+| Админка | локально: http://127.0.0.1:4777 | тот же VPS: https://admin.jks.ooo |
 | Демо-зеркало | https://jks-sosnovoborsk.surge.sh | отключается |
 | Репозиторий (код + данные + бэкап) | https://github.com/nextangel-git/nextangel-git.github.io | тот же |
 
-**Инструкция по переезду на Beget — в [DEPLOY-BEGET.md](DEPLOY-BEGET.md).** Ниже — текущее развёртывание и общие вещи.
+**Инструкция по переезду на свой VPS — в [DEPLOY-VPS.md](DEPLOY-VPS.md).** Ниже — текущее развёртывание и общие вещи.
 
 ## Локальная разработка
 
@@ -55,11 +55,13 @@ node server.mjs --reset-totp ivan                           # сбросить 2
 
 ### Как это работает
 
-Каждое сохранение = запись `src/data/*.json` → `git commit` + `git push` (PAT живёт в credential manager git на машине, в браузер не отдаётся) → GitHub Actions → сайт обновляется через 2–3 минуты. На VPS-режиме (`REBUILD=1`) сайт пересобирается прямо на сервере — см. DEPLOY-BEGET.md.
+Каждое сохранение = запись `src/data/*.json` → `git commit` + `git push` (PAT живёт в credential manager git на машине, в браузер не отдаётся) → GitHub Actions → сайт обновляется через 2–3 минуты. На VPS-режиме (`REBUILD=1`) сайт пересобирается прямо на сервере — см. DEPLOY-VPS.md.
 
-### Резервная админка на GitHub Pages
+### Статичная админка (основная, с 17.11.2026)
 
-`https://nextangel-git.github.io/admin` — статичная версия через GitHub API (вход токеном PAT). Запасной вариант, когда серверная админка недоступна.
+`https://nextangel-git.github.io/admin` — работает на любом статическом хостинге, сервер не нужен. Вход — **обычный пароль** (токен GitHub вводится один раз при первичной настройке и хранится в браузере в зашифрованном виде, AES-GCM+PBKDF2). Навигация с рабочей кнопкой «назад» (hash-роутинг). Все разделы, загрузка файлов (до 25 МБ, через Git Data API), архив домов, календари, выпадающие списки улиц. Кнопок синхронизации нет (нужен сервер) — они в локальной серверной админке.
+
+Серверная админка (`admin/`, 2FA+капча) остаётся опцией для VPS — см. DEPLOY-VPS.md.
 
 ## Данные
 
