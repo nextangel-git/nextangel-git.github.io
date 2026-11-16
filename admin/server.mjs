@@ -470,6 +470,10 @@ app.get('/c/:name', auth, (req, res) => {
 });
 
 /* ---------------- форма редактирования ---------------- */
+// конвертация дат: в базе «ДД.ММ.ГГГГ ЧЧ:ММ» (красиво на сайте), в форме — нативный datetime-local
+const toIsoDT = (v) => { const m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})[ T](\d{2}):(\d{2})/); return m ? `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}` : String(v || ''); };
+const fromIsoDT = (v) => { const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}` : String(v || ''); };
+
 let HOUSES_CACHE = null;
 let HOUSES_AT = 0;
 function houseOptions(current) {
@@ -510,6 +514,8 @@ function fieldHtml(f, val) {
   if (f.type === 'checkbox') return `<label style="display:flex;align-items:center;gap:9px;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" value="1" style="width:18px;height:18px" ${v ? 'checked' : ''}> да</label>`;
   if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   if (f.type === 'house') return `<select name="${esc(f.key)}">${houseOptions(v)}</select>`;
+  if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}">`;
+  if (f.type === 'date') return `<input name="${esc(f.key)}" type="date" value="${esc(String(v || '').slice(0, 10))}">`;
   if (f.type === 'street') {
     const map = streetMap();
     const cur = String(v || '');
@@ -602,6 +608,7 @@ app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
   for (const f of fields) {
     if (f.type === 'checkbox') rec[f.key] = !!req.body[f.key];
     else if (f.type === 'number') rec[f.key] = req.body[f.key] === '' ? null : Number(req.body[f.key]);
+    else if (f.type === 'datetime') rec[f.key] = fromIsoDT(req.body[f.key]); // обратно в «ДД.ММ.ГГГГ ЧЧ:ММ»
     else rec[f.key] = String(req.body[f.key] ?? '');
   }
   // загрузка файла: поле типа 'file' — сохраняем в public/documents, url подставляем сами

@@ -38,10 +38,10 @@ export const COLLECTIONS = {
     fields: [
       { key: 'what', label: 'Что отключается', type: 'text', required: true, placeholder: 'Горячая вода' },
       { key: 'where', label: 'Где (адреса)', type: 'text', required: true, placeholder: 'ул. Юности, 1–19' },
-      { key: 'from', label: 'С (когда)', type: 'text', placeholder: '12.11.2026 09:00' },
-      { key: 'to', label: 'По (когда)', type: 'text', placeholder: '12.11.2026 18:00' },
+      { key: 'from', label: 'С (когда)', type: 'datetime', placeholder: '12.11.2026 09:00' },
+      { key: 'to', label: 'По (когда)', type: 'datetime', placeholder: '12.11.2026 18:00' },
       { key: 'reason', label: 'Причина', type: 'text' },
-      { key: 'until', label: 'Показывать до (дата ГГГГ-ММ-ДД)', type: 'text', placeholder: '2026-11-12' },
+      { key: 'until', label: 'Показывать до (дата)', type: 'date', placeholder: '2026-11-12' },
       { key: 'active', label: 'Активно (показывать на главной)', type: 'checkbox' },
     ],
     defaults: () => ({ active: true }),
