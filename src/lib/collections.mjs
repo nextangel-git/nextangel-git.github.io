@@ -22,7 +22,7 @@ export const COLLECTIONS = {
       { key: 'year', label: 'Год', type: 'number' },
       { key: 'url', label: 'Файл', type: 'file' },
     ],
-    defaults: () => ({ ext: 'PDF', date: new Date().toLocaleDateString('ru-RU') }),
+    defaults: () => ({ ext: 'PDF', year: new Date().getFullYear(), date: new Date().toLocaleDateString('ru-RU') }),
     display: (x) => `[${x.cat}] ${x.name}${x.house ? ` — ${x.house}` : ''}`,
   },
   houses: {
