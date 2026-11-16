@@ -5,3 +5,6 @@ dist/
 .astro/
 admin/node_modules/
 admin/users.json
+admin/.secret
+admin/sync-*.log
+public/documents/old/

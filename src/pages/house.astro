@@ -4,13 +4,19 @@ import { getHouses } from '../lib/content.js';
 
 const houses = await getHouses();
 import housesGeoAll from '../data/houses_geo.json';
+import docsAll from '../data/documents.json';
 const housesGeo = housesGeoAll.filter((h) => !h.archived); // архивные не показываем
+const docs = docsAllDocs(docsAll);
+function docsAllDocs(all) {
+  // реальные документы: протоколы конкретного дома и общие — без выдуманных заглушек
+  return all.map((d) => ({ name: d.name, url: d.url, ext: d.ext, year: d.year, house: d.house || '', cat: d.cat }));
+}
 ---
 <Base title="Карточка дома — УК «Жилкомсервис»"
       description="Карточка многоквартирного дома в управлении ООО УК «Жилкомсервис»: документы, протоколы собраний, отчёты, тарифы.">
   <div id="house-root"></div>
 
-  <script define:vars={{ houses, housesGeo }}>
+  <script define:vars={{ houses, housesGeo, docs }}>
     const root = document.getElementById('house-root');
     const params = new URLSearchParams(location.search);
     const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
@@ -22,35 +28,28 @@ const housesGeo = housesGeoAll.filter((h) => !h.archived); // архивные �
     );
     if (house && geo) Object.assign(house, { year: geo.year, floors: geo.floors, flats: geo.flats, ukSince: geo.ukSince, area: geo.area, entrances: geo.entrances });
 
-    const DOC_GROUPS = [
-      { title: 'Договор и отчёты', items: [
-        { name: 'Договор управления МКД', meta: 'PDF · действующий' },
-        { name: 'Отчёт о выполнении договора управления за 2025 год', meta: 'PDF' },
-        { name: 'Отчёт о выполнении договора управления за 2024 год', meta: 'PDF' },
-      ]},
-      { title: 'Протоколы собраний', items: [
-        { name: 'Протокол общего собрания собственников', meta: 'PDF · 2025' },
-        { name: 'Протокол общего собрания собственников', meta: 'PDF · 2024' },
-      ]},
-      { title: 'Тарифы и начисления', items: [
-        { name: 'Размер платы за содержание жилого помещения', meta: 'PDF · текущий' },
-        { name: 'Тарифы на коммунальные ресурсы', meta: 'PDF · текущий' },
-      ]},
-    ];
-
     const docIcon = '<svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>';
 
-    const docGroupHtml = (g) => `
-      <section class="doc-group">
-        <h3>${g.title}</h3>
-        <ul class="doc-list">
-          ${g.items.map((d) => `
-            <li class="doc-item">${docIcon}
-              <span class="doc-item__name">${d.name}</span>
-              <span class="doc-item__meta">${d.meta}</span>
-            </li>`).join('')}
-        </ul>
-      </section>`;
+    // реальные документы, привязанные к дому через админку (поле «Дом»)
+    const houseDocsHtml = (addr) => {
+      const mine = docs.filter((d) => norm(d.house) === norm(addr));
+      if (!mine.length) return `
+        <p class="house__note">Документы, относящиеся именно к этому дому (протоколы собраний и др.), пока не загружены.
+        Общий реестр — в разделе <a href="/disclosure">«Раскрытие информации»</a>.</p>`;
+      const byCat = {};
+      for (const d of mine) (byCat[d.cat] ??= []).push(d);
+      return Object.entries(byCat).map(([cat, items]) => `
+        <section class="doc-group">
+          <h3>${cat}</h3>
+          <ul class="doc-list">
+            ${items.map((d) => `
+              <li><a class="doc-item" href="${d.url}" target="_blank" rel="noopener">${docIcon}
+                <span class="doc-item__name">${d.name}</span>
+                <span class="doc-item__meta">${d.year ? d.year + ' · ' : ''}${d.ext || ''}</span>
+              </a></li>`).join('')}
+          </ul>
+        </section>`).join('');
+    };
 
     if (!house) {
       document.title = 'Дом не найден — УК «Жилкомсервис»';
@@ -88,8 +87,8 @@ const housesGeo = housesGeoAll.filter((h) => !h.archived); // архивные �
           <div class="house__grid">
             <div class="house__docs">
               <h2>Документы по дому</h2>
-              <p class="house__note">Структура раздела — демонстрационная. Реальные файлы будут загружаться из CMS и привязываться к адресу.</p>
-              ${DOC_GROUPS.map(docGroupHtml).join('')}
+              ${houseDocsHtml(addr)}
+              <p class="house__note" style="margin-top:14px">Все документы УК — в разделе <a href="/disclosure">«Раскрытие информации»</a>.</p>
             </div>
             <aside class="house__side">
               <div class="side-card">

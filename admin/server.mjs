@@ -71,11 +71,21 @@ if (cli[0] === '--passwd') {
 }
 
 /* ---------------- приложение ---------------- */
+// секрет сессий: из env, иначе — постоянный из файла admin/.secret (не в git), чтобы перезапуск не разлогинивал
+const SECRET_FILE = path.join(__dirname, '.secret');
+function sessionSecret() {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  try { return fs.readFileSync(SECRET_FILE, 'utf8').trim(); } catch { }
+  const s = 'jks-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  fs.writeFileSync(SECRET_FILE, s);
+  return s;
+}
+
 const app = express();
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'jks-admin-' + Math.random().toString(36).slice(2),
+  secret: sessionSecret(),
   resave: false, saveUninitialized: false,
   cookie: { httpOnly: true, sameSite: 'lax', secure: !DEV && process.env.HTTPS === '1', maxAge: 8 * 3600 * 1000 },
 }));
@@ -102,6 +112,7 @@ const I = {
   key: '<circle cx="8" cy="14" r="5"/><path d="M11.5 10.5 20 2"/><path d="M15 7l3 3"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
   eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  sync: '<path d="M21 12a9 9 0 1 1-2.9-6.6"/><path d="M21 3v6h-6"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/>',
 };
 const icon = (name, size = 18) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${I[name] || I.dashboard}</svg>`;
@@ -220,6 +231,7 @@ ${user ? `<div class="layout">
     ${Object.entries(COLLECTIONS).map(([name, cfg]) => navItem(name, cfg)).join('')}
     <div class="cap">Система</div>
     <a href="/password" class="${active === 'password' ? 'on' : ''}">${icon('key')}<span class="t">Сменить пароль</span></a>
+    <a href="/sync" class="${active === 'sync' ? 'on' : ''}">${icon('sync')}<span class="t">Синхронизация</span></a>
     ${user.role === 'admin' ? `<a href="/users" class="${active === 'users' ? 'on' : ''}">${icon('users')}<span class="t">Пользователи</span></a>` : ''}
     <a href="https://nextangel-git.github.io" target="_blank" rel="noopener">${icon('eye')}<span class="t">Открыть сайт ↗</span></a>
   </nav>
@@ -738,6 +750,72 @@ app.post('/c/houses/restore/:idx', auth, (req, res) => {
   } catch { }
   const warn = gitSync(`admin: дом возвращён из архива — ул. ${h.street}, ${h.num}`);
   res.redirect(`/c/houses?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || 'Дом восстановлен. Сайт обновится через ~2–3 минуты.'));
+});
+
+/* ---------------- синхронизация с внешними источниками ---------------- */
+const PY = process.platform === 'win32' ? 'python' : 'python3';
+const SYNC = {
+  mingkh: {
+    label: 'Дома и улицы (реестр ГИС ЖКХ)',
+    desc: 'Собирает весь реестр домов Сосновоборска с dom.mingkh.ru: новые дома, смена управляющих компаний, характеристики (год постройки, этажи, квартиры, площадь). Если что-то изменилось — сайт пересоберётся сам. Идёт 5–10 минут. Также запускается автоматически 5-го числа каждого месяца.',
+    cmd: [PY, '-u', 'mingkh_sync.py'],
+    cwd: path.resolve(REPO, '..', 'migration'),
+  },
+  vk: {
+    label: 'Посты VK на главную',
+    desc: 'Забирает свежие посты группы vk.ru/ooojks в блок «Новости» на главной странице. Идёт ~1 минуту. Работает, только когда на этом компьютере в браузере Kimi открыта вкладка VK (нужна авторизованная сессия).',
+    cmd: [PY, '-u', 'vk_extract.py'],
+    cwd: path.resolve(REPO, '..', 'migration'),
+  },
+};
+const syncState = {};
+
+function syncRun(kind) {
+  const cfg = SYNC[kind];
+  if (!cfg || syncState[kind]?.running) return false;
+  const logFile = path.join(__dirname, `sync-${kind}.log`);
+  const log = fs.createWriteStream(logFile);
+  const p = spawn(cfg.cmd[0], cfg.cmd.slice(1), { cwd: cfg.cwd });
+  syncState[kind] = { running: true, startedAt: new Date(), exit: null };
+  p.stdout.pipe(log); p.stderr.pipe(log);
+  p.on('error', (e) => { syncState[kind] = { running: false, startedAt: syncState[kind].startedAt, exit: -1, err: e.message }; });
+  p.on('close', (code) => { syncState[kind] = { running: false, startedAt: syncState[kind].startedAt, exit: code }; });
+  return true;
+}
+
+app.get('/sync', auth, (req, res) => {
+  const card = (kind) => {
+    const cfg = SYNC[kind];
+    const st = syncState[kind] || {};
+    let status = 'ещё не запускалась в этой сессии';
+    if (st.running) status = `выполняется… (с ${st.startedAt.toLocaleTimeString('ru-RU')})`;
+    else if (st.exit === 0) status = 'завершена успешно';
+    else if (st.exit != null) status = `завершилась с ошибкой (код ${st.exit}) — смотрите лог`;
+    return `<div class="card">
+      <h2>${esc(cfg.label)}</h2>
+      <p class="muted">${esc(cfg.desc)}</p>
+      <p style="margin:10px 0">Статус: <b>${status}</b></p>
+      <form method="post" action="/sync/${kind}" class="row">
+        <button class="btn" type="submit" ${st.running ? 'disabled' : ''}>▶ Запустить сейчас</button>
+        <a class="btn ghost" href="/sync-log/${kind}" target="_blank">Открыть лог</a>
+      </form></div>`;
+  };
+  const anyRunning = Object.values(syncState).some(s => s.running);
+  res.send(page('Синхронизация', `
+    ${anyRunning ? '<meta http-equiv="refresh" content="5">' : ''}
+    <p class="muted" style="margin-top:0">Ручное обновление данных из внешних источников — в любое время, не дожидаясь расписания.${anyRunning ? ' Страница обновляется сама каждые 5 секунд.' : ''}</p>
+    ${card('mingkh')}${card('vk')}`, req.user, 'sync'));
+});
+
+app.post('/sync/:kind', auth, (req, res) => {
+  const started = syncRun(req.params.kind);
+  res.redirect('/sync?' + (started ? 'ok' : 'err') + '=' + encodeURIComponent(started ? 'Синхронизация запущена' : 'Уже выполняется или неизвестная задача'));
+});
+
+app.get('/sync-log/:kind', auth, (req, res) => {
+  res.type('text/plain; charset=utf-8');
+  try { res.send(fs.readFileSync(path.join(__dirname, `sync-${req.params.kind}.log`), 'utf8')); }
+  catch { res.send('(лог пуст — задача ещё не запускалась)'); }
 });
 
 /* ---------------- смена своего пароля ---------------- */

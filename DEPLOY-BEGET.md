@@ -45,6 +45,19 @@ npm run build          # первая сборка сайта → dist/
 cd admin && npm install --omit=dev
 ```
 
+### 3.1 Файлы документов (PDF со старого сайта)
+
+108 файлов (~148 МБ) скачаны со старого сайта в `public/documents/old/` и **намеренно не лежат в git**. Переносим на сервер с машины разработки:
+
+```bash
+# с локальной машины:
+scp -r jks-site/public/documents/old root@<IP>:/var/www/jks/public/documents/old
+# на сервере — переписать ссылки с jks.ooo/upload/... на локальные:
+cd /var/www/jks && python3 ../migration/mirror_old_files.py  # или скопировать migration/ на сервер и запустить там
+```
+
+ВАЖНО: сделать **до** переключения DNS jks.ooo — иначе все ссылки на документы раскрытия (731-ПП) умрут.
+
 Если `npm run build` падает по памяти (1 ГБ тариф), добавьте swap:
 
 ```bash
