@@ -540,7 +540,7 @@ import Base from '../layouts/Base.astro';
     route();
   </script>
 
-  <style>
+  <style is:global>
     .adm-fixed{position:fixed;inset:0;z-index:60;background:#eef2f7;overflow:auto}
     .adm-fixed .layout{display:flex;min-height:100vh}
     .adm-fixed .side{width:250px;flex:none;background:linear-gradient(180deg,#0b1220 0%,#14213d 100%);color:#cbd5e1;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
