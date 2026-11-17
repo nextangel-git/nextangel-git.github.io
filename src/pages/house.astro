@@ -33,9 +33,8 @@ function docsAllDocs(all) {
     // реальные документы, привязанные к дому через админку (поле «Дом»)
     const houseDocsHtml = (addr) => {
       const mine = docs.filter((d) => norm(d.house) === norm(addr));
-      if (!mine.length) return `
-        <p class="house__note">Документы, относящиеся именно к этому дому (протоколы собраний и др.), пока не загружены.
-        Общий реестр — в разделе <a href="/disclosure">«Раскрытие информации»</a>.</p>`;
+      const gisLink = `<p class="house__note" style="margin-top:14px">${mine.length ? 'Также документы' : 'Документы'} по дому — в <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a> (реестр МКД, поиск по адресу).</p>`;
+      if (!mine.length) return gisLink;
       const byCat = {};
       for (const d of mine) (byCat[d.cat] ??= []).push(d);
       return Object.entries(byCat).map(([cat, items]) => `
@@ -48,7 +47,7 @@ function docsAllDocs(all) {
                 <span class="doc-item__meta">${d.year ? d.year + ' · ' : ''}${d.ext || ''}</span>
               </a></li>`).join('')}
           </ul>
-        </section>`).join('');
+        </section>`).join('') + gisLink;
     };
 
     if (!house) {
@@ -86,9 +85,8 @@ function docsAllDocs(all) {
           </div>
           <div class="house__grid">
             <div class="house__docs">
-              <h2>Документы по дому</h2>
+              ${docs.some((d) => norm(d.house) === norm(addr)) ? '<h2>Документы по дому</h2>' : ''}
               ${houseDocsHtml(addr)}
-              <p class="house__note" style="margin-top:14px">Все документы УК — в разделе <a href="/disclosure">«Раскрытие информации»</a>.</p>
               ${(() => {
                 const now = new Date().getFullYear();
                 const techRows = [
