@@ -26,6 +26,9 @@ function tagFor(title) {
     </div>
 
     <div id="news-list" class="news-list">
+      {news.length === 0 && (
+        <p class="disc-intro" style="padding:16px 0">Новостей пока нет. Оперативная информация — в нашей группе <a href="https://vk.ru/ooojks" target="_blank" rel="noopener">ВКонтакте</a> и на главной странице.</p>
+      )}
       {news.map((n) => {
         const t = tagFor(n.title);
         return (
@@ -40,7 +43,7 @@ function tagFor(title) {
         );
       })}
     </div>
-    <p class="house__note">Прототип: ссылки ведут на архив старого сайта. После запуска новости будут открываться здесь же и подтягиваться из VK.</p>
+    <p class="house__note">Новости добавляются через админку и открываются здесь же.</p>
   </div>
 
   <script>
