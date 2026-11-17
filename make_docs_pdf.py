@@ -15,7 +15,8 @@ SRC = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SRC, 'Документация-ЖКС.pdf')
 DOCS = [('DEPLOY.md', 'Развёртывание проекта'),
         ('DEPLOY-VPS.md', 'Переезд на свой VPS'),
-        ('ADMIN-GUIDE.md', 'Инструкция по админке для сотрудников УК')]
+        ('ADMIN-GUIDE.md', 'Инструкция по админке для сотрудников УК'),
+        ('HANDOVER.md', 'Передача сайта УК')]
 
 # Шрифты Windows с кириллицей
 F = r'C:\Windows\Fonts'

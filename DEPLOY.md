@@ -63,6 +63,10 @@ node server.mjs --reset-totp ivan                           # сбросить 2
 
 Серверная админка (`admin/`, 2FA+капча) остаётся опцией для VPS — см. DEPLOY-VPS.md.
 
+## Передача сайта УК (отвязка от аккаунта разработчика)
+
+Полный план — в [HANDOVER.md](HANDOVER.md): перенос репозитория в GitHub-аккаунт УК (Transfer ownership), новый fine-grained PAT у УК, отзыв токена разработчика, домен jks.ooo. ~30 минут, бесплатно.
+
 ## Данные
 
 Источник истины — `src/data/*.json` в репозитории: houses, documents, news, services, shutdowns, faq, useful, vk_posts (авто), competitors, houses_geo, requests.
