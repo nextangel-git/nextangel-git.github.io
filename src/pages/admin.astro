@@ -2,9 +2,7 @@
 import Base from '../layouts/Base.astro';
 ---
 <Base title="Админка — УК «Жилкомсервис»">
-  <div class="container house__wrap">
-    <div id="admin-root">Загрузка…</div>
-  </div>
+  <div id="admin-root">Загрузка…</div>
   <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
   <script>
     // Яндекс SmartCaptcha: токен доказательства «не робот». На статике проверка только клиентская
@@ -19,9 +17,6 @@ import Base from '../layouts/Base.astro';
         window.smartCaptcha.render(el, { sitekey: window.__CAP_SITEKEY, callback: window.smartCaptchaCallback, hl: 'ru' });
       }
     };
-    window.addEventListener('load', () => {
-      if (window.smartCaptcha) window.smartCaptchaReady();
-    });
   </script>
 
   <script>
@@ -31,12 +26,31 @@ import Base from '../layouts/Base.astro';
     const rootEl = document.getElementById('admin-root');
     let FILESHA = {};
     let CACHE = {};
+    let CNT = {};
     let STREETS = null;
 
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const te = new TextEncoder(), td = new TextDecoder();
     const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
     const unb64 = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+    /* ---------- иконки ---------- */
+    const I = {
+      news: '<path d="M4 5h13v12a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5z"/><path d="M17 8h2a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7"/>',
+      documents: '<path d="M6 3h8l4 4v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8 12h8M8 16h8"/>',
+      houses: '<path d="M3 21V10l9-7 9 7v11"/><path d="M9 21v-6h6v6"/><path d="M3 21h18"/>',
+      shutdowns: '<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/>',
+      faq: '<path d="M8 10h.01M12 10h.01M16 10h.01"/><path d="M21 12a9 9 0 1 1-4-7.5L21 3l-1 4.5A8.9 8.9 0 0 1 21 12z"/>',
+      useful: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/>',
+      services: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4L14 13l-3-3 3.7-3.7z"/>',
+      vk_posts: '<path d="M21 4 3 11l6 2 2 6 10-15z"/><path d="M9 13l5-5"/>',
+      requests: '<path d="M3 8l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/>',
+      dashboard: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
+      key: '<circle cx="8" cy="14" r="5"/><path d="M11.5 10.5 20 2"/><path d="M15 7l3 3"/>',
+      logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+      eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+    };
+    const icon = (name, size = 18) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${I[name] || I.dashboard}</svg>`;
 
     /* ---------- сейф: пароль → PAT (AES-GCM + PBKDF2) ---------- */
     const VAULT = 'jks_vault';
@@ -56,7 +70,7 @@ import Base from '../layouts/Base.astro';
       if (!v) return null;
       const key = await keyFrom(pass, unb64(v.salt));
       try { return td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(v.iv) }, key, unb64(v.ct))); }
-      catch { return false; } // неверный пароль
+      catch { return false; }
     }
 
     /* ---------- даты: база «ДД.ММ.ГГГГ ЧЧ:ММ» ↔ input datetime-local ---------- */
@@ -67,23 +81,25 @@ import Base from '../layouts/Base.astro';
     const TR = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' };
     const safeName = (n) => n.toLowerCase().split('').map(c => TR[c] ?? c).join('').replace(/[^a-z0-9.]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'file';
 
-    /* ---------- вспомогательные данные ---------- */
+    /* ---------- данные ---------- */
     async function getCol(name) {
       const cfg = COLLECTIONS[name];
       if (!CACHE[name]) {
         const { data, sha } = await readDataFile(cfg.file);
         CACHE[name] = data; FILESHA[name] = sha;
       }
-      return CACHE[name];
+      const data = CACHE[name];
+      CNT[name] = name === 'houses' ? data.filter(h => !h.archived).length
+        : cfg.nested ? data.reduce((s, c) => s + (c.items || []).length, 0)
+        : Array.isArray(data) ? data.length : Object.keys(data).length;
+      return data;
     }
     async function streetMap() {
       if (STREETS) return STREETS;
       const map = {};
       const add = (s, n) => { if (s && n) (map[String(s).trim()] ??= new Set()).add(String(n).trim()); };
-      const geo = await readDataFile('houses_geo.json');
-      geo.data.forEach(h => add(h.street, h.num));
-      const comps = await readDataFile('competitors.json');
-      comps.data.forEach(h => add(h.street, h.num));
+      (await readDataFile('houses_geo.json')).data.forEach(h => add(h.street, h.num));
+      (await readDataFile('competitors.json')).data.forEach(h => add(h.street, h.num));
       const nat = (a, b) => a.localeCompare(b, 'ru', { numeric: true });
       STREETS = Object.fromEntries(Object.entries(map).sort(([a], [b]) => nat(a, b)).map(([s, ns]) => [s, [...ns].sort(nat)]));
       return STREETS;
@@ -92,49 +108,62 @@ import Base from '../layouts/Base.astro';
     /* ---------- тосты ---------- */
     function toast(text, isErr = false) {
       const t = document.createElement('div');
+      t.className = 'toast ' + (isErr ? 'err' : 'ok');
       t.textContent = text;
-      t.style.cssText = `position:fixed;right:20px;bottom:20px;z-index:99;padding:14px 18px;border-radius:12px;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(15,23,42,.25);max-width:min(420px,90vw);background:${isErr ? '#dc2626' : '#16a34a'}`;
       document.body.appendChild(t);
       setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 4500);
     }
 
-    /* ---------- оболочки ---------- */
-    function shell(title, inner) {
+    /* ---------- каркас ---------- */
+    function shell(title, inner, active = '') {
+      const navItem = (name, cfg) => `<a href="#/c/${name}" class="${active === name ? 'on' : ''}">${icon(name)}<span class="t">${esc(cfg.label)}</span>${CNT[name] != null ? `<span class="n">${CNT[name]}</span>` : ''}</a>`;
+      const crumbs = !active || active === 'dash' ? 'Дашборд' : `<a href="#/">Дашборд</a> → ${esc(COLLECTIONS[active]?.label || title)}`;
       rootEl.innerHTML = `
-        <div class="adm">
-          <div class="adm-head">
-            <div class="crumbs"><a href="#/">Админка</a>${title ? ' → ' + esc(title) : ''}</div>
-            <div class="adm-head__r"><a href="/" target="_blank">Открыть сайт ↗</a> · <a href="#/pass">Сменить пароль</a> · <a href="#" id="adm-exit">Выйти</a></div>
+      <div class="adm-fixed"><div class="layout">
+        <aside class="side">
+          <div class="brand"><img src="/logo.svg" alt="ЖКС"><div><b>Жилкомсервис</b><span>админ-панель</span></div></div>
+          <nav class="snav">
+            <a href="#/" class="${active === 'dash' ? 'on' : ''}">${icon('dashboard')}<span class="t">Дашборд</span></a>
+            <div class="cap">Контент</div>
+            ${Object.entries(COLLECTIONS).map(([n, c]) => navItem(n, c)).join('')}
+            <div class="cap">Система</div>
+            <a href="#/pass" class="${active === 'pass' ? 'on' : ''}">${icon('key')}<span class="t">Сменить пароль</span></a>
+            <a href="/" target="_blank" rel="noopener">${icon('eye')}<span class="t">Открыть сайт ↗</span></a>
+          </nav>
+          <div class="sfoot"><a href="#" id="adm-exit">${icon('logout', 14)} Выйти</a></div>
+        </aside>
+        <main class="main">
+          <div class="pagehead">
+            <div><div class="crumbs">${crumbs}</div><h1>${esc(title || 'Дашборд')}</h1></div>
+            <div class="userchip"><span class="av">Ж</span>Админка · <a href="#" id="adm-exit2">выйти</a></div>
           </div>
-          <div id="adm-body">${inner}</div>
-        </div>`;
-      document.getElementById('adm-exit').onclick = () => { location.hash = '#/'; location.reload(); };
+          ${inner}
+        </main>
+      </div></div>`;
+      const exit = () => { setToken(''); location.hash = '#/'; location.reload(); };
+      document.getElementById('adm-exit').onclick = exit;
+      document.getElementById('adm-exit2').onclick = exit;
     }
 
     /* ---------- вход ---------- */
     function showLogin(msg = '') {
       const hasVault = !!localStorage.getItem(VAULT);
       rootEl.innerHTML = `
-        <div class="card" style="max-width:460px;margin:40px auto">
-          <h1 style="font-size:1.3rem">Вход для сотрудников</h1>
-          <p class="disc-intro">${hasVault ? 'Введите пароль от админки.' : 'Первичная настройка: один раз введите токен GitHub (его выдаёт администратор сайта) и придумайте пароль. Дальше вход — только по паролю.'}</p>
-          ${hasVault ? `
-            <label style="display:block;font-weight:600;margin:12px 0 4px">Пароль</label>
-            <input id="pass" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" autofocus>
-            <div id="captcha-container" class="smart-captcha" style="margin-top:14px"></div>
-          ` : `
-            <label style="display:block;font-weight:600;margin:12px 0 4px">Токен GitHub (PAT)</label>
-            <input id="pat" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" placeholder="github_pat_…">
-            <label style="display:block;font-weight:600;margin:12px 0 4px">Придумайте пароль (минимум 8 символов)</label>
-            <input id="pass" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px">
-            <label style="display:block;font-weight:600;margin:12px 0 4px">Пароль ещё раз</label>
-            <input id="pass2" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px">
-          `}
-          <button class="btn btn--primary" style="margin-top:14px" id="adm-login">Войти</button>
-          ${hasVault ? '<p style="margin-top:10px"><a href="#" id="adm-reset" style="font-size:.85rem;color:#64748b">Сбросить привязку (сменить токен)</a></p>' : ''}
-          ${msg ? `<p style="color:#dc2626;margin-top:10px">${esc(msg)}</p>` : ''}
-        </div>`;
-      // рендерим капчу (виджет может грузиться дольше формы — с повтором)
+      <div class="authpage"><div class="authcard">
+        <div class="alogo"><img src="/logo.svg" alt="ЖКС"><h1>Вход в админку</h1><p class="muted" style="margin:0">УК «Жилкомсервис» · Сосновоборск</p></div>
+        ${msg ? `<p class="muted" style="color:#dc2626;font-weight:600">${esc(msg)}</p>` : ''}
+        ${hasVault ? `
+          <label>Пароль</label><input id="pass" type="password" autofocus>
+          <div id="captcha-container" class="smart-captcha" style="margin-top:14px"></div>
+        ` : `
+          <p class="muted">Первичная настройка: один раз введите токен GitHub (его выдаёт администратор сайта) и придумайте пароль. Дальше вход — только по паролю.</p>
+          <label>Токен GitHub (PAT)</label><input id="pat" type="password" placeholder="github_pat_…">
+          <label>Придумайте пароль (минимум 8 символов)</label><input id="pass" type="password">
+          <label>Пароль ещё раз</label><input id="pass2" type="password">
+        `}
+        <p style="margin:22px 0 0"><button class="btn" id="adm-login" style="width:100%;justify-content:center">Войти</button></p>
+        ${hasVault ? '<p style="margin:10px 0 0;text-align:center"><a href="#" id="adm-reset" style="font-size:.82rem;color:#64748b">Сбросить привязку (сменить токен)</a></p>' : ''}
+      </div></div>`;
       if (hasVault) {
         const tryRender = (n) => { if (window.smartCaptcha) window.smartCaptchaReady(); else if (n > 0) setTimeout(() => tryRender(n - 1), 500); };
         tryRender(20);
@@ -143,9 +172,8 @@ import Base from '../layouts/Base.astro';
       document.getElementById('adm-login').onclick = async () => {
         try {
           if (hasVault) {
-            if (document.getElementById('captcha-container') && !window.__capToken) {
+            if (document.getElementById('captcha-container') && !window.__capToken)
               return showLogin('Подтвердите, что вы не робот (галочка под паролем)');
-            }
             const pat = await vaultOpen(document.getElementById('pass').value);
             if (pat === false) { window.__capToken = ''; return showLogin('Неверный пароль'); }
             setToken(pat); await checkToken();
@@ -159,24 +187,25 @@ import Base from '../layouts/Base.astro';
             await vaultSave(pat, p1);
           }
           location.hash = '#/'; route();
-        } catch (e) { showLogin(e.message); }
+        } catch (e) { window.__capToken = ''; showLogin(e.message); }
       };
       document.getElementById('pass').onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('adm-login').click(); };
     }
 
     /* ---------- дашборд ---------- */
     async function viewDash() {
-      shell('', 'Загрузка…');
+      shell('', '<p class="muted">Загрузка разделов…</p>', 'dash');
       const cards = [];
       for (const [name, cfg] of Object.entries(COLLECTIONS)) {
-        const data = await getCol(name);
-        const n = cfg.nested ? data.reduce((s, c) => s + (c.items || []).length, 0) : (Array.isArray(data) ? data.length : Object.keys(data).length);
-        cards.push(`<a class="ccard" href="#/c/${name}"><b>${name === 'houses' ? data.filter(h => !h.archived).length : n}</b><span>${esc(cfg.label)}</span>${cfg.readonly ? '<div class="ro">только чтение</div>' : ''}</a>`);
+        await getCol(name);
+        cards.push(`<a class="ccard" href="#/c/${name}">
+          <span class="ic">${icon(name, 22)}</span>
+          <span><b>${CNT[name]}</b><small>${esc(cfg.label)}</small>${cfg.readonly ? '<span class="ro">ТОЛЬКО ЧТЕНИЕ</span>' : ''}</span>
+        </a>`);
       }
-      shell('', `
-        <h1 style="font-size:1.3rem">Что редактируем?</h1>
-        <p class="disc-intro">Сохранение = коммит в GitHub → сайт пересобирается сам (~2–3 минуты).</p>
-        <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">${cards.join('')}</div>`);
+      shell('Дашборд', `
+        <p class="muted" style="margin-top:0">Изменения сохраняются коммитом в GitHub — сайт пересобирается автоматически за 2–3 минуты.</p>
+        <div class="grid">${cards.join('')}</div>`, 'dash');
     }
 
     /* ---------- список ---------- */
@@ -184,67 +213,70 @@ import Base from '../layouts/Base.astro';
       const cfg = COLLECTIONS[name];
       if (!cfg) return viewDash();
       const data = await getCol(name);
-      const btn = (href, text, red) => `<a class="btn btn--ghost" style="padding:4px 12px;font-size:.8rem;${red ? 'background:#dc2626;color:#fff' : ''}" href="${href}">${text}</a>`;
+      const btn = (href, text, red) => `<a class="btn sm ${red ? 'red' : 'ghost'}" href="${href}">${text}</a>`;
       let rows = '';
       if (cfg.nested) {
         data.forEach((cat, ci) => {
-          rows += `<tr style="background:#eff6ff"><td colspan="2"><b>${esc(cat.cat)}</b></td></tr>`;
+          rows += `<tr class="cat"><td colspan="2">${esc(cat.cat)}</td></tr>`;
           (cat.items || []).forEach((item, ii) => {
             const disp = item.name + (item.price ? ` — ${item.price} ₽` : '');
-            rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%">${cfg.readonly ? '' : btn(`#/c/${name}/edit/${ci}.${ii}`, 'Изменить') + ' ' + btn(`#/c/${name}/del/${ci}.${ii}`, '✕', 1)}</td></tr>`;
+            rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%;text-align:right">${cfg.readonly ? '' : btn(`#/c/${name}/edit/${ci}.${ii}`, 'Изменить') + ' ' + btn(`#/c/${name}/del/${ci}.${ii}`, '✕', 1)}</td></tr>`;
           });
         });
       } else if (name === 'houses') {
         const act = [], arch = [];
         data.forEach((x, i) => (x.archived ? arch : act).push([i, x]));
-        rows = act.map(([idx, x]) => `<tr><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%">${btn(`#/c/houses/edit/${idx}`, 'Изменить') + ' ' + btn(`#/c/houses/del/${idx}`, 'В архив', 1)}</td></tr>`).join('');
-        if (arch.length) rows += `<tr style="background:#f8fafc"><td colspan="2"><b>Архив — ушли из управления (${arch.length})</b></td></tr>` +
-          arch.map(([idx, x]) => `<tr style="opacity:.6"><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%">${btn(`#/c/houses/restore/${idx}`, 'Вернуть из архива')}</td></tr>`).join('');
+        rows = act.map(([idx, x]) => `<tr><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%;text-align:right">${btn(`#/c/houses/edit/${idx}`, 'Изменить') + ' ' + btn(`#/c/houses/del/${idx}`, 'В архив', 1)}</td></tr>`).join('');
+        if (arch.length) rows += `<tr class="cat"><td colspan="2">Архив — ушли из управления (${arch.length})</td></tr>` +
+          arch.map(([idx, x]) => `<tr style="opacity:.6"><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%;text-align:right">${btn(`#/c/houses/restore/${idx}`, 'Вернуть из архива')}</td></tr>`).join('');
       } else {
         const list = cfg.dict ? Object.entries(data) : data.map((x, i) => [i, x]);
         list.forEach(([idx, x]) => {
           const disp = cfg.display ? cfg.display(x) : (x.title || x.name || JSON.stringify(x).slice(0, 60));
-          rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%">${cfg.readonly ? '' : btn(`#/c/${name}/edit/${idx}`, 'Изменить') + ' ' + btn(`#/c/${name}/del/${idx}`, '✕', 1)}</td></tr>`;
+          rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%;text-align:right">${cfg.readonly ? '' : btn(`#/c/${name}/edit/${idx}`, 'Изменить') + ' ' + btn(`#/c/${name}/del/${idx}`, '✕', 1)}</td></tr>`;
         });
       }
       shell(cfg.label, `
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-          <input id="q" placeholder="Поиск по списку…" oninput="const q=this.value.toLowerCase();document.querySelectorAll('#tbl tr').forEach(r=>r.style.display=!q||r.textContent.toLowerCase().includes(q)?'':'none')" style="flex:1;min-width:200px;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px">
-          ${cfg.readonly ? '' : `<a class="btn btn--primary" href="#/c/${name}/edit/new">+ Добавить ${esc(cfg.singular || 'запись')}</a>`}
-          <a class="btn btn--ghost" href="#/">← Все разделы</a>
+        <div class="toolbar">
+          <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="q" placeholder="Поиск по списку…"></div>
+          ${cfg.readonly ? '' : `<a class="btn" href="#/c/${name}/edit/new">+ Добавить ${esc(cfg.singular || 'запись')}</a>`}
         </div>
-        <table style="width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:12px;border-collapse:collapse" id="tbl"><tbody>${rows || '<tr><td style="padding:12px">пусто</td></tr>'}</tbody></table>`);
+        <div class="tblwrap"><table id="tbl"><tbody>${rows || '<tr><td style="padding:16px">пусто</td></tr>'}</tbody></table></div>`, name);
+      document.getElementById('q').oninput = (e) => {
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('#tbl tr').forEach(r => r.style.display = !q || r.textContent.toLowerCase().includes(q) ? '' : 'none');
+      };
     }
 
     /* ---------- поля формы ---------- */
     function fieldHtml(f, val, extra) {
       const v = val ?? (typeof f.defaults === 'string' ? f.defaults : '');
-      if (f.type === 'textarea') return `<textarea name="${esc(f.key)}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;min-height:110px">${esc(v)}</textarea>`;
-      if (f.type === 'checkbox') return `<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" ${v ? 'checked' : ''} style="width:18px;height:18px"> да</label>`;
-      if (f.type === 'select') return `<select name="${esc(f.key)}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
-      if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">`;
-      if (f.type === 'date') return `<input name="${esc(f.key)}" type="date" value="${esc(String(v || '').slice(0, 10))}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">`;
-      if (f.type === 'house') return `<select name="${esc(f.key)}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px"><option value="">— общий документ (все дома) —</option>${extra.houseOpts.map(h => `<option ${h === v ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select>`;
+      if (f.type === 'textarea') return `<textarea name="${esc(f.key)}">${esc(v)}</textarea>`;
+      if (f.type === 'checkbox') return `<label style="display:flex;gap:9px;align-items:center;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" ${v ? 'checked' : ''} style="width:18px;height:18px"> да</label>`;
+      if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+      if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}">`;
+      if (f.type === 'date') return `<input name="${esc(f.key)}" type="date" value="${esc(String(v || '').slice(0, 10))}">`;
+      if (f.type === 'house') return `<select name="${esc(f.key)}"><option value="">— общий документ (все дома) —</option>${extra.houseOpts.map(h => `<option ${h === v ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select>`;
       if (f.type === 'street') {
         const cur = String(v || '');
-        return `<select name="street" id="fld_street" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">
+        return `<select name="street" id="fld_street">
           <option value="">— выберите улицу —</option>
           ${Object.keys(extra.streets).map(s => `<option ${s === cur ? 'selected' : ''}>${esc(s)}</option>`).join('')}
           ${cur && !extra.streets[cur] ? `<option selected>${esc(cur)}</option>` : ''}
           <option value="__other">➕ Другая улица (нет в реестре)…</option></select>
-        <input name="street_other" id="fld_street_other" placeholder="Название улицы" style="display:none;margin-top:8px;width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">`;
+        <input name="street_other" id="fld_street_other" placeholder="Название улицы" style="display:none;margin-top:8px">`;
       }
       if (f.type === 'housenum') {
-        return `<select name="num" id="fld_num" data-cur="${esc(v || '')}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px"><option value="">— сначала выберите улицу —</option></select>
-        <input name="num_other" id="fld_num_other" placeholder="Номер дома" style="display:none;margin-top:8px;width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">`;
+        return `<select name="num" id="fld_num" data-cur="${esc(v || '')}"><option value="">— сначала выберите улицу —</option></select>
+        <input name="num_other" id="fld_num_other" placeholder="Номер дома" style="display:none;margin-top:8px">`;
       }
       if (f.type === 'file') return `
-        <div id="drop" style="border:2px dashed #e2e8f0;border-radius:12px;padding:18px;text-align:center;cursor:pointer;background:#fafbfe">
+        <div class="drop" id="drop">
           <input type="file" id="__file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display:none">
-          <div id="drop-txt">Перетащите файл сюда или <u>выберите на диске</u><br><span style="color:#64748b;font-size:.85rem">PDF, DOCX, XLSX, картинки — до 25 МБ</span></div>
+          <div id="drop-txt" style="padding:8px 0">Перетащите файл сюда или <u>выберите на диске</u><br><span class="muted">PDF, DOCX, XLSX, картинки — до 25 МБ</span></div>
         </div>
-        ${v ? `<p style="color:#64748b;font-size:.85rem;margin-top:6px">Текущий файл: ${esc(v)} — если не выбирать новый, останется он.</p>` : ''}`;
-      return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}" ${f.required ? 'required' : ''} placeholder="${esc(f.placeholder || '')}" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">`;
+        ${v ? `<p class="muted" style="margin-top:6px">Текущий файл: ${esc(v)} — если не выбирать новый, останется он.</p>` : ''}`;
+      return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}" ${f.required ? 'required' : ''} placeholder="${esc(f.placeholder || '')}">`;
     }
 
     /* ---------- форма ---------- */
@@ -269,19 +301,18 @@ import Base from '../layouts/Base.astro';
       }
       if (fields.some(f => f.type === 'street')) extra.streets = await streetMap();
 
-      const keyField = cfg.dict ? `<label style="display:block;font-weight:600;margin:12px 0 4px">Ключ (латиницей)</label><input name="__key" value="${isNew ? '' : esc(idx)}" ${isNew ? 'required' : 'readonly'} style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">` : '';
-      const catField = (cfg.nested && isNew) ? `<label style="display:block;font-weight:600;margin:12px 0 4px">Категория</label><select name="__cat" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px">${data.map((c, i) => `<option value="${i}">${esc(c.cat)}</option>`).join('')}</select>` : '';
+      const keyField = cfg.dict ? `<label>Ключ <span class="hint">латиницей, напр. tariffs</span></label><input name="__key" value="${isNew ? '' : esc(idx)}" ${isNew ? 'required' : 'readonly'}>` : '';
+      const catField = (cfg.nested && isNew) ? `<label>Категория</label><select name="__cat">${data.map((c, i) => `<option value="${i}">${esc(c.cat)}</option>`).join('')}</select>` : '';
 
       shell((isNew ? 'Новая запись' : 'Изменение') + ' · ' + cfg.label, `
         <div class="card" style="max-width:720px">
         <form id="adm-form">
           ${keyField}${catField}
-          ${fields.map(f => `<label style="display:block;font-weight:600;margin:14px 0 4px">${esc(f.label)}${f.required ? ' <span style="color:#dc2626">*</span>' : ''}</label>${fieldHtml(f, rec ? rec[f.key] : undefined, extra)}`).join('')}
-          <div style="display:flex;gap:10px;margin-top:20px"><button class="btn btn--primary" type="submit">Сохранить</button><a class="btn btn--ghost" href="#/c/${name}">Отмена</a></div>
+          ${fields.map(f => `<label>${esc(f.label)}${f.required ? ' <span style="color:#dc2626">*</span>' : ''}${f.placeholder ? `<span class="hint">напр. ${esc(f.placeholder)}</span>` : ''}</label>${fieldHtml(f, rec ? rec[f.key] : undefined, extra)}`).join('')}
+          <div class="row" style="margin-top:22px"><button class="btn" type="submit">Сохранить</button><a class="btn ghost" href="#/c/${name}">Отмена</a></div>
           <p id="form-msg" style="margin-top:10px"></p>
-        </form></div>`);
+        </form></div>`, name);
 
-      // каскад улица→дом
       if (extra.streets) {
         const MAP = extra.streets;
         const st = document.getElementById('fld_street'), nm = document.getElementById('fld_num'),
@@ -302,17 +333,16 @@ import Base from '../layouts/Base.astro';
         if (st.value) fillNums();
       }
 
-      // drag&drop файла
       const dz = document.getElementById('drop');
       let pickedFile = null;
       if (dz) {
         const fi = document.getElementById('__file'), tx = document.getElementById('drop-txt');
-        const show = (n) => { tx.innerHTML = `<b>${esc(n)}</b><br><span style="color:#64748b;font-size:.85rem">будет загружен при сохранении</span>`; dz.style.borderColor = '#16a34a'; };
+        const show = (n) => { tx.innerHTML = `<b>${esc(n)}</b><br><span class="muted">будет загружен при сохранении</span>`; dz.style.borderColor = '#16a34a'; };
         dz.onclick = () => fi.click();
         fi.onchange = () => { pickedFile = fi.files[0] || null; if (pickedFile) show(pickedFile.name); };
-        dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = '#3b82f6'; };
-        dz.ondragleave = () => { dz.style.borderColor = '#e2e8f0'; };
-        dz.ondrop = (e) => { e.preventDefault(); pickedFile = e.dataTransfer.files[0] || null; if (pickedFile) show(pickedFile.name); };
+        dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = '#3b82f6'; dz.style.background = '#eff6ff'; };
+        dz.ondragleave = () => { dz.style.borderColor = ''; dz.style.background = ''; };
+        dz.ondrop = (e) => { e.preventDefault(); dz.style.borderColor = ''; dz.style.background = ''; pickedFile = e.dataTransfer.files[0] || null; if (pickedFile) show(pickedFile.name); };
       }
 
       document.getElementById('adm-form').onsubmit = async (e) => {
@@ -330,7 +360,6 @@ import Base from '../layouts/Base.astro';
           }
           const dataNow = await getCol(name);
 
-          // дома: разрешение «другой» улицы/номера + защита от дублей
           if (name === 'houses') {
             recNew.street = (recNew.street === '__other' ? String(fd.get('street_other') || '') : String(recNew.street || '')).trim();
             recNew.num = (recNew.num === '__other' ? String(fd.get('num_other') || '') : String(recNew.num || '')).trim();
@@ -354,7 +383,6 @@ import Base from '../layouts/Base.astro';
             if (mExt && mExt.length <= 5) recNew.ext = mExt.toUpperCase();
           }
 
-          // пустые необязательные поля не храним
           for (const k of Object.keys(recNew)) if (recNew[k] === '' || recNew[k] === null) delete recNew[k];
           if (isNew && cfg.defaults && !cfg.nested) { recNew.id ??= Date.now(); }
 
@@ -371,8 +399,7 @@ import Base from '../layouts/Base.astro';
 
           const label = `${isNew ? 'добавлено' : 'изменено'} — ${cfg.label}`;
           if (pickedFile && fileField) {
-            const buf = await pickedFile.arrayBuffer();
-            const bytes = new Uint8Array(buf);
+            const bytes = new Uint8Array(await pickedFile.arrayBuffer());
             let bin = '';
             for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
             await commitFiles([
@@ -404,18 +431,18 @@ import Base from '../layouts/Base.astro';
         else disp = cfg.dict ? idx : cfg.display(data[+idx]);
       } catch { }
       const isHouse = name === 'houses';
-      shell(isHouse ? 'Перенос дома в архив' : 'Удаление', `
-        <div class="card" style="max-width:480px;margin:20px auto">
+      shell(isHouse ? 'Перенос дома в архив' : 'Подтверждение удаления', `
+        <div class="card" style="max-width:480px">
           <p style="font-size:1.05rem">${isHouse ? 'Перенести в архив дом' : 'Удалить запись'} <b>${esc(disp)}</b>?</p>
-          <p class="disc-intro">${isHouse ? 'Дом исчезнет с сайта и с карты, но останется в базе внизу списка. Вернётся — кнопкой «Вернуть из архива».' : 'Сайт пересоберётся без этой записи. Отменить можно через git-историю.'}</p>
-          <div style="display:flex;gap:10px;margin-top:16px">
-            <button class="btn btn--primary" style="background:#dc2626" id="adm-del-yes">${isHouse ? 'Да, в архив' : 'Да, удалить'}</button>
-            <a class="btn btn--ghost" href="#/c/${name}">Отмена</a></div>
+          <p class="muted">${isHouse ? 'Дом исчезнет с сайта и с карты, но останется в базе внизу списка. Вернётся — кнопкой «Вернуть из архива».' : 'Сайт пересоберётся без этой записи. Отменить можно через git-историю.'}</p>
+          <div class="row" style="margin-top:18px">
+            <button class="btn red" id="adm-del-yes">${isHouse ? 'Да, в архив' : 'Да, удалить'}</button>
+            <a class="btn ghost" href="#/c/${name}">Отмена</a></div>
           <p id="del-msg" style="margin-top:10px"></p>
-        </div>`);
+        </div>`, name);
       document.getElementById('adm-del-yes').onclick = async () => {
         const msg = document.getElementById('del-msg');
-        msg.textContent = 'Сохраняю…';
+        msg.style.color = '#64748b'; msg.textContent = 'Сохраняю…';
         try {
           if (isHouse) {
             const h = data[+idx];
@@ -426,13 +453,14 @@ import Base from '../layouts/Base.astro';
             const files = [{ path: 'src/data/houses.json', text: JSON.stringify(data, null, 1) + '\n' }];
             if (g) { g.archived = true; files.push({ path: 'src/data/houses_geo.json', text: JSON.stringify(geo, null, 1) + '\n' }); }
             await commitFiles(files, `admin: дом в архив — ул. ${h.street}, ${h.num}`);
+            delete CACHE['houses_geo'];
           } else {
             if (cfg.nested) { const [ci, ii] = idx.split('.').map(Number); data[ci].items.splice(ii, 1); }
             else if (cfg.dict) delete data[idx];
             else data.splice(+idx, 1);
             await writeDataFile(cfg.file, data, FILESHA[name], `admin: удалено — ${cfg.label}`);
           }
-          delete CACHE[name]; CACHE['houses_geo'] && delete CACHE['houses_geo'];
+          delete CACHE[name];
           STREETS = null;
           toast(isHouse ? 'Дом в архиве. Сайт обновится через ~2–3 минуты.' : 'Удалено. Сайт обновится через ~2–3 минуты.');
           location.hash = '#/c/' + name;
@@ -445,14 +473,14 @@ import Base from '../layouts/Base.astro';
       const h = data[+idx];
       if (!h) return viewList('houses');
       shell('Восстановление дома', `
-        <div class="card" style="max-width:480px;margin:20px auto">
+        <div class="card" style="max-width:480px">
           <p style="font-size:1.05rem">Вернуть дом <b>ул. ${esc(h.street)}, ${esc(h.num)}</b> из архива?</p>
-          <p class="disc-intro">Дом снова появится на сайте, карте и в поиске.</p>
-          <div style="display:flex;gap:10px;margin-top:16px">
-            <button class="btn btn--primary" id="adm-restore-yes">Да, вернуть</button>
-            <a class="btn btn--ghost" href="#/c/houses">Отмена</a></div>
+          <p class="muted">Дом снова появится на сайте, карте и в поиске.</p>
+          <div class="row" style="margin-top:18px">
+            <button class="btn" id="adm-restore-yes">Да, вернуть</button>
+            <a class="btn ghost" href="#/c/houses">Отмена</a></div>
           <p id="res-msg" style="margin-top:10px"></p>
-        </div>`);
+        </div>`, 'houses');
       document.getElementById('adm-restore-yes').onclick = async () => {
         try {
           delete h.archived;
@@ -472,13 +500,13 @@ import Base from '../layouts/Base.astro';
     /* ---------- смена пароля ---------- */
     function viewPass() {
       shell('Сменить пароль', `
-        <div class="card" style="max-width:460px;margin:20px auto">
-          <label style="display:block;font-weight:600;margin:12px 0 4px">Текущий пароль</label><input id="p0" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px">
-          <label style="display:block;font-weight:600;margin:12px 0 4px">Новый пароль (минимум 8 символов)</label><input id="p1" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px">
-          <label style="display:block;font-weight:600;margin:12px 0 4px">Новый пароль ещё раз</label><input id="p2" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px">
-          <button class="btn btn--primary" style="margin-top:14px" id="pass-save">Сменить пароль</button>
+        <div class="card" style="max-width:460px">
+          <label>Текущий пароль</label><input id="p0" type="password">
+          <label>Новый пароль <span class="hint">минимум 8 символов</span></label><input id="p1" type="password">
+          <label>Новый пароль ещё раз</label><input id="p2" type="password">
+          <div class="row" style="margin-top:22px"><button class="btn" id="pass-save">Сменить пароль</button></div>
           <p id="pass-msg" style="margin-top:10px"></p>
-        </div>`);
+        </div>`, 'pass');
       document.getElementById('pass-save').onclick = async () => {
         const msg = document.getElementById('pass-msg');
         const pat = await vaultOpen(document.getElementById('p0').value);
@@ -505,24 +533,81 @@ import Base from '../layouts/Base.astro';
         return viewDash();
       } catch (e) {
         if (/Токен отклонён/.test(e.message)) { setToken(''); showLogin(e.message); return; }
-        rootEl.innerHTML = `<div class="card" style="max-width:480px;margin:20px auto"><p style="color:#dc2626">${esc(e.message)}</p><p><a href="#/">← В админку</a></p></div>`;
+        rootEl.innerHTML = `<div class="adm-fixed" style="display:flex;align-items:center;justify-content:center"><div class="card" style="max-width:480px"><p style="color:#dc2626">${esc(e.message)}</p><p><a href="#/">← В админку</a></p></div></div>`;
       }
     }
-
-    // Токен живёт только в памяти страницы: перезагрузка/возврат «назад» за пределы админки —
-    // значит, вход по паролю заново (это и есть защита). Сейф с зашифрованным PAT — в localStorage.
     window.addEventListener('hashchange', route);
     route();
   </script>
 
   <style>
-    .adm-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
-    .adm-head__r a{color:#64748b;font-size:.9rem;margin-left:10px}
-    .ccard{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;text-decoration:none;color:#0f172a}
-    .ccard:hover{border-color:#3b82f6}
-    .ccard b{font-size:1.5rem;display:block;color:#1d4ed8}
-    .ccard span{color:#334155}
-    .ccard .ro{font-size:.72rem;color:#d97706;font-weight:700}
-    #tbl td{padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:.92rem}
+    .adm-fixed{position:fixed;inset:0;z-index:60;background:#eef2f7;overflow:auto}
+    .adm-fixed .layout{display:flex;min-height:100vh}
+    .adm-fixed .side{width:250px;flex:none;background:linear-gradient(180deg,#0b1220 0%,#14213d 100%);color:#cbd5e1;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+    .adm-fixed .brand{display:flex;gap:12px;align-items:center;padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .adm-fixed .brand img{width:38px;height:38px;border-radius:9px;background:#fff;padding:3px}
+    .adm-fixed .brand b{color:#fff;font-size:.95rem;line-height:1.2;display:block}
+    .adm-fixed .brand span{font-size:.72rem;color:#7c8db0}
+    .adm-fixed .snav{padding:12px 10px;overflow:auto;flex:1}
+    .adm-fixed .snav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:#cbd5e1;font-weight:500;font-size:.92rem;margin-bottom:2px;text-decoration:none}
+    .adm-fixed .snav a:hover{background:rgba(255,255,255,.07);color:#fff}
+    .adm-fixed .snav a.on{background:#1d4ed8;color:#fff}
+    .adm-fixed .snav a .n{margin-left:auto;font-size:.72rem;background:rgba(255,255,255,.13);border-radius:20px;padding:1px 8px;color:#e2e8f0}
+    .adm-fixed .snav a.on .n{background:rgba(255,255,255,.22)}
+    .adm-fixed .snav .cap{font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;color:#61708f;padding:14px 12px 6px}
+    .adm-fixed .sfoot{padding:14px;border-top:1px solid rgba(255,255,255,.08);font-size:.8rem}
+    .adm-fixed .sfoot a{color:#94a3b8;text-decoration:none}
+    .adm-fixed .main{flex:1;min-width:0;padding:26px 30px 40px}
+    .adm-fixed .crumbs{font-size:.83rem;color:#64748b;margin-bottom:8px}
+    .adm-fixed .crumbs a{color:#64748b}
+    .adm-fixed .pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .adm-fixed .pagehead h1{font-size:1.4rem;margin:0;letter-spacing:-.01em}
+    .adm-fixed .userchip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5eaf2;border-radius:30px;padding:6px 14px 6px 6px;font-size:.88rem;font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+    .adm-fixed .userchip .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
+    .adm-fixed .userchip a{color:#64748b;font-weight:400}
+    .adm-fixed .card{background:#fff;border:1px solid #e5eaf2;border-radius:14px;padding:22px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 4px 16px rgba(15,23,42,.06)}
+    .adm-fixed .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:14px}
+    .adm-fixed .ccard{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid #e5eaf2;border-radius:14px;padding:16px;color:#0f172a;box-shadow:0 1px 2px rgba(15,23,42,.05),0 4px 16px rgba(15,23,42,.06);transition:transform .12s,box-shadow .12s;text-decoration:none}
+    .adm-fixed .ccard:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(15,23,42,.12)}
+    .adm-fixed .ccard .ic{width:44px;height:44px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#dbeafe,#eff6ff);color:#1d4ed8}
+    .adm-fixed .ccard b{font-size:1.45rem;line-height:1;display:block}
+    .adm-fixed .ccard small{color:#64748b;font-size:.8rem;display:block;margin-top:3px}
+    .adm-fixed .ccard .ro{font-size:.68rem;color:#d97706;font-weight:700}
+    .adm-fixed .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    .adm-fixed .toolbar .search{flex:1;min-width:200px;position:relative}
+    .adm-fixed .toolbar .search input{padding-left:38px}
+    .adm-fixed .toolbar .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#64748b}
+    .adm-fixed .tblwrap{background:#fff;border:1px solid #e5eaf2;border-radius:14px;overflow:auto;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+    .adm-fixed table{width:100%;border-collapse:collapse;min-width:420px}
+    .adm-fixed td{padding:11px 16px;text-align:left;vertical-align:middle;border-bottom:1px solid #e5eaf2;font-size:.92rem}
+    .adm-fixed tbody tr:last-child td{border-bottom:0}
+    .adm-fixed tbody tr:hover td{background:#f6f9ff}
+    .adm-fixed tr.cat td{background:#f1f5ff;font-weight:700;color:#1e3a8a;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+    .adm-fixed input,.adm-fixed textarea,.adm-fixed select{width:100%;padding:11px 14px;border:1.5px solid #e5eaf2;border-radius:10px;font:inherit;background:#fff;transition:border-color .15s,box-shadow .15s}
+    .adm-fixed input:focus,.adm-fixed textarea:focus,.adm-fixed select:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+    .adm-fixed textarea{min-height:130px;resize:vertical}
+    .adm-fixed label{display:block;font-weight:600;font-size:.9rem;margin:16px 0 6px}
+    .adm-fixed .hint{font-weight:400;color:#64748b;font-size:.8rem;margin-left:6px}
+    .adm-fixed .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;background:#1d4ed8;color:#fff;text-decoration:none;transition:filter .15s}
+    .adm-fixed .btn:hover{filter:brightness(1.08)}
+    .adm-fixed .btn.ghost{background:#e6ebf3;color:#0f172a}
+    .adm-fixed .btn.red{background:#dc2626}
+    .adm-fixed .btn.sm{padding:6px 13px;font-size:.83rem;border-radius:8px}
+    .adm-fixed .muted{color:#64748b;font-size:.85rem}
+    .adm-fixed .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .adm-fixed .drop{border:2px dashed #e5eaf2;border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:#fafbfe}
+    .toast{position:fixed;right:22px;bottom:22px;z-index:99;display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(15,23,42,.25);max-width:min(420px,90vw)}
+    .toast.ok{background:#16a34a}.toast.err{background:#dc2626}
+    .authpage{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(1000px 500px at 20% 0%,#1e3a8a 0%,#0b1220 55%),#0b1220;padding:20px}
+    .authcard{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px;box-shadow:0 25px 60px rgba(0,0,0,.45)}
+    .authcard .alogo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:6px;text-align:center}
+    .authcard .alogo img{width:64px;height:64px;border-radius:14px}
+    .authcard h1{font-size:1.25rem;margin:0}
+    .authcard label{display:block;font-weight:600;font-size:.9rem;margin:16px 0 6px}
+    .authcard input{width:100%;padding:11px 14px;border:1.5px solid #e5eaf2;border-radius:10px;font:inherit}
+    .authcard input:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+    .authcard .muted{color:#64748b;font-size:.85rem}
+    .authcard .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;background:#1d4ed8;color:#fff}
+    @media(max-width:900px){.adm-fixed .side{width:66px}.adm-fixed .brand b,.adm-fixed .brand span,.adm-fixed .snav .cap,.adm-fixed .snav a .n,.adm-fixed .snav a span.t{display:none}.adm-fixed .snav a{justify-content:center;padding:11px}.adm-fixed .main{padding:18px}}
   </style>
 </Base>
