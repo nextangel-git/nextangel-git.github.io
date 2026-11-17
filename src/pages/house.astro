@@ -96,6 +96,8 @@ function docsAllDocs(all) {
                   house.condition && ['Состояние дома', house.condition],
                   house.wear != null && ['Износ здания', house.wear + '%'],
                   house.kadastr && ['Кадастровый номер', house.kadastr],
+                  house.livingArea && ['Жилая площадь', Math.round(house.livingArea).toLocaleString('ru-RU') + ' м²'],
+                  house.commonArea && ['Площадь МОП (общего имущества)', Math.round(house.commonArea).toLocaleString('ru-RU') + ' м²'],
                   house.landArea && ['Придомовой участок', Math.round(house.landArea).toLocaleString('ru-RU') + ' м²'],
                   house.heating && ['Отопление', house.heating],
                   house.hotwater && ['Горячая вода', house.hotwater],
