@@ -97,6 +97,7 @@ function docsAllDocs(all) {
                   house.livingArea && ['Жилая площадь (квартиры)', Math.round(house.livingArea).toLocaleString('ru-RU') + ' м²'],
                   house.commonArea && ['Площадь МОП (подъезды, холлы, коридоры)', Math.round(house.commonArea).toLocaleString('ru-RU') + ' м²'],
                   (house.nonlivingArea != null && house.nonlivingArea > 0) && ['Нежилые помещения (коммерция)', Math.round(house.nonlivingArea).toLocaleString('ru-RU') + ' м²'],
+                  (house.nonlivingArea > 0 && house.livingArea > 0) && ['Доля коммерции', Math.round(house.nonlivingArea / house.livingArea * 1000) / 10 + '% от жилой площади'],
                   house.landArea && ['Придомовая территория (уборка, дворник)', Math.round(house.landArea).toLocaleString('ru-RU') + ' м²'],
                   house.heating && ['Отопление', house.heating],
                   house.hotwater && ['Горячая вода', house.hotwater],
