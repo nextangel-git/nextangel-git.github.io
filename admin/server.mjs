@@ -269,8 +269,7 @@ app.get('/login', (req, res) => {
     <form method="post" action="/login">
       <label>Логин</label><input name="login" required autocomplete="username" autofocus>
       <label>Пароль</label><input name="password" type="password" required autocomplete="current-password">
-      <label>Я не робот <span class="hint">введите символы с картинки</span></label>
-      <div class="cap"><span class="capimg">${cap.data}</span><input name="captcha" required autocomplete="off" placeholder="Символы" style="flex:1"></div>
+      <label>Я не робот <span class="hint">введите символы с картинки</span></label>      <div class="cap"><span class="capimg">${cap.data}</span><input name="captcha" required autocomplete="off" placeholder="Символы" style="flex:1"></div>
       <p style="margin:22px 0 0"><button class="btn" type="submit" style="width:100%;justify-content:center">Войти</button></p>
     </form>`));
 });
@@ -287,8 +286,8 @@ app.post('/login', (req, res) => {
     return res.redirect('/login?err=' + encodeURIComponent(!capOk ? 'Неверные символы с картинки' : 'Неверный логин или пароль'));
   }
   okFail(ip);
-  req.session.pendingUser = u.login;
-  res.redirect(u.totpSecret ? '/totp' : '/setup-totp');
+  req.session.user = u.login; // 2FA отключена по решению владельца (17.11.2026) — логин+пароль+капча
+  res.redirect('/');
 });
 
 app.get('/setup-totp', async (req, res) => {
@@ -844,10 +843,9 @@ app.post('/password', auth, (req, res) => {
 /* ---------------- пользователи (только admin) ---------------- */
 app.get('/users', auth, adminOnly, (req, res) => {
   const rows = loadUsers().map(u => `<tr><td><b>${esc(u.login)}</b><br><span class="muted">${esc(u.name)}</span></td>
-    <td>${u.role === 'admin' ? 'Администратор' : 'Редактор'}</td>
-    <td>${u.totpSecret ? '<span class="badge">2FA включена</span>' : '<span class="badge off">2FA не настроена</span>'}</td></tr>`).join('');
+    <td>${u.role === 'admin' ? 'Администратор' : 'Редактор'}</td></tr>`).join('');
   res.send(page('Пользователи', `
-    <div class="tblwrap"><table><thead><tr><th>Пользователь</th><th>Роль</th><th>2FA</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="tblwrap"><table><thead><tr><th>Пользователь</th><th>Роль</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="card" style="margin-top:18px;max-width:720px"><h2>Управление — через консоль сервера</h2>
     <div class="mono">node server.mjs --add-user ivan "Иван (УК)" 'Пароль123!'<br>node server.mjs --passwd ivan 'НовыйПароль'<br>node server.mjs --reset-totp ivan</div></div>`, req.user, 'users', req));
 });

@@ -5,6 +5,24 @@ import Base from '../layouts/Base.astro';
   <div class="container house__wrap">
     <div id="admin-root">Загрузка…</div>
   </div>
+  <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
+  <script>
+    // Яндекс SmartCaptcha: токен доказательства «не робот». На статике проверка только клиентская
+    // (серверной валидации нет) — но ботов отсекает сам вызов проверки; настоящий секрет — PAT в сейфе.
+    window.__CAP_SITEKEY = 'ysc1_c1z811srDG3allSQnw0xpIy1ubAve2lTWfeKJrLe29c108b2';
+    window.__capToken = '';
+    window.smartCaptchaCallback = (t) => { window.__capToken = t; };
+    window.smartCaptchaReady = () => {
+      const el = document.getElementById('captcha-container');
+      if (el && window.smartCaptcha) {
+        el.innerHTML = '';
+        window.smartCaptcha.render(el, { sitekey: window.__CAP_SITEKEY, callback: window.smartCaptchaCallback, hl: 'ru' });
+      }
+    };
+    window.addEventListener('load', () => {
+      if (window.smartCaptcha) window.smartCaptchaReady();
+    });
+  </script>
 
   <script>
     import { COLLECTIONS } from '../lib/collections.mjs';
@@ -103,6 +121,7 @@ import Base from '../layouts/Base.astro';
           ${hasVault ? `
             <label style="display:block;font-weight:600;margin:12px 0 4px">Пароль</label>
             <input id="pass" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" autofocus>
+            <div id="captcha-container" class="smart-captcha" style="margin-top:14px"></div>
           ` : `
             <label style="display:block;font-weight:600;margin:12px 0 4px">Токен GitHub (PAT)</label>
             <input id="pat" type="password" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px" placeholder="github_pat_…">
@@ -115,12 +134,20 @@ import Base from '../layouts/Base.astro';
           ${hasVault ? '<p style="margin-top:10px"><a href="#" id="adm-reset" style="font-size:.85rem;color:#64748b">Сбросить привязку (сменить токен)</a></p>' : ''}
           ${msg ? `<p style="color:#dc2626;margin-top:10px">${esc(msg)}</p>` : ''}
         </div>`;
+      // рендерим капчу (виджет может грузиться дольше формы — с повтором)
+      if (hasVault) {
+        const tryRender = (n) => { if (window.smartCaptcha) window.smartCaptchaReady(); else if (n > 0) setTimeout(() => tryRender(n - 1), 500); };
+        tryRender(20);
+      }
       document.getElementById('adm-reset')?.addEventListener('click', () => { localStorage.removeItem(VAULT); showLogin(); });
       document.getElementById('adm-login').onclick = async () => {
         try {
           if (hasVault) {
+            if (document.getElementById('captcha-container') && !window.__capToken) {
+              return showLogin('Подтвердите, что вы не робот (галочка под паролем)');
+            }
             const pat = await vaultOpen(document.getElementById('pass').value);
-            if (pat === false) return showLogin('Неверный пароль');
+            if (pat === false) { window.__capToken = ''; return showLogin('Неверный пароль'); }
             setToken(pat); await checkToken();
           } else {
             const pat = document.getElementById('pat').value.trim();
