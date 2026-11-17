@@ -509,3 +509,9 @@ html.vi img, html.vi .tile__icon svg { filter: grayscale(1) contrast(1.2); }
   .tiles, .news-grid, .disc-grid, .useful-grid { grid-template-columns: 1fr; }
   .hero { padding: 40px 0; }
 }
+
+/* Технические данные дома (ГИС ЖКХ) */
+.tech-tbl { width: 100%; border-collapse: collapse; }
+.tech-tbl td { padding: 8px 4px; border-bottom: 1px solid var(--line, #eef2f7); font-size: .92rem; vertical-align: top; }
+.tech-tbl td:first-child { color: var(--gray, #64748b); width: 45%; }
+.tech-tbl tr:last-child td { border-bottom: 0; }

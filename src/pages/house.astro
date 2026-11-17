@@ -26,7 +26,7 @@ function docsAllDocs(all) {
     const geo = housesGeo.find(
       (h) => norm(h.street) === norm(params.get('street')) && norm(h.num) === norm(params.get('num'))
     );
-    if (house && geo) Object.assign(house, { year: geo.year, floors: geo.floors, flats: geo.flats, ukSince: geo.ukSince, area: geo.area, entrances: geo.entrances });
+    if (house && geo) Object.assign(house, { year: geo.year, floors: geo.floors, flats: geo.flats, ukSince: geo.ukSince, area: geo.area, entrances: geo.entrances, serie: geo.serie, condition: geo.condition, wear: geo.wear, kadastr: geo.kadastr, landArea: geo.landArea, livingArea: geo.livingArea, kapremont: geo.kapremont, heating: geo.heating, hotwater: geo.hotwater, gas: geo.gas, sewage: geo.sewage });
 
     const docIcon = '<svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>';
 
@@ -89,6 +89,37 @@ function docsAllDocs(all) {
               <h2>Документы по дому</h2>
               ${houseDocsHtml(addr)}
               <p class="house__note" style="margin-top:14px">Все документы УК — в разделе <a href="/disclosure">«Раскрытие информации»</a>.</p>
+              ${(() => {
+                const now = new Date().getFullYear();
+                const techRows = [
+                  house.serie && ['Серия, тип постройки', house.serie],
+                  house.condition && ['Состояние дома', house.condition],
+                  house.wear != null && ['Износ здания', house.wear + '%'],
+                  house.kadastr && ['Кадастровый номер', house.kadastr],
+                  house.landArea && ['Придомовой участок', Math.round(house.landArea).toLocaleString('ru-RU') + ' м²'],
+                  house.heating && ['Отопление', house.heating],
+                  house.hotwater && ['Горячая вода', house.hotwater],
+                  house.sewage && ['Канализация', house.sewage],
+                  house.gas && ['Газоснабжение', house.gas],
+                ].filter(Boolean);
+                const techHtml = techRows.length ? `
+                  <section class="doc-group" style="margin-top:26px">
+                    <h3>Технические данные <span class="doc-group__n">ГИС ЖКХ</span></h3>
+                    <table class="tech-tbl">${techRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+                  </section>` : '';
+                const kap = house.kapremont;
+                const kapHtml = kap && kap.length ? `
+                  <section class="doc-group" style="margin-top:26px">
+                    <h3>Капитальный ремонт <span class="doc-group__n">план ГИС ЖКХ</span></h3>
+                    <ul class="doc-list">
+                      ${kap.map(k => `<li class="doc-item" style="cursor:default">${docIcon}
+                        <span class="doc-item__name">${k.work}</span>
+                        <span class="doc-item__meta">план: ${k.year}${k.year <= now ? ' (год прошёл)' : ''}</span>
+                      </li>`).join('')}
+                    </ul>
+                  </section>` : '';
+                return techHtml + kapHtml;
+              })()}
             </div>
             <aside class="house__side">
               <div class="side-card">
