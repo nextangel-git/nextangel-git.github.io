@@ -13,7 +13,7 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
     <h1>Раскрытие информации</h1>
     <p class="disc-intro">
       В соответствии с Постановлением Правительства РФ № 731 от 23.09.2010
-      и ст. 165 ЖК РФ. Также информация размещается в
+      и ст. 165 ЖК РФ. Также информация размещается в{" "}
       <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a>.
     </p>
 
@@ -59,10 +59,10 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
         (!year || String(d.year) === year) &&
         (!q || norm(d.name).includes(q) || norm(d.house || '').includes(q))
       );
-      countEl.textContent = filtered.length
+      countEl.innerHTML = filtered.length
         ? `Найдено документов: ${filtered.length}`
         : (docs.length === 0
-          ? 'Документы публикуются. Актуальные сведения также доступны в ГИС ЖКХ и в приёмной: 8 (391-31) 2-13-74.'
+          ? 'Документы публикуются. Актуальные сведения также доступны в <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener" style="color:var(--blue,#1d4ed8)">ГИС ЖКХ</a> и в приёмной: 8 (391-31) 2-13-74.'
           : 'Ничего не найдено — попробуйте изменить запрос или позвоните в приёмную: 8 (391-31) 2-13-74');
 
       const groups = {};
