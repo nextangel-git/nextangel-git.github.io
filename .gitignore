@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 *.log
 .astro/
 admin/node_modules/

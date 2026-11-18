@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getServices } from '../lib/content.js';
+import { confirmedServicePrice } from '../lib/public-safety.js';
 
 const services = await getServices();
 const fmt = (n) => n.toLocaleString('ru-RU');
@@ -11,7 +12,7 @@ const fmt = (n) => n.toLocaleString('ru-RU');
     <nav class="crumbs"><a href="/">Главная</a> → <span>Платные услуги</span></nav>
     <h1>Платные услуги</h1>
     <p class="disc-intro">Мастера УК выполняют работы в квартирах и помещениях. Заказ — через форму или по телефону приёмной.</p>
-    <p class="house__note">Цены ориентировочные (средние по рынку УК) — будут заменены на действующий прайс ООО УК «Жилкомсервис».</p>
+    <p class="house__note">Если цена не указана, уточните стоимость в приёмной перед заказом работ.</p>
 
     <div class="disc-cats" id="svc-cats">
       <button type="button" class="chip chip--active" data-cat="">Все услуги · {services.reduce((s, c) => s + c.items.length, 0)}</button>
@@ -29,8 +30,8 @@ const fmt = (n) => n.toLocaleString('ru-RU');
               <div class="svc-card">
                 <span class="svc-card__name">{s.name}</span>
                 <span class="svc-card__price">
-                  {s.price ? `от ${fmt(s.price)} ₽` : 'по запросу'}
-                  {s.price && <small> / {s.unit}</small>}
+                  {confirmedServicePrice(s) !== null ? `от ${fmt(s.price)} ₽` : 'по запросу'}
+                  {confirmedServicePrice(s) !== null && s.unit && <small> / {s.unit}</small>}
                 </span>
                 <a class="btn btn--ghost svc-card__btn" href="/request">Заказать</a>
               </div>

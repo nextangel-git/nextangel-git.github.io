@@ -3,15 +3,15 @@ name: Build & Deploy
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,14 +23,28 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            admin/package-lock.json
       - run: npm ci
+      - run: npm ci --prefix admin
+      - run: npm test
       - run: npm run build
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://nextangel-git.github.io' }}
+          PUBLIC_FORM_TARGET: ${{ vars.PUBLIC_FORM_TARGET || 'uk@jks.ooo' }}
+      - run: npm run test:build
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: dist
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

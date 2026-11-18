@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin
-
-Sitemap: https://jks-sosnovoborsk.surge.sh/sitemap-index.xml

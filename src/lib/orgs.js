@@ -2,6 +2,9 @@
 // остальные — по убыванию количества домов.
 import competitors from '../data/competitors.json';
 import houses from '../data/houses.json';
+import { otherManagedHouses } from './public-safety.js';
+
+export const competitorHouses = otherManagedHouses(houses, competitors);
 
 export const OURS_NAME = 'УК «Жилкомсервис»';
 export const OURS_COUNT = houses.filter((h) => !h.archived).length;
@@ -20,8 +23,8 @@ const PALETTE = [
 ];
 
 export function getOrgLegend() {
-  const counts = {};
-  for (const c of competitors) counts[c.uk] = (counts[c.uk] || 0) + 1;
+  const counts = Object.create(null);
+  for (const c of competitorHouses) counts[c.uk] = (counts[c.uk] || 0) + 1;
   const others = Object.entries(counts)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
     .map(([name, count], i) => ({ name, count, color: PALETTE[i % PALETTE.length] }));

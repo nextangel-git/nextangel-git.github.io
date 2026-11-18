@@ -515,3 +515,21 @@ html.vi img, html.vi .tile__icon svg { filter: grayscale(1) contrast(1.2); }
 .tech-tbl td { padding: 8px 4px; border-bottom: 1px solid var(--line, #eef2f7); font-size: .92rem; vertical-align: top; }
 .tech-tbl td:first-child { color: var(--gray, #64748b); width: 45%; }
 .tech-tbl tr:last-child td { border-bottom: 0; }
+
+/* Public content must remain usable with long addresses, large fonts and keyboard navigation. */
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+html.vi :focus-visible { outline-color: #000; }
+.house__wrap, .article, .house__grid > *, .request-grid > *, .doc-item__name { min-width: 0; overflow-wrap: anywhere; }
+.article__body { overflow-x: auto; }
+.article__body img { max-width: 100%; height: auto; }
+.tech-tbl { table-layout: fixed; overflow-wrap: anywhere; }
+html.vi .tech-tbl td, html.vi .tech-tbl td:first-child { color: #000; border-color: #000; }
+html.vi .shutdowns, html.vi .shutdown-card { background: #fff; color: #000; }
+@media (max-width: 480px) {
+  .house-facts, .facts { grid-template-columns: 1fr; }
+  .stat--wide { grid-column: auto; }
+  .footer__links { flex-wrap: wrap; }
+  .doc-item { flex-wrap: wrap; }
+  .doc-item__meta { margin-left: 0; }
+}

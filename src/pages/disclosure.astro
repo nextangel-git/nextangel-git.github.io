@@ -4,26 +4,24 @@ import { getDocuments } from '../lib/content.js';
 
 const docs = await getDocuments();
 const CATS = [...new Set(docs.map((d) => d.cat))];
-const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].sort((a, b) => b - a);
+const YEARS = [...new Set([...docs.map((d) => d.year).filter(Boolean)])].sort((a, b) => b - a);
 ---
 <Base title="Раскрытие информации — УК «Жилкомсервис»"
-      description="Раскрытие информации ООО УК «Жилкомсервис» по Постановлению Правительства РФ № 731: отчёты, протоколы, бухгалтерская отчётность, тарифы.">
+      description="Документы ООО УК «Жилкомсервис»: отчёты, протоколы, бухгалтерская отчётность и тарифы.">
   <div class="container house__wrap">
     <nav class="crumbs"><a href="/">Главная</a> → <span>Раскрытие информации</span></nav>
     <h1>Раскрытие информации</h1>
     <p class="disc-intro">
-      В соответствии с{" "}
-      <a href="https://normativ.kontur.ru/document?moduleId=1&documentId=310860" target="_blank" rel="noopener">Постановлением Правительства РФ № 731 от 23.09.2010</a>{" "}
-      и ст. 165 ЖК РФ. Также информация размещается в{" "}
+      Отчёты, протоколы собраний и другие документы управляющей компании. Также информация размещается в{" "}
       <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a>.
     </p>
 
     <div class="disc-controls">
       <div class="house-search disc-search">
         <svg viewBox="0 0 24 24" class="icon"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5zm-6 0a4.5 4.5 0 1 1 4.5-4.5 4.5 4.5 0 0 1-4.5 4.5z"/></svg>
-        <input type="text" id="doc-search" placeholder="Поиск по документам: улица, год, название…" autocomplete="off" />
+        <input type="text" id="doc-search" aria-label="Поиск по документам" placeholder="Поиск по документам: улица, год, название…" autocomplete="off" />
       </div>
-      <select id="doc-year" class="disc-year">
+      <select id="doc-year" aria-label="Год документа" class="disc-year">
         <option value="">Все годы</option>
         {YEARS.map((y) => <option value={String(y)}>{y} год</option>)}
       </select>
@@ -35,11 +33,14 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
         <button type="button" class="chip" data-cat={c}>{c} · {docs.filter((d) => d.cat === c).length}</button>
       ))}
     </div>
-    <p class="disc-count" id="doc-count"></p>
+    <p class="disc-count" id="doc-count" role="status"></p>
     <div id="doc-list"></div>
+    <noscript><p class="house__note">Для поиска по документам включите JavaScript. Информацию также можно уточнить в приёмной: 8 (391-31) 2-13-74.</p></noscript>
   </div>
 
-  <script define:vars={{ docs }}>
+  <script>
+    import docs from '../data/documents.json';
+    import { escapeHtml as esc, safeHref } from '../lib/public-safety.js';
     const searchInput = document.getElementById('doc-search');
     const yearSelect = document.getElementById('doc-year');
     const chips = document.querySelectorAll('#doc-cats .chip');
@@ -49,8 +50,7 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
     let activeCat = new URLSearchParams(location.search).get('cat') || '';
     chips.forEach((c) => c.classList.toggle('chip--active', c.dataset.cat === activeCat));
 
-    const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е');
-    const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const norm = (s) => String(s ?? '').toLowerCase().replace(/ё/g, 'е');
 
     function renderList() {
       const q = norm(searchInput.value);
@@ -66,7 +66,7 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
           ? 'Документы публикуются. Актуальные сведения также доступны в <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener" style="color:var(--blue,#1d4ed8)">ГИС ЖКХ</a> и в приёмной: 8 (391-31) 2-13-74.'
           : 'Ничего не найдено — попробуйте изменить запрос или позвоните в приёмную: 8 (391-31) 2-13-74');
 
-      const groups = {};
+      const groups = Object.create(null);
       for (const d of filtered) (groups[d.cat] ??= []).push(d);
 
       listBox.innerHTML = Object.entries(groups)
@@ -76,10 +76,10 @@ const YEARS = [...new Set([2026, ...docs.map((d) => d.year).filter(Boolean)])].s
             <ul class="doc-list">
               ${items.map((d) => `
                 <li>
-                  <a class="doc-item" href="${d.url}" target="_blank" rel="noopener">
+                  <a class="doc-item" href="${esc(safeHref(d.url))}" target="_blank" rel="noopener">
                     <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
                     <span class="doc-item__name">${esc(d.name)}</span>
-                    <span class="doc-item__meta">${d.house ? esc(d.house) + ' · ' : ''}${d.year ? d.year + ' · ' : ''}${d.ext}</span>
+                    <span class="doc-item__meta">${d.house ? esc(d.house) + ' · ' : ''}${d.year ? esc(d.year) + ' · ' : ''}${esc(d.ext)}</span>
                   </a>
                 </li>`).join('')}
             </ul>

@@ -21,6 +21,7 @@ import Base from '../layouts/Base.astro';
 
   <script>
     import { COLLECTIONS } from '../lib/collections.mjs';
+    import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../lib/admin-data.js';
     import { setToken, getToken, readDataFile, writeDataFile, commitFiles, checkToken } from '../lib/github-admin.js';
 
     const rootEl = document.getElementById('admin-root');
@@ -165,6 +166,7 @@ import Base from '../layouts/Base.astro';
         ${hasVault ? '<p style="margin:10px 0 0;text-align:center"><a href="#" id="adm-reset" style="font-size:.82rem;color:#64748b">Сбросить привязку (сменить токен)</a></p>' : ''}
       </div></div>`;
       if (hasVault) {
+        window.__capToken = '';
         const tryRender = (n) => { if (window.smartCaptcha) window.smartCaptchaReady(); else if (n > 0) setTimeout(() => tryRender(n - 1), 500); };
         tryRender(20);
       }
@@ -175,7 +177,7 @@ import Base from '../layouts/Base.astro';
             if (document.getElementById('captcha-container') && !window.__capToken)
               return showLogin('Подтвердите, что вы не робот (галочка под паролем)');
             const pat = await vaultOpen(document.getElementById('pass').value);
-            if (pat === false) { window.__capToken = ''; return showLogin('Неверный пароль'); }
+            if (!pat) { window.__capToken = ''; return showLogin('Неверный пароль'); }
             setToken(pat); await checkToken();
           } else {
             const pat = document.getElementById('pat').value.trim();
@@ -213,7 +215,7 @@ import Base from '../layouts/Base.astro';
       const cfg = COLLECTIONS[name];
       if (!cfg) return viewDash();
       const data = await getCol(name);
-      const btn = (href, text, red) => `<a class="btn sm ${red ? 'red' : 'ghost'}" href="${href}">${text}</a>`;
+      const btn = (href, text, red) => `<a class="btn sm ${red ? 'red' : 'ghost'}" href="${esc(href)}">${text}</a>`;
       let rows = '';
       if (cfg.nested) {
         data.forEach((cat, ci) => {
@@ -251,7 +253,7 @@ import Base from '../layouts/Base.astro';
     /* ---------- поля формы ---------- */
     function fieldHtml(f, val, extra) {
       const v = val ?? (typeof f.defaults === 'string' ? f.defaults : '');
-      if (f.type === 'textarea') return `<textarea name="${esc(f.key)}">${esc(v)}</textarea>`;
+      if (f.type === 'textarea') return `<textarea name="${esc(f.key)}" ${f.required ? 'required' : ''}>${esc(v)}</textarea>`;
       if (f.type === 'checkbox') return `<label style="display:flex;gap:9px;align-items:center;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" ${v ? 'checked' : ''} style="width:18px;height:18px"> да</label>`;
       if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
       if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}">`;
@@ -276,7 +278,7 @@ import Base from '../layouts/Base.astro';
           <div id="drop-txt" style="padding:8px 0">Перетащите файл сюда или <u>выберите на диске</u><br><span class="muted">PDF, DOCX, XLSX, картинки — до 25 МБ</span></div>
         </div>
         ${v ? `<p class="muted" style="margin-top:6px">Текущий файл: ${esc(v)} — если не выбирать новый, останется он.</p>` : ''}`;
-      return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}" ${f.required ? 'required' : ''} placeholder="${esc(f.placeholder || '')}">`;
+      return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : f.type === 'url' ? 'url' : 'text'}" value="${esc(v)}" ${f.type === 'number' ? 'min="0" step="any"' : ''} ${f.required ? 'required' : ''} placeholder="${esc(f.placeholder || '')}">`;
     }
 
     /* ---------- форма ---------- */
@@ -287,9 +289,8 @@ import Base from '../layouts/Base.astro';
       const isNew = idx === 'new';
       let rec = null, fields = cfg.fields;
       if (!isNew) {
-        if (cfg.nested) { const [ci, ii] = idx.split('.').map(Number); rec = data[ci]?.items?.[ii]; fields = cfg.itemFields; }
-        else if (cfg.dict) rec = data[idx];
-        else rec = data[+idx];
+        rec = recordAt(data, cfg, idx);
+        if (cfg.nested) fields = cfg.itemFields;
         if (rec == null) { toast('Запись не найдена', true); return viewList(name); }
       } else if (cfg.nested) { fields = cfg.itemFields; rec = {}; }
       if (isNew && cfg.defaults) rec = { ...(cfg.defaults()), ...(rec || {}) };
@@ -321,10 +322,10 @@ import Base from '../layouts/Base.astro';
         const fillNums = () => {
           const nums = MAP[st.value] || [];
           let h = '<option value="">— выберите номер —</option>';
-          if (st.value === '__other') { nm.innerHTML = h; nm.value = '__other'; no.style.display = 'block'; return; }
+          if (st.value === '__other') { nm.innerHTML = '<option value="__other">Другой номер</option>'; nm.value = '__other'; no.style.display = 'block'; return; }
           no.style.display = 'none';
-          h += nums.map(n => `<option ${n === cur ? 'selected' : ''}>${n}</option>`).join('');
-          if (cur && !nums.includes(cur)) h += `<option selected>${cur}</option>`;
+          h += nums.map(n => `<option ${n === cur ? 'selected' : ''}>${esc(n)}</option>`).join('');
+          if (cur && !nums.includes(cur)) h += `<option selected>${esc(cur)}</option>`;
           h += '<option value="__other">➕ Другой номер…</option>';
           nm.innerHTML = h;
         };
@@ -338,7 +339,7 @@ import Base from '../layouts/Base.astro';
       if (dz) {
         const fi = document.getElementById('__file'), tx = document.getElementById('drop-txt');
         const show = (n) => { tx.innerHTML = `<b>${esc(n)}</b><br><span class="muted">будет загружен при сохранении</span>`; dz.style.borderColor = '#16a34a'; };
-        dz.onclick = () => fi.click();
+        dz.onclick = (event) => { if (event.target !== fi) fi.click(); };
         fi.onchange = () => { pickedFile = fi.files[0] || null; if (pickedFile) show(pickedFile.name); };
         dz.ondragover = (e) => { e.preventDefault(); dz.style.borderColor = '#3b82f6'; dz.style.background = '#eff6ff'; };
         dz.ondragleave = () => { dz.style.borderColor = ''; dz.style.background = ''; };
@@ -347,18 +348,22 @@ import Base from '../layouts/Base.astro';
 
       document.getElementById('adm-form').onsubmit = async (e) => {
         e.preventDefault();
+        const submit = e.target.querySelector('button[type=submit]');
+        if (submit.disabled) return;
+        submit.disabled = true;
         const msg = document.getElementById('form-msg');
         msg.style.color = '#64748b'; msg.textContent = 'Сохраняю…';
         const fd = new FormData(e.target);
         try {
-          const recNew = {};
+          let recNew = {};
           for (const f of fields) {
             if (f.type === 'checkbox') recNew[f.key] = !!fd.get(f.key);
             else if (f.type === 'number') recNew[f.key] = fd.get(f.key) === '' ? null : Number(fd.get(f.key));
             else if (f.type === 'datetime') recNew[f.key] = fromIsoDT(fd.get(f.key));
             else if (f.type !== 'file') recNew[f.key] = String(fd.get(f.key) ?? '');
           }
-          const dataNow = await getCol(name);
+          const dataNow = structuredClone(data);
+          const expectedSha = FILESHA[name];
 
           if (name === 'houses') {
             recNew.street = (recNew.street === '__other' ? String(fd.get('street_other') || '') : String(recNew.street || '')).trim();
@@ -375,39 +380,46 @@ import Base from '../layouts/Base.astro';
           if (fileField) {
             const oldUrl = isNew ? '' : (rec?.[fileField.key] || '');
             if (pickedFile) {
-              if (pickedFile.size > 25 * 1024 * 1024) throw new Error('Файл больше 25 МБ');
-              recNew[fileField.key] = '/documents/' + safeName(pickedFile.name);
+              validateUpload(pickedFile);
+              recNew[fileField.key] = '/documents/' + crypto.randomUUID() + '-' + safeName(pickedFile.name);
             } else recNew[fileField.key] = oldUrl;
             if (!recNew[fileField.key]) throw new Error('Нужно выбрать файл');
             const mExt = recNew[fileField.key].split('.').pop();
             if (mExt && mExt.length <= 5) recNew.ext = mExt.toUpperCase();
           }
 
-          for (const k of Object.keys(recNew)) if (recNew[k] === '' || recNew[k] === null) delete recNew[k];
-          if (isNew && cfg.defaults && !cfg.nested) { recNew.id ??= Date.now(); }
+          recNew = mergeRecord(rec || {}, recNew, fields);
 
           if (cfg.nested) {
             if (isNew) dataNow[+fd.get('__cat') || 0].items.push(recNew);
             else { const [ci, ii] = idx.split('.').map(Number); dataNow[ci].items[ii] = recNew; }
           } else if (cfg.dict) {
             const key = String(fd.get('__key') || '').trim();
-            if (isNew && !key) throw new Error('Нужен ключ');
+            validateKey(key, dataNow, isNew);
             dataNow[isNew ? key : idx] = recNew;
           } else {
             if (isNew) dataNow.push(recNew); else dataNow[+idx] = recNew;
           }
 
           const label = `${isNew ? 'добавлено' : 'изменено'} — ${cfg.label}`;
-          if (pickedFile && fileField) {
+          if (name === 'houses') {
+            const geoFile = await readDataFile('houses_geo.json');
+            const registry = (await readDataFile('competitors.json')).data;
+            const geo = updateHouseGeo(isNew ? null : rec, recNew, geoFile.data, registry);
+            await commitFiles([
+              { path: 'src/data/houses.json', text: JSON.stringify(dataNow, null, 1) + '\n', expectedSha },
+              { path: 'src/data/houses_geo.json', text: JSON.stringify(geo, null, 1) + '\n', expectedSha: geoFile.sha },
+            ], `admin: ${label}`);
+          } else if (pickedFile && fileField) {
             const bytes = new Uint8Array(await pickedFile.arrayBuffer());
             let bin = '';
             for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
             await commitFiles([
               { path: 'public' + recNew[fileField.key], base64: btoa(bin) },
-              { path: 'src/data/' + cfg.file, text: JSON.stringify(dataNow, null, 1) + '\n' },
+              { path: 'src/data/' + cfg.file, text: JSON.stringify(dataNow, null, 1) + '\n', expectedSha },
             ], `admin: ${label} (+файл)`);
           } else {
-            await writeDataFile(cfg.file, dataNow, FILESHA[name], `admin: ${label}`);
+            await writeDataFile(cfg.file, dataNow, expectedSha, `admin: ${label}`);
           }
           const fresh = await readDataFile(cfg.file);
           CACHE[name] = fresh.data; FILESHA[name] = fresh.sha;
@@ -416,7 +428,7 @@ import Base from '../layouts/Base.astro';
           location.hash = '#/c/' + name;
         } catch (err) {
           msg.style.color = '#dc2626'; msg.textContent = 'Ошибка: ' + err.message;
-        }
+        } finally { submit.disabled = false; }
       };
     }
 
@@ -424,7 +436,8 @@ import Base from '../layouts/Base.astro';
     async function viewDel(name, idx) {
       const cfg = COLLECTIONS[name];
       if (!cfg || cfg.readonly) return viewDash();
-      const data = await getCol(name);
+      const data = structuredClone(await getCol(name));
+      if (!recordAt(data, cfg, idx)) return viewList(name);
       let disp = idx;
       try {
         if (cfg.nested) { const [ci, ii] = idx.split('.').map(Number); disp = data[ci].items[ii].name; }
@@ -440,18 +453,21 @@ import Base from '../layouts/Base.astro';
             <a class="btn ghost" href="#/c/${name}">Отмена</a></div>
           <p id="del-msg" style="margin-top:10px"></p>
         </div>`, name);
-      document.getElementById('adm-del-yes').onclick = async () => {
+      document.getElementById('adm-del-yes').onclick = async (event) => {
+        if (event.currentTarget.disabled) return;
+        event.currentTarget.disabled = true;
         const msg = document.getElementById('del-msg');
         msg.style.color = '#64748b'; msg.textContent = 'Сохраняю…';
         try {
           if (isHouse) {
             const h = data[+idx];
             h.archived = true;
-            const geo = (await readDataFile('houses_geo.json')).data;
+            const geoFile = await readDataFile('houses_geo.json');
+            const geo = geoFile.data;
             const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
             const g = geo.find(x => norm(x.street) === norm(h.street) && norm(String(x.num)) === norm(String(h.num)));
-            const files = [{ path: 'src/data/houses.json', text: JSON.stringify(data, null, 1) + '\n' }];
-            if (g) { g.archived = true; files.push({ path: 'src/data/houses_geo.json', text: JSON.stringify(geo, null, 1) + '\n' }); }
+            const files = [{ path: 'src/data/houses.json', text: JSON.stringify(data, null, 1) + '\n', expectedSha: FILESHA.houses }];
+            if (g) { g.archived = true; files.push({ path: 'src/data/houses_geo.json', text: JSON.stringify(geo, null, 1) + '\n', expectedSha: geoFile.sha }); }
             await commitFiles(files, `admin: дом в архив — ул. ${h.street}, ${h.num}`);
             delete CACHE['houses_geo'];
           } else {
@@ -469,8 +485,8 @@ import Base from '../layouts/Base.astro';
     }
 
     async function viewRestore(idx) {
-      const data = await getCol('houses');
-      const h = data[+idx];
+      const data = structuredClone(await getCol('houses'));
+      const h = recordAt(data, COLLECTIONS.houses, idx);
       if (!h) return viewList('houses');
       shell('Восстановление дома', `
         <div class="card" style="max-width:480px">
@@ -481,14 +497,17 @@ import Base from '../layouts/Base.astro';
             <a class="btn ghost" href="#/c/houses">Отмена</a></div>
           <p id="res-msg" style="margin-top:10px"></p>
         </div>`, 'houses');
-      document.getElementById('adm-restore-yes').onclick = async () => {
+      document.getElementById('adm-restore-yes').onclick = async (event) => {
+        if (event.currentTarget.disabled) return;
+        event.currentTarget.disabled = true;
         try {
           delete h.archived;
-          const geo = (await readDataFile('houses_geo.json')).data;
+          const geoFile = await readDataFile('houses_geo.json');
+            const geo = geoFile.data;
           const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
           const g = geo.find(x => norm(x.street) === norm(h.street) && norm(String(x.num)) === norm(String(h.num)));
-          const files = [{ path: 'src/data/houses.json', text: JSON.stringify(data, null, 1) + '\n' }];
-          if (g) { delete g.archived; files.push({ path: 'src/data/houses_geo.json', text: JSON.stringify(geo, null, 1) + '\n' }); }
+          const files = [{ path: 'src/data/houses.json', text: JSON.stringify(data, null, 1) + '\n', expectedSha: FILESHA.houses }];
+          if (g) { delete g.archived; files.push({ path: 'src/data/houses_geo.json', text: JSON.stringify(geo, null, 1) + '\n', expectedSha: geoFile.sha }); }
           await commitFiles(files, `admin: дом возвращён из архива — ул. ${h.street}, ${h.num}`);
           delete CACHE['houses']; delete CACHE['houses_geo']; STREETS = null;
           toast('Дом восстановлен. Сайт обновится через ~2–3 минуты.');
@@ -525,12 +544,12 @@ import Base from '../layouts/Base.astro';
       const h = location.hash.replace(/^#\/?/, '');
       const parts = h.split('/');
       try {
-        if (parts[0] === 'c' && parts[2] === 'edit') return viewEdit(parts[1], parts[3]);
-        if (parts[0] === 'c' && parts[2] === 'del') return viewDel(parts[1], parts[3]);
-        if (parts[0] === 'c' && parts[1] === 'houses' && parts[2] === 'restore') return viewRestore(parts[3]);
-        if (parts[0] === 'c' && parts[1]) return viewList(parts[1]);
+        if (parts[0] === 'c' && parts[2] === 'edit') return await viewEdit(parts[1], parts[3]);
+        if (parts[0] === 'c' && parts[2] === 'del') return await viewDel(parts[1], parts[3]);
+        if (parts[0] === 'c' && parts[1] === 'houses' && parts[2] === 'restore') return await viewRestore(parts[3]);
+        if (parts[0] === 'c' && parts[1]) return await viewList(parts[1]);
         if (parts[0] === 'pass') return viewPass();
-        return viewDash();
+        return await viewDash();
       } catch (e) {
         if (/Токен отклонён/.test(e.message)) { setToken(''); showLogin(e.message); return; }
         rootEl.innerHTML = `<div class="adm-fixed" style="display:flex;align-items:center;justify-content:center"><div class="card" style="max-width:480px"><p style="color:#dc2626">${esc(e.message)}</p><p><a href="#/">← В админку</a></p></div></div>`;
@@ -597,7 +616,7 @@ import Base from '../layouts/Base.astro';
     .adm-fixed .drop{border:2px dashed #e5eaf2;border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:#fafbfe}
     .toast{position:fixed;right:22px;bottom:22px;z-index:99;display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(15,23,42,.25);max-width:min(420px,90vw)}
     .toast.ok{background:#16a34a}.toast.err{background:#dc2626}
-    .authpage{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(1000px 500px at 20% 0%,#1e3a8a 0%,#0b1220 55%),#0b1220;padding:20px}
+    .authpage{overflow:auto;position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(1000px 500px at 20% 0%,#1e3a8a 0%,#0b1220 55%),#0b1220;padding:20px}
     .authcard{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px;box-shadow:0 25px 60px rgba(0,0,0,.45)}
     .authcard .alogo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:6px;text-align:center}
     .authcard .alogo img{width:200px;height:auto;border-radius:10px}
@@ -607,6 +626,7 @@ import Base from '../layouts/Base.astro';
     .authcard input:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
     .authcard .muted{color:#64748b;font-size:.85rem}
     .authcard .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;background:#1d4ed8;color:#fff}
+    @media(max-width:480px){.adm-fixed .main{padding:12px;overflow-wrap:anywhere}.adm-fixed .userchip{display:none}.authcard{padding:20px}.authpage{align-items:flex-start}.adm-fixed .row{align-items:stretch}.adm-fixed .btn.sm{padding:6px}.adm-fixed .brand{padding:10px 4px}}
     @media(max-width:900px){.adm-fixed .side{width:66px}.adm-fixed .brand b,.adm-fixed .brand span,.adm-fixed .snav .cap,.adm-fixed .snav a .n,.adm-fixed .snav a span.t{display:none}.adm-fixed .snav a{justify-content:center;padding:11px}.adm-fixed .main{padding:18px}}
   </style>
 </Base>

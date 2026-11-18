@@ -1,4 +1,6 @@
 ---
+import { articleHtml } from '../../lib/article-html.js';
+import { safeHref } from '../../lib/public-safety.js';
 import Base from '../../layouts/Base.astro';
 import useful from '../../data/useful.json';
 
@@ -13,7 +15,7 @@ const { a } = Astro.props;
     <nav class="crumbs"><a href="/">Главная</a> → <a href="/useful">Полезное</a> → <span>{a.title}</span></nav>
     <article class="article">
       <h1 class="article__title">{a.title}</h1>
-      <div class="article__body" set:html={a.body} />
+      <div class="article__body" set:html={articleHtml(a.body)} />
     </article>
   </div>
 </Base>

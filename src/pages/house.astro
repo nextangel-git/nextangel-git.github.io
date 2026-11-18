@@ -1,25 +1,21 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getHouses } from '../lib/content.js';
-
-const houses = await getHouses();
-import housesGeoAll from '../data/houses_geo.json';
-import docsAll from '../data/documents.json';
-const housesGeo = housesGeoAll.filter((h) => !h.archived); // архивные не показываем
-const docs = docsAllDocs(docsAll);
-function docsAllDocs(all) {
-  // реальные документы: протоколы конкретного дома и общие — без выдуманных заглушек
-  return all.map((d) => ({ name: d.name, url: d.url, ext: d.ext, year: d.year, house: d.house || '', cat: d.cat }));
-}
 ---
 <Base title="Карточка дома — УК «Жилкомсервис»"
       description="Карточка многоквартирного дома в управлении ООО УК «Жилкомсервис»: документы, протоколы собраний, отчёты, тарифы.">
+  <noscript><div class="container house__wrap"><h1>Карточка дома</h1><p>Для отображения сведений включите JavaScript. Информацию о доме можно уточнить в приёмной: <a href="tel:83913121374">8 (391-31) 2-13-74</a>.</p></div></noscript>
   <div id="house-root"></div>
 
-  <script define:vars={{ houses, housesGeo, docs }}>
+  <script>
+    import housesAll from '../data/houses.json';
+    import housesGeoAll from '../data/houses_geo.json';
+    import docs from '../data/documents.json';
+    import { escapeHtml as esc, safeHref } from '../lib/public-safety.js';
+    const houses = housesAll.filter(h => !h.archived);
+    const housesGeo = housesGeoAll.filter(h => !h.archived);
     const root = document.getElementById('house-root');
     const params = new URLSearchParams(location.search);
-    const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
+    const norm = (s) => String(s ?? '').toLowerCase().replace(/ё/g, 'е').trim();
     const house = houses.find(
       (h) => norm(h.street) === norm(params.get('street')) && norm(h.num) === norm(params.get('num'))
     );
@@ -35,16 +31,16 @@ function docsAllDocs(all) {
       const mine = docs.filter((d) => norm(d.house) === norm(addr));
       const gisLink = `<p class="house__note" style="margin-top:14px">${mine.length ? 'Также документы' : 'Документы'} по дому — в <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a> (реестр МКД, поиск по адресу).</p>`;
       if (!mine.length) return gisLink;
-      const byCat = {};
+      const byCat = Object.create(null);
       for (const d of mine) (byCat[d.cat] ??= []).push(d);
       return Object.entries(byCat).map(([cat, items]) => `
         <section class="doc-group">
-          <h3>${cat}</h3>
+          <h3>${esc(cat)}</h3>
           <ul class="doc-list">
             ${items.map((d) => `
-              <li><a class="doc-item" href="${d.url}" target="_blank" rel="noopener">${docIcon}
-                <span class="doc-item__name">${d.name}</span>
-                <span class="doc-item__meta">${d.year ? d.year + ' · ' : ''}${d.ext || ''}</span>
+              <li><a class="doc-item" href="${esc(safeHref(d.url))}" target="_blank" rel="noopener">${docIcon}
+                <span class="doc-item__name">${esc(d.name)}</span>
+                <span class="doc-item__meta">${d.year ? esc(d.year) + ' · ' : ''}${esc(d.ext)}</span>
               </a></li>`).join('')}
           </ul>
         </section>`).join('') + gisLink;
@@ -64,18 +60,18 @@ function docsAllDocs(all) {
       const reqUrl = `/request?street=${encodeURIComponent(house.street)}&num=${encodeURIComponent(house.num)}`;
       root.innerHTML = `
         <div class="container house__wrap">
-          <nav class="crumbs"><a href="/">Главная</a> → <a href="/#houses">Дома</a> → <span>${addr}</span></nav>
+          <nav class="crumbs"><a href="/">Главная</a> → <a href="/#houses">Дома</a> → <span>${esc(addr)}</span></nav>
           <div class="house__head">
             <div>
-              <h1>${addr}</h1>
+              <h1>${esc(addr)}</h1>
               <p class="house__sub"><span class="badge badge--ok">В управлении УК «Жилкомсервис»</span></p>
               <div class="house-facts">
-                ${house.year ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14z"/></svg><b>${house.year}</b><span>год постройки</span></div>` : ''}
-                ${house.floors ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M3 21h18v-2H5V5H3zM7 17h10v-2H7zm0-5h10V9H7z"/></svg><b>${house.floors}</b><span>этажей</span></div>` : ''}
-                ${house.entrances ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-6h6v6h6V10z"/></svg><b>${house.entrances}</b><span>подъезд${house.entrances === 1 ? '' : house.entrances < 5 ? 'а' : 'ов'}</span></div>` : ''}
-                ${house.flats ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><b>${house.flats}</b><span>квартир</span></div>` : ''}
+                ${house.year ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14z"/></svg><b>${esc(house.year)}</b><span>год постройки</span></div>` : ''}
+                ${house.floors ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M3 21h18v-2H5V5H3zM7 17h10v-2H7zm0-5h10V9H7z"/></svg><b>${esc(house.floors)}</b><span>этажей</span></div>` : ''}
+                ${house.entrances ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-6h6v6h6V10z"/></svg><b>${esc(house.entrances)}</b><span>подъезд${house.entrances === 1 ? '' : house.entrances < 5 ? 'а' : 'ов'}</span></div>` : ''}
+                ${house.flats ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><b>${esc(house.flats)}</b><span>квартир</span></div>` : ''}
                 ${house.area ? `<div class="stat"><svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zm2 2v10h14V7z"/></svg><b>${Math.round(house.area).toLocaleString('ru-RU')}</b><span>м² площади</span></div>` : ''}
-                ${house.ukSince ? `<div class="stat stat--wide"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 10.6 4.2 2.5-.8 1.3-4.9-3V7h1.5z"/></svg><span>в управлении с <b>${house.ukSince}</b></span></div>` : ''}
+                ${house.ukSince ? `<div class="stat stat--wide"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 10.6 4.2 2.5-.8 1.3-4.9-3V7h1.5z"/></svg><span>в управлении с <b>${esc(house.ukSince)}</b></span></div>` : ''}
               </div>
             </div>
             <div class="house__actions">
@@ -107,7 +103,7 @@ function docsAllDocs(all) {
                 const techHtml = techRows.length ? `
                   <section class="doc-group" style="margin-top:26px">
                     <h3>Технические данные <span class="doc-group__n">ГИС ЖКХ</span></h3>
-                    <table class="tech-tbl">${techRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+                    <table class="tech-tbl">${techRows.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table>
                   </section>` : '';
                 const kap = house.kapremont;
                 const kapHtml = kap && kap.length ? `
@@ -115,8 +111,8 @@ function docsAllDocs(all) {
                     <h3>Капитальный ремонт <span class="doc-group__n">план ГИС ЖКХ</span></h3>
                     <ul class="doc-list">
                       ${kap.map(k => `<li class="doc-item" style="cursor:default">${docIcon}
-                        <span class="doc-item__name">${k.work}</span>
-                        <span class="doc-item__meta">план: ${k.year}${k.year <= now ? ' (год прошёл)' : ''}</span>
+                        <span class="doc-item__name">${esc(k.work)}</span>
+                        <span class="doc-item__meta">план: ${esc(k.year)}${k.year < now ? ' (год прошёл)' : ''}</span>
                       </li>`).join('')}
                     </ul>
                   </section>` : '';

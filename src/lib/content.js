@@ -1,5 +1,6 @@
 // Слой данных: локальные JSON-файлы (src/data/). Правятся через свою админку
-// (scripts/rebuild-server.mjs → /admin) или вручную. Никаких внешних CMS.
+// (/admin → GitHub API) или вручную. Никаких внешних CMS.
+import { newsTimestamp } from './public-safety.js';
 import housesLocal from '../data/houses.json';
 import docsLocal from '../data/documents.json';
 import newsLocal from '../data/news.json';
@@ -19,15 +20,14 @@ export async function getNews() {
   return newsLocal.map((n) => ({
     ...n,
     slug: n.slug || (n.url && (n.url.match(/news\/(\d+)\.html/) || [])[1]) || String(n.id),
-  }));
+  })).sort((a, b) => newsTimestamp(b.date) - newsTimestamp(a.date));
 }
 
 export async function getServices() {
   return servicesLocal;
 }
 
-// Отключения: активные, не истёкшие по дате
+// Даты проверяются также в браузере: статический HTML живёт дольше сборки.
 export async function getShutdowns() {
-  const now = new Date();
-  return shutdownsLocal.filter((s) => s.active !== false && (!s.until || new Date(s.until) >= now));
+  return shutdownsLocal.filter((s) => s.active !== false);
 }

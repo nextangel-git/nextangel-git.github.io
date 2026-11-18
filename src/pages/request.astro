@@ -1,8 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getHouses } from '../lib/content.js';
-
-const houses = await getHouses();
+const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
 ---
 <Base title="Оставить заявку — УК «Жилкомсервис»"
       description="Онлайн-заявка в управляющую компанию «Жилкомсервис», Сосновоборск.">
@@ -11,25 +9,27 @@ const houses = await getHouses();
     <div class="request-grid">
       <div>
         <h1>Оставить заявку</h1>
-        <p class="disc-intro">Опишите проблему — передадим диспетчеру. Если аварийная ситуация (прорыв, затопление, запах газа) — звоните сразу: <strong>8 (391-31) 2-00-62</strong> (круглосуточно).</p>
+        <p class="disc-intro">Опишите проблему — отправим обращение на электронную почту УК. Если аварийная ситуация (прорыв, затопление, запах газа) — звоните сразу: <strong>8 (391-31) 2-00-62</strong> (круглосуточно).</p>
 
-        <form id="request-form" class="form" novalidate>
+        <p id="request-unavailable" class="house__note">Если форма не появилась, включите JavaScript или напишите на <a href="mailto:uk@jks.ooo">uk@jks.ooo</a>. Телефон приёмной: 8 (391-31) 2-13-74.</p>
+        <form id="request-form" class="form" data-target={formTarget} method="post" novalidate hidden>
+          <fieldset id="request-fields" class="request-fields" aria-label="Обращение в УК" disabled>
           <label class="form__field">
             <span>ФИО *</span>
-            <input type="text" name="fio" required placeholder="Иванова Мария Петровна" />
+            <input type="text" name="fio" autocomplete="name" maxlength="150" required placeholder="Иванова Мария Петровна" />
           </label>
           <label class="form__field">
             <span>Телефон *</span>
-            <input type="tel" name="phone" required placeholder="+7 (___) ___-__-__" />
+            <input type="tel" name="phone" autocomplete="tel" maxlength="30" required placeholder="+7 (___) ___-__-__" />
           </label>
           <label class="form__field form__field--house">
             <span>Ваш дом *</span>
-            <input type="text" id="req-house" required placeholder="Начните вводить улицу…" autocomplete="off" />
+            <input type="text" id="req-house" name="house" maxlength="180" required placeholder="Начните вводить улицу…" autocomplete="off" />
             <div class="house-search__results" id="req-house-results" hidden></div>
           </label>
           <label class="form__field">
             <span>Квартира</span>
-            <input type="text" name="flat" placeholder="№ квартиры (необязательно)" />
+            <input type="text" name="flat" maxlength="20" placeholder="№ квартиры (необязательно)" />
           </label>
           <label class="form__field">
             <span>Тема *</span>
@@ -47,7 +47,7 @@ const houses = await getHouses();
           </label>
           <label class="form__field form__field--wide">
             <span>Описание проблемы *</span>
-            <textarea name="text" rows="5" required placeholder="Что случилось, где, когда началось…"></textarea>
+            <textarea name="text" rows="5" maxlength="5000" required placeholder="Что случилось, где, когда началось…"></textarea>
           </label>
           <label class="form__check form__field--wide">
             <input type="checkbox" name="pdn" required />
@@ -58,13 +58,19 @@ const houses = await getHouses();
           <div class="form__field--wide">
             <button type="submit" class="btn btn--primary">Отправить заявку</button>
           </div>
+          </fieldset>
         </form>
 
-        <div id="request-done" class="form-done" hidden>
-          <h2>Заявка сформирована</h2>
-          <p>Номер заявки: <strong id="request-num"></strong>. Диспетчер свяжется с вами. Статус можно отслеживать в личном кабинете.</p>
+        <div id="request-done" class="form-done" role="status" tabindex="-1" hidden>
+          <h2 id="request-heading">Обращение подготовлено</h2>
+          <p>Код обращения: <strong id="request-num"></strong>. Он поможет найти письмо при обращении в УК. Эта форма не регистрирует заявку в личном кабинете.</p>
           <p class="house__note"></p>
           <p><a id="request-mailto" class="btn btn--primary" href="#" hidden>Открыть готовое письмо</a></p>
+          <div id="request-copy" hidden>
+            <label class="form__field"><span>Текст письма — можно скопировать вручную</span><textarea id="request-copy-text" rows="8" readonly></textarea></label>
+            <button id="request-copy-button" class="btn btn--ghost" type="button">Скопировать текст</button>
+          </div>
+          <button id="request-back" class="btn btn--ghost" type="button" hidden>Вернуться к форме</button>
         </div>
       </div>
 
@@ -85,10 +91,12 @@ const houses = await getHouses();
     </div>
   </div>
 
-  <script define:vars={{ houses }}>
+  <script>
+    import housesAll from '../data/houses.json';
+    const houses = housesAll.filter(h => !h.archived);
     const houseInput = document.getElementById('req-house');
     const houseResults = document.getElementById('req-house-results');
-    const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
+    const norm = (s) => String(s ?? '').toLowerCase().replace(/ё/g, 'е').trim();
 
     const params = new URLSearchParams(location.search);
     if (params.get('street') && params.get('num')) {
@@ -117,37 +125,38 @@ const houses = await getHouses();
     });
 
     const form = document.getElementById('request-form');
-    const formShownAt = Date.now();
+    let submitting = false;
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (submitting) return;
+      const phone = form.elements.phone;
+      phone.setCustomValidity(phone.value.replace(/\D/g, '').length >= 10 ? '' : 'Введите телефон с кодом города или мобильного оператора.');
+      for (const name of ['fio', 'text']) {
+        const field = form.elements[name];
+        field.setCustomValidity(field.value.trim() ? '' : 'Заполните это поле.');
+      }
+      houseInput.setCustomValidity(houseInput.value.trim() ? '' : 'Укажите адрес дома.');
       if (!form.checkValidity()) {
         form.reportValidity();
         return;
       }
-      // антиспам: ханипот + время заполнения (< 3 сек — бот)
-      const isBot = form.elements.company.value !== '' || Date.now() - formShownAt < 3000;
-      const num = 'ЖКС-' + new Date().toISOString().slice(2, 10).replaceAll('-', '') + '-' + String(Math.floor(Math.random() * 900) + 100);
-      if (isBot) {
-        // боту отвечаем «успехом», но ничего не отправляем
-        form.hidden = true;
-        document.getElementById('request-num').textContent = num;
-        document.getElementById('request-done').hidden = false;
-        return;
-      }
+      // Honeypot blocks automated submissions without silently discarding quick human input.
+      if (form.elements.company.value !== '') return;
+      const num = 'ЖКС-' + crypto.randomUUID();
       const btn = form.querySelector('button[type=submit]');
+      submitting = true;
       btn.disabled = true;
       btn.textContent = 'Отправляем…';
 
-      // Реальная отправка на почту УК через FormSubmit (без бэкенда).
-      // Адрес назначения — проектный; при запуске заменить на почту УК (первая заявка = письмо-подтверждение).
-      const FORM_TARGET = 'jkssosnovoborsk@fldubai.com';
+      const FORM_TARGET = form.dataset.target;
       const fd = new FormData(form);
       const payload = {
         _subject: `Заявка ${num} с сайта: ${fd.get('topic')}`,
         'Номер заявки': num,
         'ФИО': fd.get('fio'),
         'Телефон': fd.get('phone'),
-        'Дом': fd.get('req-house') || houseInput.value,
+        'Дом': houseInput.value,
         'Квартира': fd.get('flat') || '—',
         'Тема': fd.get('topic'),
         'Описание': fd.get('text'),
@@ -159,6 +168,7 @@ const houses = await getHouses();
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(20000),
         });
         const data = await res.json().catch(() => null);
         sent = res.ok && data && String(data.success) === 'true';
@@ -170,12 +180,13 @@ const houses = await getHouses();
       const note = done.querySelector('.house__note');
       const mailtoBtn = document.getElementById('request-mailto');
       if (sent) {
-        note.textContent = 'Заявка ушла в управляющую компанию по электронной почте.';
+        document.getElementById('request-heading').textContent = 'Сервис принял обращение';
+        note.textContent = 'Сервис отправки принял письмо для УК. Это не подтверждение регистрации у диспетчера. Если вопрос срочный или ответ не поступает, позвоните: 8 (391-31) 2-13-74.';
         note.style.background = '';
         mailtoBtn.hidden = true;
       } else {
-        // запасной путь: письмо через почтовый клиент жителя (работает всегда)
-        note.textContent = 'Автоотправка недоступна из вашей сети. Нажмите кнопку ниже — откроется готовое письмо в вашей почте, останется нажать «Отправить». Или позвоните: 8 (391-31) 2-13-74.';
+        document.getElementById('request-heading').textContent = 'Отправка не подтверждена';
+        note.textContent = 'Не удалось подтвердить отправку. Откройте готовое письмо и отправьте его из своей почты на uk@jks.ooo либо скопируйте текст ниже. Повторное письмо может продублировать обращение, если сервис успел его принять. Можно позвонить: 8 (391-31) 2-13-74.';
         note.style.background = '#fffbeb';
         const body = [
           `Номер заявки: ${num}`, `ФИО: ${fd.get('fio')}`, `Телефон: ${fd.get('phone')}`,
@@ -184,9 +195,40 @@ const houses = await getHouses();
         ].join('\n');
         mailtoBtn.href = `mailto:uk@jks.ooo?subject=${encodeURIComponent('Заявка ' + num + ': ' + fd.get('topic'))}&body=${encodeURIComponent(body)}`;
         mailtoBtn.hidden = false;
+        document.getElementById('request-copy-text').value = body;
+        document.getElementById('request-copy').hidden = false;
+        document.getElementById('request-back').hidden = false;
       }
+      submitting = false;
       done.hidden = false;
+      done.focus();
       done.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+    document.getElementById('request-copy-button').addEventListener('click', async () => {
+      const field = document.getElementById('request-copy-text');
+      try {
+        await navigator.clipboard.writeText(field.value);
+        document.getElementById('request-copy-button').textContent = 'Текст скопирован';
+      } catch { field.focus(); field.select(); }
+    });
+    document.getElementById('request-back').addEventListener('click', () => {
+      document.getElementById('request-done').hidden = true;
+      document.getElementById('request-copy').hidden = true;
+      document.getElementById('request-back').hidden = true;
+      form.hidden = false;
+      const button = form.querySelector('button[type=submit]');
+      button.disabled = false;
+      button.textContent = 'Отправить заявку';
+      form.elements.fio.focus();
+    });
+    form.addEventListener('input', e => e.target.setCustomValidity?.(''));
+    // Make controls available only after every handler is installed. Without JS the
+    // browser must not send personal data through a native form submission.
+    document.getElementById('request-fields').disabled = false;
+    form.hidden = false;
+    document.getElementById('request-unavailable').hidden = true;
   </script>
+  <style>
+    .request-fields { grid-column: 1 / -1; display: grid; grid-template-columns: inherit; gap: inherit; min-width: 0; margin: 0; padding: 0; border: 0; }
+  </style>
 </Base>

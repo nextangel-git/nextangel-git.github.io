@@ -1,14 +1,18 @@
 ---
+import { russianPlural } from '../lib/public-safety.js';
 import Base from '../layouts/Base.astro';
+import { getHouses } from '../lib/content.js';
 import housesGeoAll from '../data/houses_geo.json';
 
 // точные цифры — считаются из данных по домам, а не пишутся руками; архивные (ушли из управления) не считаем
-const housesGeo = housesGeoAll.filter((h) => !h.archived);
-const houseCount = housesGeo.length;
+const houses = await getHouses();
+const activeAddresses = new Set(houses.map(h => `${h.street}|${h.num}`));
+const housesGeo = housesGeoAll.filter(h => !h.archived && activeAddresses.has(`${h.street}|${h.num}`));
+const houseCount = houses.length;
 const totalArea = Math.round(housesGeo.reduce((s, h) => s + (h.area || 0), 0));
 const totalFlats = housesGeo.reduce((s, h) => s + (h.flats || 0), 0);
 const years = housesGeo.map((h) => h.year).filter(Boolean);
-const oldest = Math.min(...years);
+const oldest = years.length ? Math.min(...years) : null;
 const fmt = (n) => n.toLocaleString('ru-RU');
 ---
 <Base title="О компании — УК «Жилкомсервис»"
@@ -18,14 +22,14 @@ const fmt = (n) => n.toLocaleString('ru-RU');
     <h1>О компании</h1>
 
     <div class="facts">
-      <div class="fact"><strong>{houseCount}</strong><span>дома в управлении</span></div>
+      <div class="fact"><strong>{houseCount}</strong><span>{russianPlural(houseCount, ['дом', 'дома', 'домов'])} в управлении</span></div>
       <div class="fact"><strong>{fmt(totalArea)} м²</strong><span>обслуживаемой площади</span></div>
       <div class="fact"><strong>{fmt(totalFlats)}</strong><span>квартир обслуживаем</span></div>
       <div class="fact"><strong>с 2007</strong><span>года работаем в Сосновоборске</span></div>
     </div>
 
     <div class="about-text">
-      <p>Управляющая компания «Жилкомсервис» оказывает услуги по управлению и обслуживанию многоквартирных жилых домов с 2007 года. В управлении находятся {houseCount} жилых дома города Сосновоборска общей площадью {fmt(totalArea)} м² — от дома {oldest} года постройки до новостроек.</p>
+      <p>Управляющая компания «Жилкомсервис» оказывает услуги по управлению и обслуживанию многоквартирных жилых домов с 2007 года. В управлении находятся {houseCount} {russianPlural(houseCount, ['жилой дом', 'жилых дома', 'жилых домов'])} города Сосновоборска общей площадью {fmt(totalArea)} м². {oldest && `Самый ранний год постройки в реестре — ${oldest}.`}</p>
       <p>Главная цель компании — профессиональное предоставление качественных жилищно-коммунальных услуг жителям. Приоритетным направлением с самого начала деятельности стало качество услуг в рамках договора управления и обеспечение технической эксплуатации многоквартирных домов.</p>
       <p class="section__note" style="margin-top:14px">Цифры по портфелю — точные, рассчитаны по перечню домов на {new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}.</p>
     </div>

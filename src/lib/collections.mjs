@@ -70,6 +70,7 @@ export const COLLECTIONS = {
     itemFields: [
       { key: 'name', label: 'Название услуги', type: 'text', required: true },
       { key: 'price', label: 'Цена, ₽ (пусто = «по запросу»)', type: 'number' },
+      { key: 'priceConfirmed', label: 'Цена подтверждена УК (показывать на сайте)', type: 'checkbox' },
       { key: 'unit', label: 'Единица', type: 'text', placeholder: 'шт / услуга / выезд' },
     ],
     display: (x) => x.name,
@@ -85,3 +86,6 @@ export const COLLECTIONS = {
     display: (x) => `${x.date || ''} — ${x.fio || ''} — ${x.topic || ''}`,
   },
 };
+
+// Route parameters must never resolve inherited Object properties.
+Object.setPrototypeOf(COLLECTIONS, null);

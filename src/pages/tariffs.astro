@@ -1,4 +1,5 @@
 ---
+import { safeHref } from '../lib/public-safety.js';
 import Base from '../layouts/Base.astro';
 import { getDocuments } from '../lib/content.js';
 
@@ -16,9 +17,11 @@ const groups = Object.entries(byYear).sort((a, b) => String(b[0]).localeCompare(
     <p class="disc-intro">
       Плата за содержание жилого помещения устанавливается решением общего собрания собственников —
       смотрите документы конкретного дома в его карточке (поиск на <a href="/#houses">главной</a>).
-      Ниже — тарифы на коммунальные ресурсы, утверждённые РЭК Красноярского края.
+      Документы с тарифами на коммунальные ресурсы публикуются по мере поступления.
     </p>
     <p class="house__note" style="margin-top:14px">Почему плата за содержание пересматривается каждый год и куда идут эти деньги — читайте в статье <a href="/useful/pochemu-rastet-tarif">«Повышение тарифа — в интересах собственника»</a>.</p>
+
+    {groups.length === 0 && <p class="house__note">Документы с действующими тарифами пока не опубликованы. Уточните тариф по своему дому в приёмной: <a href="tel:83913121374">8 (391-31) 2-13-74</a>.</p>}
 
     {groups.map(([year, items]) => (
       <section class="doc-group">
@@ -26,7 +29,7 @@ const groups = Object.entries(byYear).sort((a, b) => String(b[0]).localeCompare(
         <ul class="doc-list">
           {items.map((d) => (
             <li>
-              <a class="doc-item" href={d.url} target="_blank" rel="noopener">
+              <a class="doc-item" href={safeHref(d.url)} target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
                 <span class="doc-item__name">{d.name}</span>
                 <span class="doc-item__meta">{d.ext}</span>

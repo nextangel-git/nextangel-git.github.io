@@ -1,35 +1,37 @@
 // Классическая админка сайта УК «Жилкомсервис».
-// Логин/пароль (bcrypt) + TOTP 2FA (Google Authenticator / Яндекс Ключ) + SVG-капча.
+// Логин/пароль (bcrypt) + SVG-капча; 2FA отключена владельцем.
 // Запись: src/data/*.json → git commit + push → GitHub Actions пересобирают сайт.
 // GitHub PAT живёт только здесь, на сервере (в credential manager git) — в браузер не отдаётся.
 //
 // Запуск:   npm install && npm start          (порт 4777, http://127.0.0.1:4777)
 // Добавить пользователя:  node server.mjs --add-user <login> "<Имя>" <пароль>
-// Сброс 2FA пользователя: node server.mjs --reset-totp <login>
 // Сменить пароль:         node server.mjs --passwd <login> <новый пароль>
 
 import express from 'express';
 import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
-import { authenticator } from 'otplib';
-import QRCode from 'qrcode';
 import svgCaptcha from 'svg-captcha';
 import fs from 'node:fs';
+import { randomBytes, randomUUID, createHash, timingSafeEqual } from 'node:crypto';
 import path from 'node:path';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { npmCommand, runLogged } from './process.mjs';
 import { fileURLToPath } from 'node:url';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
+import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../src/lib/admin-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(__dirname, '..');
-const DATA = path.join(REPO, 'src', 'data');
-const USERS_FILE = path.join(__dirname, 'users.json');
+const TEST_DIR = process.env.NODE_ENV === 'test' ? process.env.JKS_ADMIN_TEST_DIR : null;
+const STATE = TEST_DIR ? path.resolve(TEST_DIR) : __dirname;
+const DATA = TEST_DIR ? path.join(STATE, 'data') : path.join(REPO, 'src', 'data');
+const DOCUMENTS = TEST_DIR ? path.join(STATE, 'documents') : path.join(REPO, 'public', 'documents');
+const USERS_FILE = path.join(STATE, 'users.json');
 const PORT = process.env.PORT || 4777;
 const HOST = process.env.HOST || '127.0.0.1';
 const DEV = process.env.NODE_ENV !== 'production';
-// TOTP: принимаем код из соседних 30-секундных окон (рассинхрон часов телефона)
-authenticator.options = { window: 1 };
+// 2FA отключена владельцем; вход по паролю и капче.
 // Режим хостинга: REBUILD=1 → после каждого сохранения пересобираем сайт локально (astro build),
 // GIT_PUSH=0 → не пушить в GitHub (репо тогда просто бэкап). На GitHub Pages: REBUILD=0, GIT_PUSH=1.
 const REBUILD = process.env.REBUILD === '1';
@@ -50,15 +52,7 @@ if (cli[0] === '--add-user') {
   if (users.find(u => u.login === login)) { console.error('Такой логин уже есть'); process.exit(1); }
   users.push({ login, name, passHash: bcrypt.hashSync(password, 10), totpSecret: null, role: users.length ? 'editor' : 'admin' });
   saveUsers(users);
-  console.log(`Пользователь «${login}» (${name}) создан, роль: ${users[users.length - 1].role}. При первом входе настроит 2FA по QR-коду.`);
-  process.exit(0);
-}
-if (cli[0] === '--reset-totp') {
-  const users = loadUsers();
-  const u = users.find(x => x.login === cli[1]);
-  if (!u) { console.error('Нет такого пользователя'); process.exit(1); }
-  u.totpSecret = null; saveUsers(users);
-  console.log(`2FA для «${cli[1]}» сброшена — при следующем входе настроит заново.`);
+  console.log(`Пользователь «${login}» (${name}) создан, роль: ${users[users.length - 1].role}. Вход по паролю и капче.`);
   process.exit(0);
 }
 if (cli[0] === '--passwd') {
@@ -71,24 +65,50 @@ if (cli[0] === '--passwd') {
 }
 
 /* ---------------- приложение ---------------- */
-// секрет сессий: из env, иначе — постоянный из файла admin/.secret (не в git), чтобы перезапуск не разлогинивал
-const SECRET_FILE = path.join(__dirname, '.secret');
+// секрет сессий: из env, иначе — постоянный из файла admin/.secret (не в git), сессии в памяти, перезапуск требует нового входа
+const SECRET_FILE = path.join(STATE, '.secret');
 function sessionSecret() {
   if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
   try { return fs.readFileSync(SECRET_FILE, 'utf8').trim(); } catch { }
-  const s = 'jks-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  const s = randomBytes(32).toString('hex');
   fs.writeFileSync(SECRET_FILE, s);
   return s;
 }
 
 const app = express();
 app.disable('x-powered-by');
+if (process.env.HTTPS === '1') app.set('trust proxy', 'loopback');
+app.use((req, res, next) => {
+  res.set({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin' });
+  next();
+});
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
   secret: sessionSecret(),
   resave: false, saveUninitialized: false,
   cookie: { httpOnly: true, sameSite: 'lax', secure: !DEV && process.env.HTTPS === '1', maxAge: 8 * 3600 * 1000 },
 }));
+
+// Every form gets a CSRF token; reject cross-origin writes before reading uploads.
+app.use((req, res, next) => {
+  req.session.csrf ||= randomBytes(32).toString('hex');
+  const send = res.send.bind(res);
+  res.send = (body) => send(typeof body === 'string' ? body.replace(/(<form\b[^>]*>)/gi, `$1<input type="hidden" name="__csrf" value="${req.session.csrf}">`) : body);
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    const expectedOrigin = `${req.protocol}://${req.get('host')}`;
+    if (req.get('sec-fetch-site') === 'cross-site' || (req.get('origin') && req.get('origin') !== expectedOrigin))
+      return res.status(403).send('Запрос с другого сайта отклонён');
+    if (!req.is('multipart/form-data')) return csrf(req, res, next);
+  }
+  next();
+});
+function csrf(req, res, next) {
+  const sent = String(req.body?.__csrf || '');
+  const expected = String(req.session.csrf || '');
+  if (Buffer.byteLength(sent) !== Buffer.byteLength(expected) || !sent || !timingSafeEqual(Buffer.from(sent), Buffer.from(expected)))
+    return res.status(403).send('Форма устарела. Обновите страницу.');
+  next();
+}
 
 // простая защита от перебора: 5 неудач → пауза 10 минут на IP
 const fails = new Map();
@@ -263,7 +283,7 @@ const okInline = (req) => req.query.ok ? `<p class="muted" style="color:var(--gr
 app.get('/login', (req, res) => {
   const cap = svgCaptcha.create({ size: 5, noise: 3, color: true, ignoreChars: '0oO1ilI' });
   req.session.captcha = cap.text.toLowerCase();
-  if (DEV) console.log(`[dev] капча: ${cap.text}`);
+  if (TEST_DIR) console.log(`[test] captcha: ${cap.text}`);
   res.send(authPage('Вход в админку', `
     ${errInline(req)}
     <form method="post" action="/login">
@@ -278,7 +298,7 @@ app.post('/login', (req, res) => {
   const ip = req.ip;
   if (throttled(ip)) return res.redirect('/login?err=' + encodeURIComponent('Слишком много попыток. Подождите 10 минут.'));
   const { login, password, captcha } = req.body;
-  const capOk = captcha && req.session.captcha && captcha.toLowerCase() === req.session.captcha;
+  const capOk = typeof captcha === 'string' && req.session.captcha && captcha.toLowerCase() === req.session.captcha;
   req.session.captcha = null;
   const u = loadUsers().find(x => x.login === String(login || '').trim());
   if (!capOk || !u || !bcrypt.compareSync(String(password || ''), u.passHash)) {
@@ -286,64 +306,12 @@ app.post('/login', (req, res) => {
     return res.redirect('/login?err=' + encodeURIComponent(!capOk ? 'Неверные символы с картинки' : 'Неверный логин или пароль'));
   }
   okFail(ip);
-  req.session.user = u.login; // 2FA отключена по решению владельца (17.11.2026) — логин+пароль+капча
-  res.redirect('/');
-});
-
-app.get('/setup-totp', async (req, res) => {
-  if (!req.session.pendingUser) return res.redirect('/login');
-  if (!req.session.pendingTotp) req.session.pendingTotp = authenticator.generateSecret();
-  const u = loadUsers().find(x => x.login === req.session.pendingUser);
-  const url = authenticator.keyuri(u.login, 'ЖКС Админка', req.session.pendingTotp);
-  const qr = await QRCode.toDataURL(url, { width: 200, margin: 1 });
-  res.send(authPage('Настройка 2FA', `
-    <p class="muted">Отсканируйте QR-код приложением <b>Google Authenticator</b>, <b>Яндекс Ключ</b> или любым TOTP-приложением, затем введите 6 цифр из него.</p>
-    <p style="text-align:center;margin:14px 0"><img src="${qr}" alt="QR для 2FA" style="border-radius:10px"></p>
-    <p class="muted" style="word-break:break-all">Не сканируется? Ключ вручную: <code>${req.session.pendingTotp}</code></p>
-    ${errInline(req)}
-    <form method="post" action="/setup-totp">
-      <label>Код из приложения</label><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" placeholder="123 456" style="text-align:center;font-size:1.2rem;letter-spacing:.3em">
-      <p style="margin:20px 0 0"><button class="btn" type="submit" style="width:100%;justify-content:center">Включить 2FA и войти</button></p>
-    </form>`));
-});
-
-app.post('/setup-totp', (req, res) => {
-  const { pendingUser, pendingTotp } = req.session;
-  if (!pendingUser || !pendingTotp) return res.redirect('/login');
-  if (!authenticator.check(String(req.body.code || '').replace(/\s/g, ''), pendingTotp))
-    return res.redirect('/setup-totp?err=' + encodeURIComponent('Код не подошёл — проверьте время на телефоне и попробуйте ещё раз'));
-  const users = loadUsers();
-  const u = users.find(x => x.login === pendingUser);
-  u.totpSecret = pendingTotp; saveUsers(users);
-  delete req.session.pendingTotp;
-  req.session.user = u.login;
-  res.redirect('/?ok=' + encodeURIComponent('Двухфакторная защита включена. Добро пожаловать!'));
-});
-
-app.get('/totp', (req, res) => {
-  if (!req.session.pendingUser) return res.redirect('/login');
-  res.send(authPage('Код подтверждения', `
-    <p class="muted">Введите 6-значный код из приложения (Google Authenticator / Яндекс Ключ).</p>
-    ${errInline(req)}
-    <form method="post" action="/totp">
-      <label>Код из приложения</label><input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code" autofocus placeholder="123 456" style="text-align:center;font-size:1.2rem;letter-spacing:.3em">
-      <p style="margin:20px 0 0"><button class="btn" type="submit" style="width:100%;justify-content:center">Подтвердить</button></p>
-    </form>`));
-});
-
-app.post('/totp', (req, res) => {
-  const ip = req.ip;
-  if (throttled(ip)) return res.redirect('/login?err=' + encodeURIComponent('Слишком много попыток. Подождите 10 минут.'));
-  const u = loadUsers().find(x => x.login === req.session.pendingUser);
-  if (!u) return res.redirect('/login');
-  if (!authenticator.check(String(req.body.code || '').replace(/\s/g, ''), u.totpSecret)) {
-    fail(ip);
-    if (DEV) console.log(`[dev] totp FAIL: got="${req.body.code}" expected="${authenticator.generate(u.totpSecret)}" user=${u.login} pending=${req.session.pendingUser}`);
-    return res.redirect('/totp?err=' + encodeURIComponent('Неверный код'));
-  }
-  okFail(ip);
-  req.session.user = u.login;
-  res.redirect('/');
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).send('Не удалось создать сессию');
+    req.session.user = u.login;
+    req.session.authVersion = u.passHash;
+    res.redirect('/');
+  });
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(() => res.redirect('/login')); });
@@ -351,7 +319,7 @@ app.get('/logout', (req, res) => { req.session.destroy(() => res.redirect('/logi
 /* ---------------- auth middleware ---------------- */
 function auth(req, res, next) {
   const u = loadUsers().find(x => x.login === req.session.user);
-  if (!u) return res.redirect('/login');
+  if (!u || req.session.authVersion !== u.passHash) return res.redirect('/login');
   req.user = u; next();
 }
 function adminOnly(req, res, next) {
@@ -365,7 +333,11 @@ app.get('/favicon.svg', (req, res) => res.sendFile(path.join(REPO, 'public', 'fa
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25 МБ на документ
+  limits: { fileSize: 25 * 1024 * 1024, files: 1, fields: 40 },
+  fileFilter: (req, file, done) => {
+    try { validateUpload({ name: file.originalname, size: 1 }); done(null, true); }
+    catch (error) { error.status = 400; done(error); }
+  }, // 25 МБ на документ
   defParamCharset: 'utf8', // иначе busboy ломает кириллицу в полях формы (latin1 по умолчанию)
 });
 
@@ -379,7 +351,18 @@ function safeName(name) {
 
 /* ---------------- данные + git + пересборка ---------------- */
 const readData = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
-const writeData = (file, data) => fs.writeFileSync(path.join(DATA, file), JSON.stringify(data, null, 1) + '\n');
+const writeData = (file, data) => {
+  const target = path.join(DATA, file);
+  const temporary = target + '.' + randomUUID() + '.tmp';
+  fs.writeFileSync(temporary, JSON.stringify(data, null, 1) + '\n');
+  fs.renameSync(temporary, target);
+};
+const revision = (data) => createHash('sha256').update(JSON.stringify(data)).digest('hex');
+function assertRevision(req, res, data) {
+  if (req.body.__revision === revision(data)) return true;
+  res.status(409).send('Данные изменились. Обновите список и повторите правку; чужие изменения не перезаписаны.');
+  return false;
+}
 
 let buildState = { running: false, last: null, ok: null };
 let buildTimer = null;
@@ -389,23 +372,33 @@ function scheduleRebuild() {
   buildTimer = setTimeout(() => {
     if (buildState.running) { scheduleRebuild(); return; } // подождём окончания текущей сборки
     buildState = { running: true, last: new Date(), ok: null };
-    const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-    const p = spawn(npm, ['run', 'build'], { cwd: REPO, shell: false });
-    const log = fs.createWriteStream(path.join(__dirname, 'build.log'));
-    p.stdout.pipe(log); p.stderr.pipe(log);
-    p.on('close', (code) => { buildState = { running: false, last: new Date(), ok: code === 0 }; });
+    const logFile = path.join(STATE, 'build.log');
+    try {
+      const [command, ...args] = npmCommand();
+      runLogged(command, args, { cwd: REPO, logFile,
+        onFinish: ({ code, error }) => { buildState = { running: false, last: new Date(), ok: code === 0, error }; },
+      });
+    } catch (error) {
+      buildState = { running: false, last: new Date(), ok: false, error: error.message };
+      try { fs.writeFileSync(logFile, error.message + '\n'); } catch { /* state still reports failure */ }
+    }
   }, 5000); // дебаунс 5 сек — серия правок = одна сборка
 }
 
-function gitSync(message) {
+function gitSync(message, changedPaths) {
+  if (TEST_DIR) return null;
   try {
-    execFileSync('git', ['add', 'src/data', 'public/documents'], { cwd: REPO, stdio: 'pipe' });
-    execFileSync('git', ['commit', '-m', message], { cwd: REPO, stdio: 'pipe' });
+    const paths = [...new Set(changedPaths)];
+    if (!paths.length || paths.some(file => !/^(src\/data\/[a-z_]+\.json|public\/documents\/[a-z0-9][a-z0-9.-]*)$/.test(file)))
+      throw new Error('Неверный список файлов для коммита');
+    execFileSync('git', ['add', '--', ...paths], { cwd: REPO, stdio: 'pipe' });
+    // Do not accidentally commit unrelated changes staged by the developer.
+    execFileSync('git', ['commit', '--only', '-m', message, '--', ...paths], { cwd: REPO, stdio: 'pipe' });
     if (GIT_PUSH) execFileSync('git', ['push', 'origin', 'main'], { cwd: REPO, stdio: 'pipe', timeout: 60000 });
     scheduleRebuild();
     return null;
   } catch (e) {
-    const out = String(e.stderr || e.message || '');
+    const out = String(e.stdout || '') + String(e.stderr || e.message || '');
     if (out.includes('nothing to commit') || out.includes('no changes added')) { scheduleRebuild(); return null; }
     return 'Сохранено локально, но git не удался: ' + out.slice(0, 300);
   }
@@ -521,7 +514,7 @@ function streetMap() {
 
 function fieldHtml(f, val) {
   const v = val ?? f.defaults ?? '';
-  if (f.type === 'textarea') return `<textarea name="${esc(f.key)}">${esc(v)}</textarea>`;
+  if (f.type === 'textarea') return `<textarea name="${esc(f.key)}" ${f.required ? 'required' : ''}>${esc(v)}</textarea>`;
   if (f.type === 'checkbox') return `<label style="display:flex;align-items:center;gap:9px;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" value="1" style="width:18px;height:18px" ${v ? 'checked' : ''}> да</label>`;
   if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   if (f.type === 'house') return `<select name="${esc(f.key)}">${houseOptions(v)}</select>`;
@@ -552,14 +545,14 @@ function fieldHtml(f, val) {
     ${v ? `<p class="muted" style="margin-top:6px">Текущий файл: <a href="https://nextangel-git.github.io${esc(v)}" target="_blank">${esc(v)}</a> — если не выбирать новый, останется он.</p>` : ''}
     <script>
     (function(){const dz=document.getElementById('drop'),fi=document.getElementById('__file'),tx=document.getElementById('drop-txt'),hid=document.getElementById('${esc(f.key)}_url');
-      const show=n=>{tx.innerHTML='<b>'+n+'</b><br><span class="muted">будет загружен при сохранении</span>';dz.style.borderColor='var(--green)';};
-      dz.onclick=()=>fi.click();
+      const show=n=>{tx.textContent=n+' — будет загружен при сохранении';dz.style.borderColor='var(--green)';};
+      dz.onclick=e=>{if(e.target!==fi)fi.click();};
       fi.onchange=()=>{if(fi.files[0])show(fi.files[0].name)};
       dz.ondragover=e=>{e.preventDefault();dz.style.borderColor='var(--blue2)';dz.style.background='#eff6ff'};
       dz.ondragleave=()=>{dz.style.borderColor='';dz.style.background=''};
       dz.ondrop=e=>{e.preventDefault();if(e.dataTransfer.files[0]){fi.files=e.dataTransfer.files;show(e.dataTransfer.files[0].name)}};
     })();</script>`;
-  return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}" ${f.required ? 'required' : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}>`;
+  return `<input name="${esc(f.key)}" type="${f.type === 'number' ? 'number' : f.type === 'url' ? 'url' : 'text'}" value="${esc(v)}" ${f.type === 'number' ? 'min="0" step="any"' : ''} ${f.required ? 'required' : ''} ${f.placeholder ? `placeholder="${esc(f.placeholder)}"` : ''}>`;
 }
 
 app.get('/c/:name/edit/:idx', auth, (req, res) => {
@@ -569,9 +562,8 @@ app.get('/c/:name/edit/:idx', auth, (req, res) => {
   const isNew = req.params.idx === 'new';
   let rec = null, fields = cfg.fields;
   if (!isNew) {
-    if (cfg.nested) { const [ci, ii] = req.params.idx.split('.').map(Number); rec = data[ci]?.items?.[ii]; fields = cfg.itemFields; }
-    else if (cfg.dict) rec = data[req.params.idx];
-    else rec = data[+req.params.idx];
+    rec = recordAt(data, cfg, req.params.idx);
+    if (cfg.nested) fields = cfg.itemFields;
     if (rec == null) return res.redirect(`/c/${req.params.name}?err=` + encodeURIComponent('Запись не найдена'));
   } else if (cfg.nested) { fields = cfg.itemFields; }
   if (isNew && cfg.defaults) rec = cfg.defaults();
@@ -581,6 +573,7 @@ app.get('/c/:name/edit/:idx', auth, (req, res) => {
   res.send(page((isNew ? 'Новая запись' : 'Изменение') + ' · ' + cfg.label, `
     <div class="card" style="max-width:720px">
     <form method="post" action="/c/${req.params.name}/save/${req.params.idx}" enctype="multipart/form-data">
+      <input type="hidden" name="__revision" value="${revision(data)}">
       ${keyField}${catField}
       ${fields.map(f => `<label>${esc(f.label)}${f.required ? ' <span style="color:var(--red)">*</span>' : ''}${f.placeholder ? `<span class="hint">напр. ${esc(f.placeholder)}</span>` : ''}</label>${fieldHtml(f, rec ? rec[f.key] : undefined)}`).join('')}
       <div class="row" style="margin-top:22px"><button class="btn" type="submit">Сохранить</button><a class="btn ghost" href="/c/${req.params.name}">Отмена</a></div>
@@ -588,17 +581,18 @@ app.get('/c/:name/edit/:idx', auth, (req, res) => {
     ${req.params.name === 'houses' ? `
     <script>
     (function(){
-      const MAP=${JSON.stringify(streetMap())};
+      const MAP=${JSON.stringify(streetMap()).replace(/</g, '\\u003c')};
+      const escapeHtml=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
       const st=document.getElementById('fld_street'),nm=document.getElementById('fld_num'),
             so=document.getElementById('fld_street_other'),no=document.getElementById('fld_num_other');
       const cur=nm.dataset.cur||'';
       function fillNums(){
         const nums=MAP[st.value]||[];
         let h='<option value="">— выберите номер —</option>';
-        if(st.value==='__other'){nm.innerHTML=h;nm.value='__other';no.style.display='block';return;}
+        if(st.value==='__other'){nm.innerHTML='<option value="__other">Другой номер</option>';nm.value='__other';no.style.display='block';return;}
         no.style.display='none';
-        h+=nums.map(n=>'<option '+(n===cur?'selected':'')+'>'+n+'</option>').join('');
-        if(cur&&!nums.includes(cur)&&cur)h+='<option selected>'+cur+'</option>';
+        h+=nums.map(n=>'<option '+(n===cur?'selected':'')+'>'+escapeHtml(n)+'</option>').join('');
+        if(cur&&!nums.includes(cur)&&cur)h+='<option selected>'+escapeHtml(cur)+'</option>';
         h+='<option value="__other">➕ Другой номер…</option>';
         nm.innerHTML=h;
       }
@@ -609,13 +603,17 @@ app.get('/c/:name/edit/:idx', auth, (req, res) => {
     </script>` : ''}`, req.user, req.params.name, req));
 });
 
-app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
+app.post('/c/:name/save/:idx', auth, upload.single('__file'), csrf, (req, res) => {
   const cfg = COLLECTIONS[req.params.name];
   if (!cfg || cfg.readonly) return res.redirect('/');
   const data = readData(cfg.file);
+  if (!assertRevision(req, res, data)) return;
   const isNew = req.params.idx === 'new';
   const fields = cfg.nested ? cfg.itemFields : cfg.fields;
-  const rec = {};
+  const changedPaths = ['src/data/' + cfg.file];
+  const previous = isNew ? (cfg.defaults?.() || {}) : recordAt(data, cfg, req.params.idx);
+  if (!previous) return res.status(404).send('Запись не найдена');
+  let rec = {};
   for (const f of fields) {
     if (f.type === 'checkbox') rec[f.key] = !!req.body[f.key];
     else if (f.type === 'number') rec[f.key] = req.body[f.key] === '' ? null : Number(req.body[f.key]);
@@ -625,12 +623,13 @@ app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
   // загрузка файла: поле типа 'file' — сохраняем в public/documents, url подставляем сами
   const urlField = fields.find(f => f.type === 'file');
   if (req.file && urlField) {
-    const dir = path.join(REPO, 'public', 'documents');
+    const dir = DOCUMENTS;
+    validateUpload({ name: req.file.originalname, size: req.file.size });
     fs.mkdirSync(dir, { recursive: true });
-    let fname = safeName(req.file.originalname);
-    while (fs.existsSync(path.join(dir, fname))) fname = fname.replace(/(\.[^.]+)$/, `-${Date.now() % 100000}$1`);
+    const fname = randomUUID() + '-' + safeName(req.file.originalname);
     fs.writeFileSync(path.join(dir, fname), req.file.buffer);
     rec[urlField.key] = '/documents/' + fname;
+    changedPaths.push('public/documents/' + fname);
   }
   // формат документа определяем сами из расширения файла/ссылки
   if (urlField && rec[urlField.key]) {
@@ -652,22 +651,29 @@ app.post('/c/:name/save/:idx', auth, upload.single('__file'), (req, res) => {
     if (isNew && !rec.src) rec.src = 'добавлен вручную через админку';
   }
   // пустые необязательные поля не храним
-  for (const k of Object.keys(rec)) if (rec[k] === '' || rec[k] === null) delete rec[k];
+  try { rec = mergeRecord(previous, rec, fields); }
+  catch (err) { return res.status(400).send(esc(err.message)); }
   if (fields.some(f => f.type === 'file') && !rec[fields.find(f => f.type === 'file').key])
     return res.redirect(`/c/${req.params.name}?err=` + encodeURIComponent('Нужно выбрать файл (или у записи должна быть ссылка)'));
-  if (isNew && cfg.defaults && !cfg.nested) Object.assign(rec, cfg.defaults(), rec);
+
   if (cfg.nested) {
     if (isNew) data[+req.body.__cat || 0].items.push(rec);
     else { const [ci, ii] = req.params.idx.split('.').map(Number); data[ci].items[ii] = rec; }
   } else if (cfg.dict) {
     const key = String(req.body.__key || '').trim();
-    if (isNew && !key) return res.redirect(`/c/${req.params.name}?err=` + encodeURIComponent('Нужен ключ'));
+    try { validateKey(key, data, isNew); } catch (err) { return res.status(400).send(esc(err.message)); }
     if (isNew) data[key] = rec; else data[req.params.idx] = rec;
   } else {
     if (isNew) data.push(rec); else data[+req.params.idx] = rec;
   }
+  if (req.params.name === 'houses') {
+    const geo = updateHouseGeo(isNew ? null : previous, rec, readData('houses_geo.json'), readData('competitors.json'));
+    writeData('houses_geo.json', geo);
+    changedPaths.push('src/data/houses_geo.json');
+    HOUSES_CACHE = null; STREETS_CACHE = null;
+  }
   writeData(cfg.file, data);
-  const warn = gitSync(`admin: ${isNew ? 'добавлено' : 'изменено'} — ${cfg.label}`);
+  const warn = gitSync(`admin: ${isNew ? 'добавлено' : 'изменено'} — ${cfg.label}`, changedPaths);
   const msg = warn || savedText();
   res.redirect(`/c/${req.params.name}?${warn ? 'err' : 'ok'}=` + encodeURIComponent(msg));
 });
@@ -676,6 +682,7 @@ app.get('/c/:name/del/:idx', auth, (req, res) => {
   const cfg = COLLECTIONS[req.params.name];
   if (!cfg || cfg.readonly) return res.redirect('/');
   const data = readData(cfg.file);
+  if (!recordAt(data, cfg, req.params.idx)) return res.status(404).send('Запись не найдена');
   let disp = req.params.idx;
   try {
     if (cfg.nested) { const [ci, ii] = req.params.idx.split('.').map(Number); disp = data[ci].items[ii].name; }
@@ -689,6 +696,7 @@ app.get('/c/:name/del/:idx', auth, (req, res) => {
         ? 'Дом исчезнет с сайта и с карты (ушёл в другую УК), но останется в базе внизу списка. Если дом вернётся к нам — восстановите его кнопкой «Вернуть из архива».'
         : 'Сайт пересоберётся без этой записи. Отменить можно только через git-историю.'}</p>
       <form method="post" action="/c/${req.params.name}/del/${req.params.idx}">
+        <input type="hidden" name="__revision" value="${revision(data)}">
         <div class="row" style="margin-top:18px"><button class="btn red" type="submit">${isHouse ? 'Да, в архив' : 'Да, удалить'}</button><a class="btn ghost" href="/c/${req.params.name}">Отмена</a></div>
       </form></div>`, req.user, req.params.name, req));
 });
@@ -697,6 +705,9 @@ app.post('/c/:name/del/:idx', auth, (req, res) => {
   const cfg = COLLECTIONS[req.params.name];
   if (!cfg || cfg.readonly) return res.redirect('/');
   const data = readData(cfg.file);
+  if (!assertRevision(req, res, data)) return;
+  if (!recordAt(data, cfg, req.params.idx)) return res.status(404).send('Запись не найдена');
+  const changedPaths = ['src/data/' + cfg.file];
   // дома не удаляем — переносим в архив (и помечаем в гео-данных, чтобы исчез с карты)
   if (req.params.name === 'houses') {
     const h = data[+req.params.idx];
@@ -707,47 +718,50 @@ app.post('/c/:name/del/:idx', auth, (req, res) => {
         const geo = readData('houses_geo.json');
         const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
         const g = geo.find(x => norm(x.street) === norm(h.street) && norm(String(x.num)) === norm(String(h.num)));
-        if (g) { g.archived = true; writeData('houses_geo.json', geo); }
+        if (g) { g.archived = true; writeData('houses_geo.json', geo); changedPaths.push('src/data/houses_geo.json'); }
       } catch { }
     }
-    const warn = gitSync(`admin: дом в архив — ${h ? cfg.display(h) : req.params.idx}`);
+    const warn = gitSync(`admin: дом в архив — ${h ? cfg.display(h) : req.params.idx}`, changedPaths);
     return res.redirect(`/c/houses?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || 'Дом перенесён в архив. Сайт обновится через ~2–3 минуты.'));
   }
   if (cfg.nested) { const [ci, ii] = req.params.idx.split('.').map(Number); data[ci].items.splice(ii, 1); }
   else if (cfg.dict) delete data[req.params.idx];
   else data.splice(+req.params.idx, 1);
   writeData(cfg.file, data);
-  const warn = gitSync(`admin: удалено — ${cfg.label}`);
+  const warn = gitSync(`admin: удалено — ${cfg.label}`, ['src/data/' + cfg.file]);
   res.redirect(`/c/${req.params.name}?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || savedText().replace('Сохранено', 'Удалено')));
 });
 
 /* ---------------- дома: восстановление из архива ---------------- */
 app.get('/c/houses/restore/:idx', auth, (req, res) => {
   const data = readData('houses.json');
-  const h = data[+req.params.idx];
+  const h = recordAt(data, COLLECTIONS.houses, req.params.idx);
   if (!h) return res.redirect('/c/houses?err=' + encodeURIComponent('Запись не найдена'));
   res.send(page('Восстановление дома', `
     <div class="card" style="max-width:480px">
       <p style="font-size:1.05rem">Вернуть дом <b>ул. ${esc(h.street)}, ${esc(h.num)}</b> из архива?</p>
       <p class="muted">Дом снова появится на сайте, на карте и в поиске — например, дом вернулся в наше управление.</p>
       <form method="post" action="/c/houses/restore/${req.params.idx}">
+        <input type="hidden" name="__revision" value="${revision(data)}">
         <div class="row" style="margin-top:18px"><button class="btn" type="submit">Да, вернуть</button><a class="btn ghost" href="/c/houses">Отмена</a></div>
       </form></div>`, req.user, 'houses', req));
 });
 
 app.post('/c/houses/restore/:idx', auth, (req, res) => {
   const data = readData('houses.json');
-  const h = data[+req.params.idx];
+  if (!assertRevision(req, res, data)) return;
+  const h = recordAt(data, COLLECTIONS.houses, req.params.idx);
   if (!h) return res.redirect('/c/houses?err=' + encodeURIComponent('Запись не найдена'));
+  const changedPaths = ['src/data/houses.json'];
   delete h.archived;
   writeData('houses.json', data);
   try {
     const geo = readData('houses_geo.json');
     const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
     const g = geo.find(x => norm(x.street) === norm(h.street) && norm(String(x.num)) === norm(String(h.num)));
-    if (g) { delete g.archived; writeData('houses_geo.json', geo); }
+    if (g) { delete g.archived; writeData('houses_geo.json', geo); changedPaths.push('src/data/houses_geo.json'); }
   } catch { }
-  const warn = gitSync(`admin: дом возвращён из архива — ул. ${h.street}, ${h.num}`);
+  const warn = gitSync(`admin: дом возвращён из архива — ул. ${h.street}, ${h.num}`, changedPaths);
   res.redirect(`/c/houses?${warn ? 'err' : 'ok'}=` + encodeURIComponent(warn || 'Дом восстановлен. Сайт обновится через ~2–3 минуты.'));
 });
 
@@ -772,13 +786,12 @@ const syncState = {};
 function syncRun(kind) {
   const cfg = SYNC[kind];
   if (!cfg || syncState[kind]?.running) return false;
-  const logFile = path.join(__dirname, `sync-${kind}.log`);
-  const log = fs.createWriteStream(logFile);
-  const p = spawn(cfg.cmd[0], cfg.cmd.slice(1), { cwd: cfg.cwd });
-  syncState[kind] = { running: true, startedAt: new Date(), exit: null };
-  p.stdout.pipe(log); p.stderr.pipe(log);
-  p.on('error', (e) => { syncState[kind] = { running: false, startedAt: syncState[kind].startedAt, exit: -1, err: e.message }; });
-  p.on('close', (code) => { syncState[kind] = { running: false, startedAt: syncState[kind].startedAt, exit: code }; });
+  const logFile = path.join(STATE, `sync-${kind}.log`);
+  const startedAt = new Date();
+  syncState[kind] = { running: true, startedAt, exit: null };
+  runLogged(cfg.cmd[0], cfg.cmd.slice(1), { cwd: cfg.cwd, logFile,
+    onFinish: ({ code, error }) => { syncState[kind] = { running: false, startedAt, exit: code, err: error }; },
+  });
   return true;
 }
 
@@ -837,6 +850,7 @@ app.post('/password', auth, (req, res) => {
   const u = users.find(x => x.login === req.user.login);
   if (!bcrypt.compareSync(String(old || ''), u.passHash)) return res.redirect('/password?err=' + encodeURIComponent('Текущий пароль неверен'));
   u.passHash = bcrypt.hashSync(String(new1), 10); saveUsers(users);
+  req.session.authVersion = u.passHash;
   res.redirect('/password?ok=' + encodeURIComponent('Пароль изменён'));
 });
 
@@ -847,7 +861,12 @@ app.get('/users', auth, adminOnly, (req, res) => {
   res.send(page('Пользователи', `
     <div class="tblwrap"><table><thead><tr><th>Пользователь</th><th>Роль</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="card" style="margin-top:18px;max-width:720px"><h2>Управление — через консоль сервера</h2>
-    <div class="mono">node server.mjs --add-user ivan "Иван (УК)" 'Пароль123!'<br>node server.mjs --passwd ivan 'НовыйПароль'<br>node server.mjs --reset-totp ivan</div></div>`, req.user, 'users', req));
+    <div class="mono">node server.mjs --add-user ivan "Иван (УК)" 'Пароль123!'<br>node server.mjs --passwd ivan 'НовыйПароль'<br></div></div>`, req.user, 'users', req));
+});
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  res.status(err instanceof multer.MulterError ? 400 : err.status || 500).send('Не удалось выполнить операцию. Проверьте поля и допустимый формат файла.');
 });
 
 app.listen(PORT, HOST, () => {

@@ -6,7 +6,30 @@ interface Props {
   description?: string;
 }
 const { title, description = '' } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovoborsk.surge.sh');
+const site = Astro.site ?? new URL('https://nextangel-git.github.io');
+const canonical = new URL(Astro.url.pathname, site);
+const noindex = ['/admin', '/404', '/house'].includes(Astro.url.pathname.replace(/\/$/, ''));
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'ООО УК «Жилкомсервис»',
+  legalName: 'ООО Управляющая компания «Жилкомсервис»',
+  url: site.href,
+  logo: new URL('/logo.svg', site).href,
+  email: 'uk@jks.ooo',
+  telephone: '+7-39131-2-13-74',
+  taxID: '7703617600',
+  foundingDate: '2006-11-29',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'ул. Ленинского Комсомола, 18, пом. 3',
+    addressLocality: 'Сосновоборск',
+    addressRegion: 'Красноярский край',
+    postalCode: '662501',
+    addressCountry: 'RU',
+  },
+  sameAs: ['https://vk.ru/ooojks'],
+};
 ---
 <!DOCTYPE html>
 <html lang="ru">
@@ -15,7 +38,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovo
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
   <meta name="description" content={description} />
-  <link rel="canonical" href={canonical} />
+  {!noindex && <link rel="canonical" href={canonical} />}
+  {noindex && <meta name="robots" content="noindex, follow" />}
+  <link rel="sitemap" href={new URL('/sitemap-index.xml', site)} />
   <meta property="og:type" content="website" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
@@ -24,31 +49,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovo
   <meta property="og:site_name" content="УК «Жилкомсервис» — Сосновоборск" />
   <meta name="theme-color" content="#1f304f" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "ООО УК «Жилкомсервис»",
-      "legalName": "ООО Управляющая компания «Жилкомсервис»",
-      "url": "https://jks-sosnovoborsk.surge.sh",
-      "logo": "https://jks-sosnovoborsk.surge.sh/logo.svg",
-      "email": "uk@jks.ooo",
-      "telephone": "+7-39131-2-13-74",
-      "taxID": "7703617600",
-      "foundingDate": "2006-11-29",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "ул. Ленинского Комсомола, 18, пом. 3",
-        "addressLocality": "Сосновоборск",
-        "addressRegion": "Красноярский край",
-        "postalCode": "662501",
-        "addressCountry": "RU"
-      },
-      "sameAs": ["https://vk.ru/ooojks"]
-    }
-  </script>
+  <script type="application/ld+json" set:html={JSON.stringify(organization).replace(/</g, '\\u003c')} />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Перейти к содержимому</a>
   <div class="topbar">
     <div class="container topbar__inner">
       <div class="topbar__contacts">
@@ -93,7 +97,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovo
         <img src="/logo.svg" alt="УК «Жилкомсервис»" class="logo__img" />
         <span class="logo__text"><small>управляющая компания · Сосновоборск</small></span>
       </a>
-      <nav class="nav" id="nav">
+      <nav class="nav" id="nav" aria-label="Главное меню">
         <a href="/about">О компании</a>
         <a href="/#houses">Дома</a>
         <a href="/services">Услуги</a>
@@ -106,17 +110,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovo
         <svg viewBox="0 0 24 24" class="icon"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>
         <span class="header__lk-text">Личный кабинет</span>
       </a>
-      <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span></button>
+      <button class="burger" id="burger" type="button" aria-label="Меню" aria-controls="nav" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </header>
 
-  <main>
+  <main id="main-content" tabindex="-1">
     <slot />
   </main>
 
   <footer class="footer">
     <div class="container footer__inner">
-      <p>© 2017–2026 ООО Управляющая компания «Жилкомсервис»</p>
+      <p>© 2017–{new Date().getFullYear()} ООО Управляющая компания «Жилкомсервис»</p>
       <div class="footer__links">
         <a href="https://vk.ru/ooojks" target="_blank" rel="noopener">Мы в VK</a>
         <a href="/privacy">Политика конфиденциальности</a>
@@ -134,10 +138,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovo
     const viPanel = document.getElementById('vi-panel');
     const imgBtn = document.getElementById('vi-img');
 
-    function viState() {
-      try { return JSON.parse(localStorage.getItem(VI_KEY)) || {}; } catch { return {}; }
+    let viMemory = {};
+    try {
+      const saved = JSON.parse(localStorage.getItem(VI_KEY) || '{}');
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) viMemory = saved;
+    } catch { /* Настройки доступны и при запрете localStorage. */ }
+    function viState() { return { ...viMemory }; }
+    function viSave(s) {
+      viMemory = s;
+      try { localStorage.setItem(VI_KEY, JSON.stringify(s)); } catch { /* Остаются на время страницы. */ }
     }
-    function viSave(s) { localStorage.setItem(VI_KEY, JSON.stringify(s)); }
     function viApply() {
       const s = viState();
       const on = s.on === true || s.on === '1';
@@ -171,8 +181,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://jks-sosnovo
 
     // Мобильное меню
     const nav = document.getElementById('nav');
-    document.getElementById('burger').addEventListener('click', () => nav.classList.toggle('open'));
-    nav.addEventListener('click', (e) => { if (e.target.tagName === 'A') nav.classList.remove('open'); });
+    const burger = document.getElementById('burger');
+    const setMenu = (open) => {
+      nav.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', String(open));
+    };
+    burger.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
+    nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('open')) { setMenu(false); burger.focus(); }
+    });
   </script>
+  <style>
+    .skip-link { position: fixed; top: 8px; left: 8px; z-index: 10000; padding: 12px 18px; color: #000; background: #fff; border: 2px solid #000; transform: translateY(-150%); }
+    .skip-link:focus { transform: translateY(0); }
+  </style>
 </body>
 </html>

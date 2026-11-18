@@ -5,6 +5,8 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   output: 'static',
   trailingSlash: 'never',
-  site: 'https://jks-sosnovoborsk.surge.sh',
-  integrations: [sitemap()],
+  site: process.env.SITE_URL || 'https://nextangel-git.github.io',
+  integrations: [sitemap({
+    filter: (page) => !['/admin', '/404', '/house'].includes(new URL(page).pathname.replace(/\/$/, '')),
+  })],
 });
