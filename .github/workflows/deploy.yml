@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  # Do not interrupt a multi-file FTPS publication halfway through.
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -29,9 +30,10 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix admin
       - run: npm test
+      - run: python3 -m unittest discover -s tests -p 'test_deploy_nic.py'
       - run: npm run build
         env:
-          SITE_URL: ${{ vars.SITE_URL || 'https://nextangel-git.github.io' }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://jks.ooo' }}
           PUBLIC_FORM_TARGET: ${{ vars.PUBLIC_FORM_TARGET || 'uk@jks.ooo' }}
       - run: npm run test:build
       - uses: actions/upload-pages-artifact@v3
@@ -51,3 +53,28 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+  deploy-nic:
+    if: vars.NIC_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: nic-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: nic-artifact
+      - name: Extract tested static artifact
+        run: |
+          mkdir -p dist
+          tar -xf nic-artifact/artifact.tar -C dist
+      - name: Publish to the initialized NIC.RU webroot
+        env:
+          NIC_FTP_HOST: ${{ secrets.NIC_FTP_HOST }}
+          NIC_FTP_USER: ${{ secrets.NIC_FTP_USER }}
+          NIC_FTP_PASSWORD: ${{ secrets.NIC_FTP_PASSWORD }}
+          NIC_FTP_TLS_NAME: ${{ secrets.NIC_FTP_TLS_NAME }}
+        run: python3 scripts/deploy-nic.py --dist dist

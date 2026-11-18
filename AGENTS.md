@@ -15,6 +15,6 @@
 
 См. `SUMMARY.md` (обзор) и `DEPLOY.md` (запуск/деплой).
 
-## Текущий демо-адрес
+## Адреса публикации
 
-https://jks-sosnovoborsk.surge.sh — при смене адреса/хостинга обновить здесь, в SUMMARY.md и DEPLOY.md.
+Основной адрес — https://jks.ooo (NIC.RU). GitHub Pages https://nextangel-git.github.io остаётся зеркалом. Исторический демо-адрес — https://jks-sosnovoborsk.surge.sh. При смене адреса/хостинга обновить здесь, в SUMMARY.md и DEPLOY.md. FTPS-публикация и её ограничения описаны в DEPLOY.md; включение автоматической NIC-публикации выполняется отдельным шагом.

@@ -5,6 +5,8 @@ dist/
 !.env.example
 *.log
 .astro/
+__pycache__/
+*.py[cod]
 admin/node_modules/
 admin/users.json
 admin/.secret

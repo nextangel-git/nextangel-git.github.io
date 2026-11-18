@@ -1,0 +1,66 @@
+# Apache 2.4 / NIC.RU shared hosting. Deploy this file after the static release.
+# NIC.RU terminates TLS upstream and supplies ENV:HTTPS=on (verified on old site).
+# Do not copy Bitrix PHP handlers or auto_prepend_file into this static release.
+Options -Indexes -MultiViews
+DirectoryIndex index.html
+DirectorySlash Off
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .htm .css .js .mjs .json .xml .txt .svg
+AddType text/javascript .js .mjs
+ErrorDocument 404 /404.html
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+
+RewriteEngine On
+# Allow /about to be rewritten even though about is a real directory.
+RewriteOptions AllowNoSlash
+
+# Block hidden files/directories, including hidden descendants of .well-known.
+RewriteRule (^|/)\.(?!well-known(?:/|$)) - [F,END]
+# Preserve certificate validation; no hostname/scheme redirects for these paths.
+RewriteRule ^\.well-known(?:/|$) - [END]
+
+# The redirect target is fixed, never constructed from an untrusted Host header.
+# Server-owned TLS variables are used; client X-Forwarded-Proto is not trusted.
+RewriteCond %{HTTP_HOST} ^www\.jks\.ooo(?::[0-9]+)?$ [NC]
+RewriteRule ^ https://jks.ooo%{REQUEST_URI} [R=301,END,NE]
+RewriteCond %{HTTP_HOST} ^jks\.ooo(?::[0-9]+)?$ [NC]
+RewriteCond %{HTTPS} !^on$ [NC]
+RewriteCond %{ENV:HTTPS} !^on$ [NC]
+RewriteRule ^ https://jks.ooo%{REQUEST_URI} [R=301,END,NE]
+
+# Only known legacy equivalents. Removed articles/news/files remain genuine 404s.
+# Do not redirect arbitrary /upload, /komfort, /auth or /photogallery to the home page.
+RewriteRule ^index\.php$ / [R=301,END,QSD]
+RewriteRule ^about/(?:licence|ustav)\.php$ /disclosure [R=301,END,QSD]
+RewriteRule ^about/confpolicy\.php$ /privacy [R=301,END,QSD]
+RewriteRule ^contacts/?$ /#contacts [R=301,END,NE,QSD]
+RewriteRule ^documents/?$ /disclosure [R=301,END,QSD]
+RewriteRule ^documents/(?:general-information|information-about-work-performed|bukhgalterskaya-otchetnost|otchet-o-vypolnenii-dogovora-upravleniya|protokoly-obshchego-sobraniya-sobstvennikov)/?$ /disclosure [R=301,END,QSD]
+RewriteRule ^documents/tarify-na-kommunalnye-resursy/?$ /tariffs [R=301,END,QSD]
+RewriteRule ^useful-info/spisok-domov-v-upravlenii-uk-zhilkomservis\.php$ /#houses [R=301,END,NE,QSD]
+RewriteRule ^useful-info/tarify/?$ /tariffs [R=301,END,QSD]
+
+# An old news ID redirects only when that exact page exists in the new release.
+RewriteCond %{DOCUMENT_ROOT}/news/$1/index.html -f
+RewriteRule ^news/([0-9]+)\.html$ /news/$1 [R=301,END,QSD]
+
+# Normalize only real generated pages. THE_REQUEST excludes internal index rewrites.
+RewriteCond %{THE_REQUEST} \s/+index\.html(?:[?\s]) [NC]
+RewriteRule ^index\.html$ / [R=301,END]
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^([A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*)/$ /$1 [R=301,END]
+
+# Keep assets intact, then serve Astro's physical page index without a slash redirect.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [END]
+RewriteCond %{REQUEST_FILENAME}/index.html -f
+RewriteRule ^([A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*)$ $1/index.html [END]
+# No SPA/catch-all fallback: Apache returns 404 with /404.html for unknown paths.
