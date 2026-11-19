@@ -201,6 +201,17 @@ class DeploymentTests(unittest.TestCase):
             with self.assertRaises(deploy.DeployError):
                 deploy.local_artifact(root)
 
+    def test_public_php_endpoint_allowed_but_private_runtime_files_blocked(self):
+        ftp = self.initialized()
+        artifact = {'index.html': b'home', **{name: b'<?php /* public code */' for name in deploy.PUBLIC_PHP_FILES}}
+        deploy.deploy(ftp, artifact)
+        self.assertEqual(ftp.files['api/admin.php'], artifact['api/admin.php'])
+        for name in ['config.php', 'api/config.php', 'config.json', 'api/credentials.json',
+                     'users.json', 'api/admin.php.bak', 'api/unknown.php', 'uploads/test.phtml', 'archive.sql',
+                     'sessions.sqlite', '../.jks-admin/config.php', '.jks-admin/config.php']:
+            with self.assertRaises(deploy.DeployError, msg=name):
+                deploy.valid_path(name)
+
     def test_explicit_tls_uses_expected_hostname_and_protects_data_channel(self):
         env = {'NIC_FTP_HOST': 'ftp.jksooo.nichost.ru', 'NIC_FTP_TLS_NAME': 'jksooo.nichost.ru', 'NIC_FTP_USER': 'fake', 'NIC_FTP_PASSWORD': 'fake'}
         with patch.dict('os.environ', env), patch.object(deploy.ftplib, 'FTP_TLS') as ctor:

@@ -27,6 +27,8 @@ EXPECTED_TARGET = {
 }
 MAX_METADATA = 8 * 1024 * 1024
 HASH_RE = re.compile(r'^[a-f0-9]{64}$')
+PUBLIC_PHP_FILES = {'api/admin.php', 'api/admin-core.php', 'api/admin-schema.php'}
+PRIVATE_BASENAMES = {'config.php', 'config.json', 'users.json', 'credentials.json', 'secrets.json', 'server.mjs', 'package-lock.json'}
 
 
 class DeployError(RuntimeError):
@@ -46,6 +48,11 @@ def valid_path(value):
     # The only intended dotfile in a public release is the Apache configuration.
     if any(part.startswith('.') for part in parts) and value != '.htaccess':
         raise DeployError('Private or reserved artifact path')
+    basename = parts[-1].lower()
+    if basename in PRIVATE_BASENAMES or basename.endswith(('.sql', '.sqlite', '.sqlite3', '.db')):
+        raise DeployError('Private configuration or database in artifact')
+    if re.search(r'\.(?:php[0-9]*|phtml|phar|inc)(?:\.|$)', basename) and value not in PUBLIC_PHP_FILES:
+        raise DeployError('Only the explicitly allowed public admin PHP files may be deployed')
     return value
 
 

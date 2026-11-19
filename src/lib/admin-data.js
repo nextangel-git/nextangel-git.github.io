@@ -23,6 +23,8 @@ export function validateKey(key, data, isNew) {
 }
 
 export function validateUpload(file) {
+  if (/\.(?:php[0-9]*|phtml|phar|inc|cgi|pl|py|sh|shtml)(?:\.|$)/i.test(file.name))
+    throw new Error('Недопустимое составное расширение файла');
   if (!/\.(pdf|docx?|xlsx?|jpe?g|png)$/i.test(file.name))
     throw new Error('Разрешены только PDF, DOC, DOCX, XLS, XLSX, JPG и PNG');
   if (!file.size || file.size > 25 * 1024 * 1024) throw new Error('Нужен непустой файл размером до 25 МБ');

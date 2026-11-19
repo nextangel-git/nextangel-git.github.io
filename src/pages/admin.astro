@@ -3,26 +3,10 @@ import Base from '../layouts/Base.astro';
 ---
 <Base title="Админка — УК «Жилкомсервис»">
   <div id="admin-root">Загрузка…</div>
-  <script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
-  <script>
-    // Яндекс SmartCaptcha: токен доказательства «не робот». На статике проверка только клиентская
-    // (серверной валидации нет) — но ботов отсекает сам вызов проверки; настоящий секрет — PAT в сейфе.
-    window.__CAP_SITEKEY = 'ysc1_c1z811srDG3allSQnw0xpIy1ubAve2lTWfeKJrLe29c108b2';
-    window.__capToken = '';
-    window.smartCaptchaCallback = (t) => { window.__capToken = t; };
-    window.smartCaptchaReady = () => {
-      const el = document.getElementById('captcha-container');
-      if (el && window.smartCaptcha) {
-        el.innerHTML = '';
-        window.smartCaptcha.render(el, { sitekey: window.__CAP_SITEKEY, callback: window.smartCaptchaCallback, hl: 'ru' });
-      }
-    };
-  </script>
-
   <script>
     import { COLLECTIONS } from '../lib/collections.mjs';
     import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../lib/admin-data.js';
-    import { setToken, getToken, readDataFile, writeDataFile, commitFiles, checkToken } from '../lib/github-admin.js';
+    import { getSessionState, clearSession, refreshSession, login, logout, changePassword, readDataFile, writeDataFile, commitFiles } from '../lib/server-admin.js';
 
     const rootEl = document.getElementById('admin-root');
     let FILESHA = {};
@@ -31,10 +15,6 @@ import Base from '../layouts/Base.astro';
     let STREETS = null;
 
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const te = new TextEncoder(), td = new TextDecoder();
-    const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-    const unb64 = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-
     /* ---------- иконки ---------- */
     const I = {
       news: '<path d="M4 5h13v12a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5z"/><path d="M17 8h2a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7"/>',
@@ -53,25 +33,39 @@ import Base from '../layouts/Base.astro';
     };
     const icon = (name, size = 18) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${I[name] || I.dashboard}</svg>`;
 
-    /* ---------- сейф: пароль → PAT (AES-GCM + PBKDF2) ---------- */
-    const VAULT = 'jks_vault';
-    async function keyFrom(pass, salt) {
-      const km = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
-      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    const accessibilityButton = () => `<button type="button" class="admin-vi-toggle" data-admin-vi aria-pressed="${document.documentElement.classList.contains('vi')}">Версия для слабовидящих</button>`;
+    function syncAccessibilityButtons() {
+      const enabled = document.documentElement.classList.contains('vi');
+      rootEl.querySelectorAll('[data-admin-vi]').forEach(button => {
+        button.setAttribute('aria-pressed', String(enabled));
+        button.textContent = enabled ? 'Обычная версия' : 'Версия для слабовидящих';
+      });
     }
-    async function vaultSave(pat, pass) {
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const key = await keyFrom(pass, salt);
-      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode(pat));
-      localStorage.setItem(VAULT, JSON.stringify({ salt: b64(salt), iv: b64(iv), ct: b64(ct) }));
+    rootEl.addEventListener('click', event => {
+      if (event.target.closest('[data-admin-vi]')) {
+        document.getElementById('vi-toggle')?.click();
+        syncAccessibilityButtons();
+      }
+    });
+    new MutationObserver(syncAccessibilityButtons).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    let authVersion = 0;
+    let sessionReady = false;
+    function removeLegacyBinding() {
+      // Remove the old encrypted credential only after the server confirms access.
+      if (getSessionState().authenticated) {
+        try { localStorage.removeItem('jks_vault'); } catch {}
+      }
     }
-    async function vaultOpen(pass) {
-      const v = JSON.parse(localStorage.getItem(VAULT) || 'null');
-      if (!v) return null;
-      const key = await keyFrom(pass, unb64(v.salt));
-      try { return td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(v.iv) }, key, unb64(v.ct))); }
-      catch { return false; }
+    function clearViewCache() {
+      authVersion += 1;
+      CACHE = {}; FILESHA = {}; CNT = {}; STREETS = null;
+    }
+    function sessionExpired(error) {
+      if (error.status !== 401) return false;
+      clearSession(); clearViewCache();
+      showLogin(error.message);
+      return true;
     }
 
     /* ---------- даты: база «ДД.ММ.ГГГГ ЧЧ:ММ» ↔ input datetime-local ---------- */
@@ -86,7 +80,9 @@ import Base from '../layouts/Base.astro';
     async function getCol(name) {
       const cfg = COLLECTIONS[name];
       if (!CACHE[name]) {
+        const version = authVersion;
         const { data, sha } = await readDataFile(cfg.file);
+        if (version !== authVersion) throw Object.assign(new Error('Предыдущий экран уже закрыт.'), { staleView: true });
         CACHE[name] = data; FILESHA[name] = sha;
       }
       const data = CACHE[name];
@@ -117,6 +113,7 @@ import Base from '../layouts/Base.astro';
 
     /* ---------- каркас ---------- */
     function shell(title, inner, active = '') {
+      if (!getSessionState().authenticated) return;
       const navItem = (name, cfg) => `<a href="#/c/${name}" class="${active === name ? 'on' : ''}">${icon(name)}<span class="t">${esc(cfg.label)}</span>${CNT[name] != null ? `<span class="n">${CNT[name]}</span>` : ''}</a>`;
       const crumbs = !active || active === 'dash' ? 'Дашборд' : `<a href="#/">Дашборд</a> → ${esc(COLLECTIONS[active]?.label || title)}`;
       rootEl.innerHTML = `
@@ -136,62 +133,78 @@ import Base from '../layouts/Base.astro';
         <main class="main">
           <div class="pagehead">
             <div><div class="crumbs">${crumbs}</div><h1>${esc(title || 'Дашборд')}</h1></div>
-            <div class="userchip"><span class="av">Ж</span>Админка · <a href="#" id="adm-exit2">выйти</a></div>
+            ${accessibilityButton()}
+            <div class="userchip"><span class="av">Ж</span>${esc(getSessionState().user?.name || getSessionState().user?.username || 'Администратор')} · <a href="#" id="adm-exit2">выйти</a></div>
           </div>
           ${inner}
         </main>
       </div></div>`;
-      const exit = () => { setToken(''); location.hash = '#/'; location.reload(); };
+      syncAccessibilityButtons();
+      let exiting = false;
+      const exit = async (event) => {
+        event.preventDefault();
+        if (exiting) return;
+        exiting = true;
+        try {
+          await logout();
+          clearViewCache();
+          history.replaceState(null, '', '#/');
+          showLogin('Вы вышли из админки.');
+        } catch (error) {
+          if (!sessionExpired(error)) toast('Не удалось завершить сессию: ' + error.message, true);
+        } finally { exiting = false; }
+      };
       document.getElementById('adm-exit').onclick = exit;
       document.getElementById('adm-exit2').onclick = exit;
     }
 
     /* ---------- вход ---------- */
-    function showLogin(msg = '') {
-      const hasVault = !!localStorage.getItem(VAULT);
+    function showLogin(message = '') {
       rootEl.innerHTML = `
-      <div class="authpage"><div class="authcard">
-        <div class="alogo"><img src="/logo.svg" alt="ЖКС"><h1>Вход в админку</h1><p class="muted" style="margin:0">УК «Жилкомсервис» · Сосновоборск</p></div>
-        ${msg ? `<p class="muted" style="color:#dc2626;font-weight:600">${esc(msg)}</p>` : ''}
-        ${hasVault ? `
-          <label>Пароль</label><input id="pass" type="password" autofocus>
-          <div id="captcha-container" class="smart-captcha" style="margin-top:14px"></div>
-        ` : `
-          <p class="muted">Первичная настройка: один раз введите токен GitHub (его выдаёт администратор сайта) и придумайте пароль. Дальше вход — только по паролю.</p>
-          <label>Токен GitHub (PAT)</label><input id="pat" type="password" placeholder="github_pat_…">
-          <label>Придумайте пароль (минимум 8 символов)</label><input id="pass" type="password">
-          <label>Пароль ещё раз</label><input id="pass2" type="password">
-        `}
-        <p style="margin:22px 0 0"><button class="btn" id="adm-login" style="width:100%;justify-content:center">Войти</button></p>
-        ${hasVault ? '<p style="margin:10px 0 0;text-align:center"><a href="#" id="adm-reset" style="font-size:.82rem;color:#64748b">Сбросить привязку (сменить токен)</a></p>' : ''}
-      </div></div>`;
-      if (hasVault) {
-        window.__capToken = '';
-        const tryRender = (n) => { if (window.smartCaptcha) window.smartCaptchaReady(); else if (n > 0) setTimeout(() => tryRender(n - 1), 500); };
-        tryRender(20);
-      }
-      document.getElementById('adm-reset')?.addEventListener('click', () => { localStorage.removeItem(VAULT); showLogin(); });
-      document.getElementById('adm-login').onclick = async () => {
+        <div class="authpage"><div class="authcard">
+          <div class="alogo"><img src="/logo.svg" alt="ЖКС"><h1>Вход в админку</h1><p class="muted" style="margin:0">УК «Жилкомсервис» · Сосновоборск</p></div>
+          ${accessibilityButton()}
+          <form id="admin-login-form">
+            <label for="username">Логин</label><input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="100">
+            <label for="pass">Пароль</label><input id="pass" name="password" type="password" autocomplete="current-password" required>
+            <p id="login-message" role="alert" class="muted" style="overflow-wrap:anywhere">${esc(message)}</p>
+            <button class="btn" id="adm-login" type="submit" style="width:100%;justify-content:center">Войти</button>
+          </form>
+          <p class="muted" style="margin-bottom:0">Данные для входа выдаёт администратор сайта.</p>
+        </div></div>`;
+      syncAccessibilityButtons();
+      const form = document.getElementById('admin-login-form');
+      const button = document.getElementById('adm-login');
+      const note = document.getElementById('login-message');
+      let submitting = false;
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (submitting || !form.reportValidity()) return;
+        submitting = true; button.disabled = true; button.textContent = 'Входим…';
+        note.textContent = ''; form.setAttribute('aria-busy', 'true');
         try {
-          if (hasVault) {
-            if (document.getElementById('captcha-container') && !window.__capToken)
-              return showLogin('Подтвердите, что вы не робот (галочка под паролем)');
-            const pat = await vaultOpen(document.getElementById('pass').value);
-            if (!pat) { window.__capToken = ''; return showLogin('Неверный пароль'); }
-            setToken(pat); await checkToken();
-          } else {
-            const pat = document.getElementById('pat').value.trim();
-            const p1 = document.getElementById('pass').value, p2 = document.getElementById('pass2').value;
-            if (!pat) return showLogin('Введите токен');
-            if (p1.length < 8) return showLogin('Пароль минимум 8 символов');
-            if (p1 !== p2) return showLogin('Пароли не совпадают');
-            setToken(pat); await checkToken();
-            await vaultSave(pat, p1);
-          }
-          location.hash = '#/'; route();
-        } catch (e) { window.__capToken = ''; showLogin(e.message); }
-      };
-      document.getElementById('pass').onkeydown = (e) => { if (e.key === 'Enter') document.getElementById('adm-login').click(); };
+          await login(document.getElementById('username').value.trim(), document.getElementById('pass').value);
+          removeLegacyBinding(); clearViewCache(); sessionReady = true;
+          await route();
+        } catch (error) {
+          note.textContent = error.message;
+          document.getElementById('pass')?.focus();
+        } finally {
+          submitting = false; button.disabled = false; button.textContent = 'Войти';
+          form.removeAttribute('aria-busy');
+        }
+      });
+      document.getElementById('username').focus();
+    }
+
+    function showProductionLink() {
+      rootEl.innerHTML = `<div class="authpage"><div class="authcard">
+        <div class="alogo"><img src="/logo.svg" alt="ЖКС"><h1>Админка сайта</h1></div>
+        ${accessibilityButton()}
+        <p>Вход по логину и паролю доступен на основном сайте.</p>
+        <a class="btn" href="https://jks.ooo/admin">Открыть админку jks.ooo</a>
+      </div></div>`;
+      syncAccessibilityButtons();
     }
 
     /* ---------- дашборд ---------- */
@@ -427,6 +440,7 @@ import Base from '../layouts/Base.astro';
           toast('Сохранено. Сайт обновится через ~2–3 минуты.');
           location.hash = '#/c/' + name;
         } catch (err) {
+          if (sessionExpired(err)) return;
           msg.style.color = '#dc2626'; msg.textContent = 'Ошибка: ' + err.message;
         } finally { submit.disabled = false; }
       };
@@ -480,7 +494,7 @@ import Base from '../layouts/Base.astro';
           STREETS = null;
           toast(isHouse ? 'Дом в архиве. Сайт обновится через ~2–3 минуты.' : 'Удалено. Сайт обновится через ~2–3 минуты.');
           location.hash = '#/c/' + name;
-        } catch (err) { msg.style.color = '#dc2626'; msg.textContent = 'Ошибка: ' + err.message; }
+        } catch (err) { if (sessionExpired(err)) return; msg.style.color = '#dc2626'; msg.textContent = 'Ошибка: ' + err.message; }
       };
     }
 
@@ -512,35 +526,52 @@ import Base from '../layouts/Base.astro';
           delete CACHE['houses']; delete CACHE['houses_geo']; STREETS = null;
           toast('Дом восстановлен. Сайт обновится через ~2–3 минуты.');
           location.hash = '#/c/houses';
-        } catch (err) { document.getElementById('res-msg').textContent = 'Ошибка: ' + err.message; }
+        } catch (err) { if (sessionExpired(err)) return; document.getElementById('res-msg').textContent = 'Ошибка: ' + err.message; }
       };
     }
 
     /* ---------- смена пароля ---------- */
     function viewPass() {
       shell('Сменить пароль', `
-        <div class="card" style="max-width:460px">
-          <label>Текущий пароль</label><input id="p0" type="password">
-          <label>Новый пароль <span class="hint">минимум 8 символов</span></label><input id="p1" type="password">
-          <label>Новый пароль ещё раз</label><input id="p2" type="password">
-          <div class="row" style="margin-top:22px"><button class="btn" id="pass-save">Сменить пароль</button></div>
-          <p id="pass-msg" style="margin-top:10px"></p>
-        </div>`, 'pass');
-      document.getElementById('pass-save').onclick = async () => {
+        <form id="admin-password-form" class="card" style="max-width:460px">
+          <label for="p0">Текущий пароль</label><input id="p0" name="currentPassword" type="password" autocomplete="current-password" required>
+          <label for="p1">Новый пароль <span class="hint">минимум 10 символов</span></label><input id="p1" name="newPassword" type="password" autocomplete="new-password" required>
+          <label for="p2">Новый пароль ещё раз</label><input id="p2" type="password" autocomplete="new-password" required>
+          <div class="row" style="margin-top:22px"><button type="submit" class="btn" id="pass-save">Сменить пароль</button></div>
+          <p id="pass-msg" role="status" style="margin-top:10px"></p>
+        </form>`, 'pass');
+      const form = document.getElementById('admin-password-form');
+      const button = document.getElementById('pass-save');
+      let submitting = false;
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (submitting || !form.reportValidity()) return;
         const msg = document.getElementById('pass-msg');
-        const pat = await vaultOpen(document.getElementById('p0').value);
-        if (pat === false || !pat) { msg.style.color = '#dc2626'; msg.textContent = 'Текущий пароль неверен'; return; }
-        const p1 = document.getElementById('p1').value, p2 = document.getElementById('p2').value;
-        if (p1.length < 8) { msg.style.color = '#dc2626'; msg.textContent = 'Минимум 8 символов'; return; }
-        if (p1 !== p2) { msg.style.color = '#dc2626'; msg.textContent = 'Пароли не совпадают'; return; }
-        await vaultSave(pat, p1);
-        msg.style.color = '#166534'; msg.textContent = 'Пароль изменён';
-      };
+        const current = document.getElementById('p0').value;
+        const first = document.getElementById('p1').value;
+        const second = document.getElementById('p2').value;
+        if ([...first].length < 10) { msg.textContent = 'Минимум 10 символов'; return; }
+        if (new TextEncoder().encode(first).length > 72) { msg.textContent = 'Пароль слишком длинный. Используйте до 72 латинских или до 36 русских букв.'; return; }
+        if (first !== second) { msg.textContent = 'Пароли не совпадают'; return; }
+        submitting = true; button.disabled = true; button.textContent = 'Сохраняем…';
+        form.setAttribute('aria-busy', 'true'); msg.textContent = '';
+        try {
+          await changePassword(current, first);
+          form.reset(); msg.textContent = 'Пароль изменён.';
+        } catch (error) {
+          if (!sessionExpired(error)) msg.textContent = error.message;
+        } finally {
+          submitting = false; button.disabled = false; button.textContent = 'Сменить пароль';
+          form.removeAttribute('aria-busy');
+        }
+      });
     }
 
     /* ---------- роутер ---------- */
     async function route() {
-      if (!localStorage.getItem(VAULT) || !getToken()) { showLogin(); return; }
+      if (location.hostname.endsWith('.github.io')) { showProductionLink(); return; }
+      if (!sessionReady) return;
+      if (!getSessionState().authenticated) { showLogin(); return; }
       const h = location.hash.replace(/^#\/?/, '');
       const parts = h.split('/');
       try {
@@ -551,15 +582,38 @@ import Base from '../layouts/Base.astro';
         if (parts[0] === 'pass') return viewPass();
         return await viewDash();
       } catch (e) {
-        if (/Токен отклонён/.test(e.message)) { setToken(''); showLogin(e.message); return; }
-        rootEl.innerHTML = `<div class="adm-fixed" style="display:flex;align-items:center;justify-content:center"><div class="card" style="max-width:480px"><p style="color:#dc2626">${esc(e.message)}</p><p><a href="#/">← В админку</a></p></div></div>`;
+        if (e.staleView) return;
+        if (sessionExpired(e)) return;
+        rootEl.innerHTML = `<div class="adm-fixed" style="display:flex;align-items:center;justify-content:center"><div class="card" style="max-width:480px">${accessibilityButton()}<p style="color:#dc2626">${esc(e.message)}</p><p><a href="#/">← В админку</a></p></div></div>`;
+        syncAccessibilityButtons();
       }
     }
     window.addEventListener('hashchange', route);
-    route();
+    async function start() {
+      if (location.hostname.endsWith('.github.io')) { showProductionLink(); return; }
+      try {
+        await refreshSession(); removeLegacyBinding(); sessionReady = true;
+        await route();
+      } catch (error) {
+        sessionReady = true;
+        showLogin(error.message);
+      }
+    }
+    start();
   </script>
 
   <style is:global>
+    .admin-vi-toggle{display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-width:0;min-height:44px;padding:8px 12px;border:1px solid #64748b;border-radius:8px;background:#fff;color:#0f172a;font:inherit;font-size:.85rem;line-height:1.4;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+    .authcard .admin-vi-toggle{width:100%;margin-top:16px}
+    html.vi .authpage,html.vi .authcard,html.vi .adm-fixed,html.vi .adm-fixed .side,html.vi .adm-fixed .card,html.vi .adm-fixed .ccard,html.vi .adm-fixed .tblwrap,html.vi .adm-fixed .userchip{background:#fff;color:#000;box-shadow:none}
+    html.vi .authcard,html.vi .adm-fixed .card,html.vi .adm-fixed .ccard,html.vi .adm-fixed .tblwrap{border:2px solid #000}
+    html.vi .authcard input,html.vi .adm-fixed input,html.vi .adm-fixed textarea,html.vi .adm-fixed select{background:#fff;color:#000;border:2px solid #000}
+    html.vi .authcard input:focus,html.vi .adm-fixed input:focus,html.vi .adm-fixed textarea:focus,html.vi .adm-fixed select:focus{outline:2px solid #000;outline-offset:2px;box-shadow:none}
+    html.vi .authcard .muted,html.vi .authcard label,html.vi .adm-fixed .muted,html.vi .adm-fixed .hint,html.vi .adm-fixed .crumbs,html.vi .adm-fixed .crumbs a,html.vi .adm-fixed .ccard small,html.vi .adm-fixed .ccard .ro,html.vi .adm-fixed .snav a,html.vi .adm-fixed .sfoot a,html.vi .adm-fixed .userchip a{color:#000;font-size:inherit}
+    html.vi .authcard .btn,html.vi .adm-fixed .btn,html.vi .adm-fixed .snav a.on{background:#000;color:#fff;border:2px solid #000}
+    html.vi .admin-vi-toggle{background:#fff;color:#000;border:2px solid #000;font-size:inherit}
+    html.vi .adm-fixed .ccard .ic,html.vi .adm-fixed .drop,html.vi .adm-fixed tbody tr:hover td,html.vi .adm-fixed tr.cat td{background:#fff;color:#000}
+    html.vi .authcard h1,html.vi .adm-fixed .pagehead h1{color:#000}
     .adm-fixed{position:fixed;inset:0;z-index:60;background:#eef2f7;overflow:auto}
     .adm-fixed .layout{display:flex;min-height:100vh}
     .adm-fixed .side{width:250px;flex:none;background:linear-gradient(180deg,#0b1220 0%,#14213d 100%);color:#cbd5e1;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
@@ -617,15 +671,16 @@ import Base from '../layouts/Base.astro';
     .toast{position:fixed;right:22px;bottom:22px;z-index:99;display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(15,23,42,.25);max-width:min(420px,90vw)}
     .toast.ok{background:#16a34a}.toast.err{background:#dc2626}
     .authpage{overflow:auto;position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(1000px 500px at 20% 0%,#1e3a8a 0%,#0b1220 55%),#0b1220;padding:20px}
-    .authcard{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px;box-shadow:0 25px 60px rgba(0,0,0,.45)}
+    .authcard{box-sizing:border-box;min-width:0;width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px;box-shadow:0 25px 60px rgba(0,0,0,.45)}
     .authcard .alogo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:6px;text-align:center}
-    .authcard .alogo img{width:200px;height:auto;border-radius:10px}
+    .authcard .alogo img{width:200px;max-width:100%;height:auto;border-radius:10px}
     .authcard h1{font-size:1.25rem;margin:0}
     .authcard label{display:block;font-weight:600;font-size:.9rem;margin:16px 0 6px}
     .authcard input{width:100%;padding:11px 14px;border:1.5px solid #e5eaf2;border-radius:10px;font:inherit}
     .authcard input:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
     .authcard .muted{color:#64748b;font-size:.85rem}
     .authcard .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;background:#1d4ed8;color:#fff}
+    .authcard .btn:disabled,.adm-fixed .btn:disabled{opacity:.65;cursor:wait}
     @media(max-width:480px){.adm-fixed .main{padding:12px;overflow-wrap:anywhere}.adm-fixed .userchip{display:none}.authcard{padding:20px}.authpage{align-items:flex-start}.adm-fixed .row{align-items:stretch}.adm-fixed .btn.sm{padding:6px}.adm-fixed .brand{padding:10px 4px}}
     @media(max-width:900px){.adm-fixed .side{width:66px}.adm-fixed .brand b,.adm-fixed .brand span,.adm-fixed .snav .cap,.adm-fixed .snav a .n,.adm-fixed .snav a span.t{display:none}.adm-fixed .snav a{justify-content:center;padding:11px}.adm-fixed .main{padding:18px}}
   </style>

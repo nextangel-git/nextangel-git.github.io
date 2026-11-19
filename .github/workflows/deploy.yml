@@ -17,7 +17,8 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # The maintained 24.04 runner includes PHP 8.3 for backend syntax/integration checks.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,6 +30,11 @@ jobs:
             admin/package-lock.json
       - run: npm ci
       - run: npm ci --prefix admin
+      - name: Check public PHP backend syntax
+        run: |
+          php --version
+          for file in public/api/*.php; do php -l "$file"; done
+          php -l admin/provision-php.php
       - run: npm test
       - run: python3 -m unittest discover -s tests -p 'test_deploy_nic.py'
       - run: npm run build

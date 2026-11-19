@@ -20,7 +20,7 @@ test('article keys cannot replace existing articles or prototype properties', ()
   assert.doesNotThrow(() => validateKey('existing', { existing: {} }, false));
 });
 test('uploads reject active documents, empty files and over-limit files', () => {
-  for (const name of ['evil.html', 'evil.svg', 'evil.js', 'noextension']) assert.throws(() => validateUpload({ name, size: 12 }));
+  for (const name of ['evil.html', 'evil.svg', 'evil.js', 'noextension', 'evil.php.pdf', 'evil.PHP8.jpg', 'evil.phtml.png', 'evil.phar.docx', 'evil.inc.xls']) assert.throws(() => validateUpload({ name, size: 12 }));
   assert.throws(() => validateUpload({ name: 'a.pdf', size: 0 }));
   assert.throws(() => validateUpload({ name: 'a.pdf', size: 25 * 1024 * 1024 + 1 }));
   assert.doesNotThrow(() => validateUpload({ name: 'Отчёт.PDF', size: 42 }));
