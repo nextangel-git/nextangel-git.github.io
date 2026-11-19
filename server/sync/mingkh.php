@@ -129,9 +129,11 @@ final class JksMingkhSync {
             'balconies'=>[['Количество балконов'],'/Количество балконов\s+(\d+)/u',0,10000,true],
             'electricInputs'=>[['Количество вводов в дом, ед.'],'/Количество вводов в дом, ед\.\s+(\d+)/u',0,100,true],
         ];
+        $floorRange=false;
         foreach ($numeric as $key=>$rule) {
             $value=$field($rule[0],$rule[1]);
             if ($key==='floors' && $value!==null && preg_match('/\A(\d+)\s*-\s*(\d+)\z/D',$value,$range)) {
+                $floorRange=true;
                 $low=self::number($range[1],1,100,true); $high=self::number($range[2],1,100,true);
                 if ($low>$high) throw new RuntimeException('Invalid floor range');
                 // A range is not a single floor count. Use the source's explicit prose
@@ -142,7 +144,7 @@ final class JksMingkhSync {
             }
             $record[$key]=self::number($value,$rule[2],$rule[3],$rule[4]);
         }
-        if ($record['floors']===null) $record['floors']=self::number($grab('/(\d+)-этажный/u'),1,100,true);
+        if ($record['floors']===null && !$floorRange) $record['floors']=self::number($grab('/(\d+)-этажный/u'),1,100,true);
         $strings=[
             'serie'=>[['Серия, тип постройки здания','Серия, тип постройки'],'/Серия, тип постройки(?: здания)?\s+(.+?)\s+(?:Статус объекта|Тип перекрытий|Материал несущих)/u'],
             'condition'=>[['Состояние дома'],'/Состояние дома\s+(\S+)/u'],

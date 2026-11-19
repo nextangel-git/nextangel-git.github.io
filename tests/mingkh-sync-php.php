@@ -32,6 +32,8 @@ mkCheck($parsed['flats']===60 && $parsed['area']===1234.5,'Empty intermediate so
 $ranged=str_replace(['<td>5</td>','Год постройки'],['<td>11-18</td>','Год ввода в эксплуатацию'],card(1,'<p>17-этажный</p>'));
 $parsed=JksMingkhSync::parseHouse($ranged,'ул. Ленина, 1','1');
 mkCheck($parsed['floors']===17 && $parsed['year']===null,'Floor range uses agreeing explicit count; commissioning year not construction year');
+$disagree=JksMingkhSync::parseHouse(str_replace('17-этажный','20-этажный',$ranged),'ул. Ленина, 1','1');
+mkCheck($disagree['floors']===null,'Conflicting floor count stays unknown instead of inventing a single value');
 mkReject(static function(){JksMingkhSync::parseHouse('<h1>Сколько будет 2 + 3</h1>','ул. Ленина, 1','1');},'Challenge not a card');
 mkReject(static function(){JksMingkhSync::parseHouse('<h1>Service error</h1>','ул. Ленина, 1','1');},'Error not a card');
 mkReject(static function(){JksMingkhSync::parseHouse(card(2),'ул. Ленина, 1','1');},'Identity mismatch');
