@@ -121,9 +121,9 @@ test('only known legacy counterparts redirect; removed news and documents stay 4
     '/about/licence.php': '/disclosure', '/about/ustav.php': '/disclosure',
     '/about/confpolicy.php': '/privacy', '/contacts/': '/#contacts',
     '/documents/': '/disclosure', '/documents/general-information/': '/disclosure',
-    '/documents/tarify-na-kommunalnye-resursy/': '/disclosure',
-    '/useful-info/tarify/': '/disclosure',
-    '/tariffs': '/disclosure', '/tariffs/': '/disclosure', '/tariffs/index.html': '/disclosure', '/tariffs?year=2025': '/disclosure',
+    '/documents/tarify-na-kommunalnye-resursy/': 'https://jks.ooo/disclosure',
+    '/useful-info/tarify/': 'https://jks.ooo/disclosure',
+    '/tariffs': 'https://jks.ooo/disclosure', '/tariffs/': 'https://jks.ooo/disclosure', '/tariffs/index.html': 'https://jks.ooo/disclosure', '/tariffs?year=2025': 'https://jks.ooo/disclosure',
     '/useful-info/spisok-domov-v-upravlenii-uk-zhilkomservis.php': '/#houses',
   };
   for (const [uri, target] of Object.entries(redirects)) assert.deepEqual(request(uri), { status: 301, target });

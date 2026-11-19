@@ -44,16 +44,16 @@ RewriteRule ^ https://jks.ooo%{REQUEST_URI} [R=301,END,NE]
 
 # Only known legacy equivalents. Removed articles/news/files remain genuine 404s.
 # Do not redirect arbitrary /upload, /komfort, /auth or /photogallery to the home page.
-RewriteRule ^tariffs(?:/index\.html|/)?$ /disclosure [R=301,END,QSD]
+RewriteRule ^tariffs(?:/index\.html|/)?$ https://jks.ooo/disclosure [R=301,END,QSD]
 RewriteRule ^index\.php$ / [R=301,END,QSD]
 RewriteRule ^about/(?:licence|ustav)\.php$ /disclosure [R=301,END,QSD]
 RewriteRule ^about/confpolicy\.php$ /privacy [R=301,END,QSD]
 RewriteRule ^contacts/?$ /#contacts [R=301,END,NE,QSD]
 RewriteRule ^documents/?$ /disclosure [R=301,END,QSD]
 RewriteRule ^documents/(?:general-information|information-about-work-performed|bukhgalterskaya-otchetnost|otchet-o-vypolnenii-dogovora-upravleniya|protokoly-obshchego-sobraniya-sobstvennikov)/?$ /disclosure [R=301,END,QSD]
-RewriteRule ^documents/tarify-na-kommunalnye-resursy/?$ /disclosure [R=301,END,QSD]
+RewriteRule ^documents/tarify-na-kommunalnye-resursy/?$ https://jks.ooo/disclosure [R=301,END,QSD]
 RewriteRule ^useful-info/spisok-domov-v-upravlenii-uk-zhilkomservis\.php$ /#houses [R=301,END,NE,QSD]
-RewriteRule ^useful-info/tarify/?$ /disclosure [R=301,END,QSD]
+RewriteRule ^useful-info/tarify/?$ https://jks.ooo/disclosure [R=301,END,QSD]
 
 # An old news ID redirects only when that exact page exists in the new release.
 RewriteCond %{DOCUMENT_ROOT}/news/$1/index.html -f
