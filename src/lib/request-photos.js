@@ -1,6 +1,6 @@
 export const PHOTO_LIMITS = { count: 5, perFile: 5_000_000, total: 10_000_000 };
 const types = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const photoSize = bytes => bytes < 1000 ? `${bytes} Б` : bytes < 1_000_000
+export const photoSize = bytes => bytes < 1000 ? `${bytes} Б` : bytes < 1_000_000
   ? `${(bytes / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} КБ`
   : `${(bytes / 1_000_000).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} МБ`;
 

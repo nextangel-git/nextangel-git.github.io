@@ -9,6 +9,7 @@ import Base from '../layouts/Base.astro';
     import { getSessionState, clearSession, refreshSession, login, logout, changePassword, readDataFile, readSiteRequests, writeDataFile, commitFiles } from '../lib/server-admin.js';
 
     import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
+    import { photoSize } from '../lib/request-photos.js';
 
     const rootEl = document.getElementById('admin-root');
     let FILESHA = {};
@@ -35,7 +36,7 @@ import Base from '../layouts/Base.astro';
     };
     const icon = (name, size = 18) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none">${I[name] || I.dashboard}</svg>`;
 
-    const accessibilityButton = () => `<button type="button" class="admin-vi-toggle" data-admin-vi aria-pressed="${document.documentElement.classList.contains('vi')}">Версия для слабовидящих</button>`;
+    const accessibilityButton = () => `<div class="admin-accessibility"><button type="button" class="admin-vi-toggle" data-admin-vi aria-pressed="${document.documentElement.classList.contains('vi')}">Версия для слабовидящих</button><div class="admin-vi-options" aria-label="Размер шрифта">${[1,2,3].map((size,i)=>`<button type="button" data-admin-font="${size}" aria-label="Размер шрифта ${size}">${['A','A+','A++'][i]}</button>`).join('')}</div></div>`;
     function syncAccessibilityButtons() {
       const enabled = document.documentElement.classList.contains('vi');
       rootEl.querySelectorAll('[data-admin-vi]').forEach(button => {
@@ -44,6 +45,8 @@ import Base from '../layouts/Base.astro';
       });
     }
     rootEl.addEventListener('click', event => {
+      const font = event.target.closest('[data-admin-font]');
+      if (font) document.querySelector(`[data-vi-font="${font.dataset.adminFont}"]`)?.click();
       if (event.target.closest('[data-admin-vi]')) {
         document.getElementById('vi-toggle')?.click();
         syncAccessibilityButtons();
@@ -252,7 +255,7 @@ import Base from '../layouts/Base.astro';
         const stamp = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('ru-RU', { timeZone: 'Asia/Krasnoyarsk' });
         const photos = (item.photos || []).filter(p => /^[a-f0-9]{64}$/.test(item.id) && /^photo-[1-5]\.(jpg|png|webp)$/.test(p.name)).map((p, i) => {
           const url = '/api/admin.php?' + new URLSearchParams({ action: 'request-photo', id: item.id, file: p.name });
-          return `<figure><a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="Фото ${i + 1} к заявке" loading="lazy"></a><figcaption><a href="${esc(url)}&amp;download=1">Скачать фото ${i + 1}</a> · ${esc((p.size / 1000000).toLocaleString('ru-RU', { maximumFractionDigits: 2 }))} МБ</figcaption></figure>`;
+          return `<figure><a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="Фото ${i + 1} к заявке" loading="lazy"></a><figcaption><a href="${esc(url)}&amp;download=1">Скачать фото ${i + 1}</a> · ${esc(photoSize(p.size))}</figcaption></figure>`;
         }).join('');
         return `<article class="card request-card">
           <div class="request-meta"><time datetime="${esc(item.createdAt)}">${esc(stamp)} · Красноярск</time><span>${esc(statuses[item.delivery] || statuses.sending)}</span></div>
@@ -657,6 +660,9 @@ import Base from '../layouts/Base.astro';
   </script>
 
   <style is:global>
+    .admin-accessibility{max-width:100%;min-width:0}.admin-vi-options{display:none}
+    html.vi .admin-vi-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .admin-vi-options button{font:inherit;min-height:44px;min-width:44px;background:#fff;color:#000;border:2px solid #000;border-radius:6px;cursor:pointer}
     .request-card{margin-bottom:18px;overflow-wrap:anywhere;min-width:0}
     .request-card h2{font-size:1.15em;margin:12px 0}
     .request-card dl{display:grid;grid-template-columns:minmax(70px,100px) minmax(0,1fr);gap:8px 12px}

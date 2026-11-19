@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
 import { mountSmartCaptcha } from '../src/lib/smartcaptcha.js';
+import { photoSize } from '../src/lib/request-photos.js';
 import { mockSmartCaptcha } from './helpers/smartcaptcha.mjs';
 import * as dataHelpers from '../src/lib/admin-data.js';
 
@@ -26,7 +27,7 @@ async function setup(t, url = 'https://jks.ooo/admin', authenticated = false, re
   let state = { authenticated, user: authenticated ? { username: 'editor' } : null, csrf: 'session' };
   const calls = { session: 0, login: [], read: [], password: [], logout: 0, requests: [] };
   const deps = {
-    COLLECTIONS, ...dataHelpers, mountSmartCaptcha,
+    COLLECTIONS, ...dataHelpers, mountSmartCaptcha, photoSize,
     getSessionState: () => ({ ...state }),
     clearSession: () => { state = { authenticated: false, user: null, csrf: '' }; },
     refreshSession: async () => { calls.session++; return { ...state }; },
