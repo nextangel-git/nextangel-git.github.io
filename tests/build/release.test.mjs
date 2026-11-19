@@ -14,7 +14,7 @@ const htmlFiles = files.filter((file) => file.endsWith('.html'));
 const robots = read('robots.txt');
 const sitemapUrl = new URL(robots.match(/^Sitemap:\s*(\S+)/m)?.[1]);
 const origin = sitemapUrl.origin;
-const publicPhpFiles = ['admin.php', 'admin-core.php', 'admin-schema.php', 'captcha-core.php', 'request.php', 'request-core.php'];
+const publicPhpFiles = ['admin.php', 'admin-core.php', 'admin-schema.php', 'captcha-core.php', 'request.php', 'request-core.php', 'request-store.php'];
 
 test('robots and sitemap use one configured origin and omit non-indexable routes', () => {
   assert.equal(sitemapUrl.pathname, '/sitemap-index.xml');

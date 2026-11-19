@@ -32,7 +32,7 @@ MAX_METADATA = 8 * 1024 * 1024
 MAX_ATTEMPTS = 3
 HASH_RE = re.compile(r'^[a-f0-9]{64}$')
 PUBLIC_PHP_FILES = {'api/admin.php', 'api/admin-core.php', 'api/admin-schema.php',
-                    'api/captcha-core.php', 'api/request.php', 'api/request-core.php'}
+                    'api/captcha-core.php', 'api/request.php', 'api/request-core.php', 'api/request-store.php'}
 PRIVATE_BASENAMES = {'config.php', 'captcha.php', 'config.json', 'users.json', 'credentials.json', 'secrets.json', 'server.mjs', 'package-lock.json'}
 
 

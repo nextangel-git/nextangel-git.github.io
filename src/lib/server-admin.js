@@ -70,6 +70,10 @@ export function readDataFile(file, ref) {
   return api('read', { params: { file, ...(ref ? { ref } : {}) } });
 }
 
+export function readSiteRequests(page = 1) {
+  return api('requests', { params: { page: String(page) } });
+}
+
 export function writeDataFile(file, data, sha, message) {
   if (!/^[a-z_]+\.json$/.test(file) || !sha) throw new Error('Нужна исходная версия файла');
   return commitFiles([{ path: `src/data/${file}`, text: JSON.stringify(data, null, 1) + '\n', expectedSha: sha }], message);

@@ -50,13 +50,24 @@ try {
     verifyCheck(count($calls) === 1 && $calls[0][0] === JksCaptcha::VALIDATE_URL, 'Failed captcha never forwards mail');
     $captchaReply = ['status'=>200,'data'=>['status'=>'ok','host'=>'jks.ooo']]; $calls = [];
     $result = $api->submit($body);
-    verifyCheck($result === ['success'=>true,'requestId'=>$body->requestId], 'Success contract');
+    verifyCheck($result === ['success'=>true,'saved'=>true,'emailSent'=>true,'requestId'=>$body->requestId], 'Success contract');
     verifyCheck(count($calls) === 2 && $calls[1][0] === JksCaptcha::FORM_URL && $calls[1][1]['Квартира'] === '12', 'Fixed destination receives required flat');
     verifyCheck(!array_key_exists('captchaToken', $calls[1][1]) && !array_key_exists('secret', $calls[1][1]), 'Captcha secrets not forwarded');
+    $store=new JksRequestStore($directory);
+    verifyCheck($store->listing()['total']===1 && $store->listing()['data'][0]['delivery']==='sent','Verified request saved privately');
+    $calls=[];$api->submit($body);
+    verifyCheck(count($calls)===1 && $store->listing()['total']===1,'Same request never duplicates record or email');
+    $conflict=clone $body;$conflict->text='Different contents';
+    verifyReject(static function() use($api,$conflict){$api->submit($conflict);},409);
+    $counter=1;
     foreach ([['status'=>200,'data'=>['success'=>'false']], ['status'=>200,'data'=>[]], ['status'=>503,'data'=>['success'=>true]], new RuntimeException('timeout')] as $case) {
-        $formReply = $case; verifyReject(static function () use ($api,$body) { $api->submit($body); },502);
+        $body->requestId='ЖКС-12345678-1234-4123-8123-'.sprintf('%012x',$counter++);
+        $formReply = $case;$result=$api->submit($body);
+        verifyCheck($result['saved'] && !$result['emailSent'],'Mail failure does not lose request');
+        verifyCheck($store->record(hash('sha256',$body->requestId))['delivery']==='unconfirmed','Unconfirmed mail marked');
     }
-    $formReply = ['status'=>200,'data'=>['success'=>'true']]; verifyCheck($api->submit($body)['success'] === true,'String true supported');
+    $body->requestId='ЖКС-12345678-1234-4123-8123-'.sprintf('%012x',$counter++);
+    $formReply = ['status'=>200,'data'=>['success'=>'true']]; verifyCheck($api->submit($body)['emailSent'] === true,'String true supported');
     file_put_contents($directory.'/request-limits.json','{}');
     for ($i=0;$i<20;$i++) $api->submit($body);
     $calls = []; verifyReject(static function () use ($api,$body) { $api->submit($body); },429);
@@ -75,6 +86,7 @@ try {
     }
     echo json_encode(['passed'=>$passed,'network_used'=>false]) . "\n";
 } finally {
-    foreach (glob($directory.'/*') as $file) unlink($file);
+    $items=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($items as $file) { if($file->isDir()) rmdir($file->getPathname());else unlink($file->getPathname()); }
     rmdir($directory);
 }

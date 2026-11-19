@@ -81,7 +81,7 @@ test('form posts only once to the same-origin gateway and reports service accept
   await settled(w);
   assert.equal(form.hidden, true);
   assert.equal(w.document.getElementById('request-mailto').hidden, true);
-  assert.match(w.document.getElementById('request-heading').textContent, /Сервис принял/);
+  assert.match(w.document.getElementById('request-heading').textContent, /Обращение получено/);
   assert.match(w.document.getElementById('request-done').textContent, /не регистрирует заявку/);
 });
 

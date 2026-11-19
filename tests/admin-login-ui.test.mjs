@@ -14,7 +14,7 @@ const viScript = baseSource.match(/<script>\s*([\s\S]*?)<\/script>/)[1].split('/
 const styles = source.match(/<style is:global>([\s\S]*?)<\/style>/)[1];
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup(t, url = 'https://jks.ooo/admin', authenticated = false) {
+async function setup(t, url = 'https://jks.ooo/admin', authenticated = false, requests = []) {
   const dom = new JSDOM(`<style>${styles}</style><button id="vi-toggle" aria-pressed="false">Версия для слабовидящих</button><div id="vi-panel"><button id="vi-img"></button><button id="vi-off"></button></div><div id="admin-root">Загрузка…</div>`, { url, runScripts: 'outside-only', pretendToBeVisual: true });
   t.after(() => dom.window.close());
   const { window } = dom;
@@ -24,7 +24,7 @@ async function setup(t, url = 'https://jks.ooo/admin', authenticated = false) {
   window.structuredClone = structuredClone;
   window.localStorage.setItem('jks_vault', 'old encrypted binding');
   let state = { authenticated, user: authenticated ? { username: 'editor' } : null, csrf: 'session' };
-  const calls = { session: 0, login: [], read: [], password: [], logout: 0 };
+  const calls = { session: 0, login: [], read: [], password: [], logout: 0, requests: [] };
   const deps = {
     COLLECTIONS, ...dataHelpers, mountSmartCaptcha,
     getSessionState: () => ({ ...state }),
@@ -40,6 +40,7 @@ async function setup(t, url = 'https://jks.ooo/admin', authenticated = false) {
     logout: async () => { calls.logout++; state = { authenticated: false, user: null, csrf: '' }; },
     changePassword: async (...args) => { calls.password.push(args); },
     readDataFile: async file => { calls.read.push(file); return { data: file === 'useful.json' ? {} : [], sha: 'sha' }; },
+    readSiteRequests: async (page = 1) => { calls.requests.push(page); return { data: requests, total: requests.length, page, pages: 2 }; },
     writeDataFile: () => { throw new Error('Unexpected write'); },
     commitFiles: () => { throw new Error('Unexpected commit'); },
   };
@@ -54,6 +55,24 @@ async function setup(t, url = 'https://jks.ooo/admin', authenticated = false) {
 function submit(window, id) {
   window.document.getElementById(id).dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
 }
+
+test('private requests render escaped contents, protected photos, refresh and pagination', async t => {
+  const item = { id: 'a'.repeat(64), requestId: 'TEST', createdAt: '2026-11-19T14:34:34+07:00', topic: 'Тест', fio: '<img src=x onerror=alert(1)>', phone: '+79990000000', house: 'Тестовый дом', flat: '1', text: '<script>alert(1)</script>\nСтрока', delivery: 'confirmed_by_owner', test: true, photos: [{ name: 'photo-1.png', size: 1234 }, { name: '../config.php', size: 1 }] };
+  const { window, calls } = await setup(t, 'https://jks.ooo/admin#/c/requests', true, [item]);
+  const doc = window.document;
+  assert.equal(doc.querySelectorAll('.request-card').length, 1);
+  assert.equal(doc.querySelectorAll('.request-card script,.request-card [onerror]').length, 0);
+  assert.match(doc.querySelector('.request-card').textContent, /Получение письма подтверждено/);
+  assert.equal(doc.querySelectorAll('.request-images img').length, 1);
+  assert.match(doc.querySelector('.request-images img').src, /\/api\/admin.php\?action=request-photo&id=a{64}&file=photo-1.png$/);
+  assert.ok(doc.querySelector('.request-images a[href$="download=1"]'));
+  assert.ok(doc.querySelector('a[href="#/c/requests/2"]'));
+  const search = doc.getElementById('request-search'); search.value = 'нет совпадений'; search.dispatchEvent(new window.Event('input'));
+  assert.equal(doc.querySelector('.request-card').hidden, true); assert.equal(doc.getElementById('request-no-match').hidden, false);
+  doc.getElementById('requests-refresh').click(); await tick();
+  assert.deepEqual(calls.requests, [1, 1]); assert.equal(calls.read.length, 0, 'Requests never read GitHub data');
+  doc.getElementById('adm-exit').click(); await tick(); assert.equal(doc.querySelector('.request-card'), null);
+});
 
 test('login form has two labeled password-manager fields; failed login retains legacy binding', async t => {
   const { window, calls } = await setup(t);

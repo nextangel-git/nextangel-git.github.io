@@ -6,7 +6,7 @@ import Base from '../layouts/Base.astro';
   <script>
     import { COLLECTIONS } from '../lib/collections.mjs';
     import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../lib/admin-data.js';
-    import { getSessionState, clearSession, refreshSession, login, logout, changePassword, readDataFile, writeDataFile, commitFiles } from '../lib/server-admin.js';
+    import { getSessionState, clearSession, refreshSession, login, logout, changePassword, readDataFile, readSiteRequests, writeDataFile, commitFiles } from '../lib/server-admin.js';
 
     import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
 
@@ -82,6 +82,13 @@ import Base from '../layouts/Base.astro';
     /* ---------- данные ---------- */
     async function getCol(name) {
       const cfg = COLLECTIONS[name];
+      if (name === 'requests') {
+        const version = authVersion;
+        const result = await readSiteRequests();
+        if (version !== authVersion) throw Object.assign(new Error('Предыдущий экран уже закрыт.'), { staleView: true });
+        CNT[name] = result.total;
+        return result.data;
+      }
       if (!CACHE[name]) {
         const version = authVersion;
         const { data, sha } = await readDataFile(cfg.file);
@@ -230,6 +237,43 @@ import Base from '../layouts/Base.astro';
       shell('Дашборд', `
         <p class="muted" style="margin-top:0">Изменения сохраняются коммитом в GitHub — сайт пересобирается автоматически за 2–3 минуты.</p>
         <div class="grid">${cards.join('')}</div>`, 'dash');
+    }
+
+    /* ---------- закрытый журнал заявок ---------- */
+    async function viewRequests(page = 1) {
+      const version = authVersion, hash = location.hash;
+      shell('Заявки с сайта', '<p role="status">Загрузка заявок…</p>', 'requests');
+      const result = await readSiteRequests(Number.isSafeInteger(page) && page > 0 ? page : 1);
+      if (version !== authVersion || hash !== location.hash) return;
+      CNT.requests = result.total;
+      const statuses = { sent: 'Письмо отправлено', unconfirmed: 'Отправка письма не подтверждена', confirmed_by_owner: 'Получение письма подтверждено', sending: 'Статус отправки письма уточняется' };
+      const cards = result.data.map(item => {
+        const date = new Date(item.createdAt);
+        const stamp = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('ru-RU', { timeZone: 'Asia/Krasnoyarsk' });
+        const photos = (item.photos || []).filter(p => /^[a-f0-9]{64}$/.test(item.id) && /^photo-[1-5]\.(jpg|png|webp)$/.test(p.name)).map((p, i) => {
+          const url = '/api/admin.php?' + new URLSearchParams({ action: 'request-photo', id: item.id, file: p.name });
+          return `<figure><a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="Фото ${i + 1} к заявке" loading="lazy"></a><figcaption><a href="${esc(url)}&amp;download=1">Скачать фото ${i + 1}</a> · ${esc((p.size / 1000000).toLocaleString('ru-RU', { maximumFractionDigits: 2 }))} МБ</figcaption></figure>`;
+        }).join('');
+        return `<article class="card request-card">
+          <div class="request-meta"><time datetime="${esc(item.createdAt)}">${esc(stamp)} · Красноярск</time><span>${esc(statuses[item.delivery] || statuses.sending)}</span></div>
+          <h2>${esc(item.topic)}</h2>${item.test ? '<p><strong>ТЕСТ — не требует обработки</strong></p>' : ''}
+          <p class="request-code">${esc(item.requestId)}</p>
+          <dl><dt>ФИО</dt><dd>${esc(item.fio)}</dd><dt>Телефон</dt><dd>${esc(item.phone || 'Не указан')}</dd><dt>Дом</dt><dd>${esc(item.house)}</dd><dt>Квартира</dt><dd>${esc(item.flat || 'Не указана')}</dd></dl>
+          <p class="request-description">${esc(item.text)}</p>
+          ${photos ? `<div class="request-images">${photos}</div>` : '<p class="muted">Без фотографий</p>'}
+        </article>`;
+      }).join('');
+      const paging = `<nav class="request-paging" aria-label="Страницы заявок">${result.page > 1 ? `<a class="btn ghost" href="#/c/requests/${result.page - 1}">← Назад</a>` : ''}<span>Страница ${result.page} из ${result.pages}</span>${result.page < result.pages ? `<a class="btn ghost" href="#/c/requests/${result.page + 1}">Далее →</a>` : ''}</nav>`;
+      shell('Заявки с сайта', `<p class="muted">Обращения и фотографии доступны только после входа. Всего заявок: ${result.total}.</p>
+        <div class="toolbar"><label class="search"><span class="sr-only">Поиск на текущей странице</span><input id="request-search" placeholder="Поиск на этой странице…"></label><button type="button" class="btn ghost" id="requests-refresh">Обновить</button></div>
+        <div id="request-list">${cards || '<p>Пока нет заявок с сайта.</p>'}</div><p id="request-no-match" hidden>На этой странице ничего не найдено.</p>${paging}`, 'requests');
+      document.getElementById('requests-refresh').onclick = () => route();
+      document.getElementById('request-search').oninput = event => {
+        const query = event.target.value.trim().toLocaleLowerCase('ru');
+        const items = [...document.querySelectorAll('.request-card')];
+        items.forEach(card => { card.hidden = !card.textContent.toLocaleLowerCase('ru').includes(query); });
+        document.getElementById('request-no-match').hidden = !items.length || items.some(card => !card.hidden);
+      };
     }
 
     /* ---------- список ---------- */
@@ -584,6 +628,7 @@ import Base from '../layouts/Base.astro';
       const h = location.hash.replace(/^#\/?/, '');
       const parts = h.split('/');
       try {
+        if (parts[0] === 'c' && parts[1] === 'requests') return await viewRequests(Number(parts[2] || 1));
         if (parts[0] === 'c' && parts[2] === 'edit') return await viewEdit(parts[1], parts[3]);
         if (parts[0] === 'c' && parts[2] === 'del') return await viewDel(parts[1], parts[3]);
         if (parts[0] === 'c' && parts[1] === 'houses' && parts[2] === 'restore') return await viewRestore(parts[3]);
@@ -612,6 +657,16 @@ import Base from '../layouts/Base.astro';
   </script>
 
   <style is:global>
+    .request-card{margin-bottom:18px;overflow-wrap:anywhere;min-width:0}
+    .request-card h2{font-size:1.15em;margin:12px 0}
+    .request-card dl{display:grid;grid-template-columns:minmax(70px,100px) minmax(0,1fr);gap:8px 12px}
+    .request-card dt{font-weight:600}.request-card dd{margin:0}
+    .request-description{white-space:pre-wrap}.request-code{font-size:.85em}
+    .request-meta,.request-paging{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between}
+    .request-images{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+    .request-images figure{margin:0;min-width:0}.request-images img{display:block;width:100%;height:160px;object-fit:contain;border:1px solid #64748b;border-radius:6px}
+    .request-images figcaption{margin-top:8px;font-size:.85em}
+    @media(max-width:600px){.request-images{grid-template-columns:minmax(0,1fr)}.request-card dl{grid-template-columns:minmax(0,1fr);gap:4px}.request-card dd{margin-bottom:8px}}
     .admin-vi-toggle{display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-width:0;min-height:44px;padding:8px 12px;border:1px solid #64748b;border-radius:8px;background:#fff;color:#0f172a;font:inherit;font-size:.85rem;line-height:1.4;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
     .authcard .admin-vi-toggle{width:100%;margin-top:16px}
     html.vi .authpage,html.vi .authcard,html.vi .adm-fixed,html.vi .adm-fixed .side,html.vi .adm-fixed .card,html.vi .adm-fixed .ccard,html.vi .adm-fixed .tblwrap,html.vi .adm-fixed .userchip{background:#fff;color:#000;box-shadow:none}

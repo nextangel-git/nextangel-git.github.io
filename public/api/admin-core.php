@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/admin-schema.php';
 require_once __DIR__ . '/captcha-core.php';
+require_once __DIR__ . '/request-store.php';
 
 final class JksAdminApi {
     const ORIGIN = 'https://jks.ooo';
@@ -220,6 +221,7 @@ final class JksAdminApi {
     }
     public function read(string $file, string $ref = 'main'): array {
         $file = JksAdminSchema::readFile($file); $ref = JksAdminSchema::ref($ref);
+        if ($file==='requests.json') return (new JksRequestStore($this->privateDir))->listing();
         $record = $this->github('GET', self::REPO . '/contents/src/data/' . $file . '?ref=' . rawurlencode($ref));
         $sha = JksAdminSchema::sha($record['sha'] ?? null);
         if (($record['encoding'] ?? '') !== 'base64' || !isset($record['content'])) $record = $this->github('GET', self::REPO . '/git/blobs/' . $sha);
@@ -266,8 +268,8 @@ final class JksAdminApi {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $action = $_GET['action'] ?? 'session';
         if (!is_string($action)) throw new JksApiError(400, 'action', 'Неизвестная операция.');
-        $expectedMethod = in_array($action, ['session', 'read'], true) ? 'GET' : 'POST';
-        if (!in_array($action, ['session', 'login', 'logout', 'password', 'read', 'commit'], true)) throw new JksApiError(404, 'action', 'Неизвестная операция.');
+        $expectedMethod = in_array($action, ['session', 'read','requests','request-photo'], true) ? 'GET' : 'POST';
+        if (!in_array($action, ['session', 'login', 'logout', 'password', 'read', 'commit','requests','request-photo'], true)) throw new JksApiError(404, 'action', 'Неизвестная операция.');
         if ($method !== $expectedMethod) { header('Allow: ' . $expectedMethod); throw new JksApiError(405, 'method', 'Недопустимый метод запроса.'); }
         $authenticated = $this->authenticated();
         if ($action === 'session') return $this->sessionPayload($authenticated);
@@ -278,6 +280,16 @@ final class JksAdminApi {
         if ($action === 'password') return $this->changePassword($this->body());
         // Release the session lock for potentially slow GitHub requests.
         session_write_close();
+        if ($action==='requests') return (new JksRequestStore($this->privateDir))->listing(max(1,(int)($_GET['page'] ?? 1)));
+        if ($action==='request-photo') {
+            if (!is_string($_GET['id'] ?? null) || !is_string($_GET['file'] ?? null)) throw new JksApiError(404,'photo_missing','Фотография не найдена.');
+            $photo=(new JksRequestStore($this->privateDir))->photo($_GET['id'],$_GET['file']);
+            header('Content-Type: '.$photo['mime']);header('Content-Length: '.filesize($photo['path']));
+            header('Cache-Control: no-store, private');header('X-Content-Type-Options: nosniff');header('X-Frame-Options: DENY');
+            header('Content-Security-Policy: default-src \'none\'; sandbox');
+            header('Content-Disposition: '.(isset($_GET['download'])?'attachment':'inline').'; filename="'.$photo['name'].'"');
+            readfile($photo['path']);exit;
+        }
         if ($action === 'read') return $this->read(JksAdminSchema::readFile($_GET['file'] ?? null), JksAdminSchema::ref($_GET['ref'] ?? null));
         self::prepareCommitMemory();
         return $this->commit($this->body(self::BODY_LIMIT));

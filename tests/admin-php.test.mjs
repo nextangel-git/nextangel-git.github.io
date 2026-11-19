@@ -65,6 +65,11 @@ test('PHP provisioning uses stdin, hashes passwords, refuses overwrite and publi
 
 test('PHP sessions, login, CSRF, password rotation, rate limits and missing configuration', { skip: !available && 'Set PHP_BIN', timeout: 30000 }, async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'jks-php-admin-'));
+  const recordId = 'a'.repeat(64), recordDir = path.join(directory, 'requests', recordId);
+  const photoBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  await fs.mkdir(recordDir, { recursive: true });
+  await fs.writeFile(path.join(recordDir, 'photo-1.png'), photoBytes);
+  await fs.writeFile(path.join(recordDir, 'request.json'), JSON.stringify({ id: recordId, requestId: 'TEST', fio: 'Test', text: 'Private text', fingerprint: 'private-fingerprint', photos: [{ name: 'photo-1.png', mime: 'image/png', size: photoBytes.length }] }));
   const password = 'test-only-' + crypto.randomUUID();
   const newPassword = 'changed-only-' + crypto.randomUUID();
   const hashed = spawnSync(php, ['-r', 'echo password_hash($argv[1], PASSWORD_BCRYPT, ["cost"=>4]);', password], { encoding: 'utf8', windowsHide: true });
@@ -92,7 +97,7 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
         incoming.on('end', () => {
           const headers = new Headers();
           for (const [name, value] of Object.entries(incoming.headers)) for (const item of Array.isArray(value) ? value : [value]) if (item != null) headers.append(name, item);
-          resolve({ res: { status: incoming.statusCode, headers }, text: Buffer.concat(chunks).toString('utf8') });
+          resolve({ res: { status: incoming.statusCode, headers }, text: Buffer.concat(chunks).toString(incoming.headers['content-type'] === 'image/png' ? 'base64' : 'utf8') });
         });
       });
       req.on('error', reject); req.end(payload);
@@ -100,7 +105,7 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
     for (const header of res.headers.getSetCookie()) cookie = header.split(';')[0];
     assert.ok(!text.includes('TEST_ONLY_NO_NETWORK_TOKEN'));
     assert.ok(!text.includes('password_hash'));
-    const data = JSON.parse(text);
+    const data = res.headers.get('content-type') === 'image/png' ? { base64: text } : JSON.parse(text);
     if (data.csrf) csrf = data.csrf;
     return { res, data };
   }
@@ -112,6 +117,9 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
   reply = await request('login', { username: 'test', password }, { Origin: 'https://attacker.invalid' }); assert.equal(reply.res.status, 403);
   reply = await request('login', { username: 'test', password }, { 'X-CSRF-Token': 'bad' }); assert.equal(reply.res.status, 403);
   reply = await request('read&file=houses.json'); assert.equal(reply.res.status, 401);
+  for (const action of ['requests', 'read&file=requests.json', `request-photo&id=${recordId}&file=photo-1.png`]) {
+    reply = await request(action); assert.equal(reply.res.status, 401); assert.ok(!JSON.stringify(reply.data).includes('Private text'));
+  }
   reply = await request('login', { username: 'test', password, captchaToken: '' }); assert.equal(reply.res.status, 422);
   reply = await request('login', { username: 'test', password, captchaToken: 'invalid-token' }); assert.equal(reply.res.status, 403);
   reply = await request('session'); assert.equal(reply.data.authenticated, false);
@@ -120,6 +128,14 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
   reply = await request('login', { username: 'test', password }); assert.equal(reply.res.status, 200); assert.equal(reply.data.authenticated, true);
   assert.notEqual(cookie, anonymousCookie); assert.notEqual(csrf, anonymousCsrf); assert.equal(reply.data.user.username, 'test');
   reply = await request('read&file=houses.json'); assert.equal(reply.res.status, 200); assert.deepEqual(reply.data.data, []);
+  for (const action of ['requests', 'read&file=requests.json']) {
+    reply = await request(action); assert.equal(reply.res.status, 200); assert.equal(reply.data.total, 1); assert.equal(reply.data.data[0].text, 'Private text'); assert.ok(!JSON.stringify(reply.data).includes('private-fingerprint'));
+  }
+  reply = await request(`request-photo&id=${recordId}&file=photo-1.png`); assert.equal(reply.res.status, 200); assert.equal(reply.data.base64, photoBytes.toString('base64')); assert.match(reply.res.headers.get('cache-control'), /no-store/); assert.match(reply.res.headers.get('content-disposition'), /inline/);
+  reply = await request(`request-photo&id=${recordId}&file=photo-1.png&download=1`); assert.match(reply.res.headers.get('content-disposition'), /attachment/);
+  for (const action of [`request-photo&id=${recordId}&file=../config.php`, 'request-photo&id=../../config.php&file=photo-1.png']) {
+    reply = await request(action); assert.equal(reply.res.status, 404);
+  }
   reply = await request('read&file=../.env'); assert.equal(reply.res.status, 422);
   reply = await request('password', { currentPassword: 'incorrect', newPassword }); assert.equal(reply.res.status, 403);
   const oldCookie = cookie;

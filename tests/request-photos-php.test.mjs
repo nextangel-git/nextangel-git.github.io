@@ -25,7 +25,7 @@ test('real PHP multipart uploads enforce file bytes, count and totals before cap
   assert.match(output,/Development Server/);
   const body={fio:'Тест',phone:'+79990000000',house:'ул. Тестовая, 1',flat:'1',topic:'Другое',text:'Изолированный тест, писем нет',pdn:true,company:'',captchaToken:'valid',requestId:'ЖКС-12345678-1234-4123-8123-123456789abc'};
   async function upload(files,options={}) {
-    const form=new FormData();form.append('payload',JSON.stringify({...body,photoCount:options.count??files.length,...options.body}));
+    const form=new FormData();form.append('payload',JSON.stringify({...body,requestId:'ЖКС-'+crypto.randomUUID(),photoCount:options.count??files.length,...options.body}));
     for(const [i,f] of files.entries())form.append('photos[]',new Blob([f],{type:'image/png'}),`image-${i}.png`);
     const req=new Request('http://localhost/',{method:'POST',body:form});const bytes=Buffer.from(await req.arrayBuffer());
     return new Promise((resolve,reject)=>{
@@ -35,11 +35,15 @@ test('real PHP multipart uploads enforce file bytes, count and totals before cap
   let r=await upload([png,png]);assert.equal(r.status,200,JSON.stringify(r));assert.equal(r.data.test_calls[0].kind,'captcha');
   assert.equal(r.data.test_calls[1].count,2);assert.equal(r.data.test_calls[1].files[0].name,'photo-1.png');
   assert.equal(r.data.test_calls[1].files[0].sha,createHash('sha256').update(png).digest('hex'),'Uploaded bytes reach the mail transport unchanged');
+  const storedId=createHash('sha256').update(r.data.requestId).digest('hex');
+  const stored=JSON.parse(await fs.readFile(path.join(directory,'requests',storedId,'request.json'),'utf8'));
+  assert.equal(stored.photos.length,2);assert.equal(stored.delivery,'sent');assert.equal(stored.captchaToken,undefined);
+  assert.deepEqual(await fs.readFile(path.join(directory,'requests',storedId,'photo-1.png')),png,'Private copy matches original bytes');
   const rejected=[[[png,png],{count:3},422],[[Buffer.from('<script>not a photo</script>')],{},422],[[Buffer.alloc(0)],{},413],[[Buffer.alloc(5_000_001)],{},413],[Array(6).fill(png),{},422],[[png],{origin:'https://evil.invalid'},403]];
   for(const [files,options,status] of rejected){r=await upload(files,options);assert.equal(r.status,status,JSON.stringify(r));assert.equal(r.data.test_calls.length,0);}
   const large=Buffer.alloc(5_000_000);png.copy(large);r=await upload([large,large,png]);assert.equal(r.status,413);assert.equal(r.data.test_calls.length,0);
   r=await upload([png],{body:{captchaToken:'invalid'}});assert.equal(r.status,403);assert.deepEqual(r.data.test_calls,[{kind:'captcha'}]);
-  for(const result of ['html','wrong']){r=await upload([png],{result});assert.equal(r.status,502,'HTML or unrelated redirect never counts as success');}
+  for(const result of ['html','wrong']){r=await upload([png],{result});assert.equal(r.status,200);assert.equal(r.data.saved,true);assert.equal(r.data.emailSent,false,'HTML or unrelated redirect never confirms mail, but record is saved');}
   r=await upload([png],{result:'thanks'});assert.equal(r.status,200,'Verified service success page is accepted without following redirects');
   r=await upload([]);assert.equal(r.status,200);assert.equal(r.data.test_calls[1].kind,'text');
 });

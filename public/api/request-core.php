@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/captcha-core.php';
+require_once __DIR__ . '/request-store.php';
 
 final class JksRequestApi {
     const BODY_LIMIT = 32768;
@@ -142,17 +143,25 @@ final class JksRequestApi {
         $photos=self::photos($files,$photoCount);
         $this->rateLimit();
         $this->captcha->verify($body->captchaToken ?? null);
+        // Save before sending mail: an upstream outage must not lose a verified request.
+        $store=new JksRequestStore($this->privateDir);
+        $saved=$store->save(compact('requestId','fio','phone','house','flat','topic','text'),$photos);
+        if (!$saved['created']) return ['success'=>true,'saved'=>true,'emailSent'=>in_array($saved['record']['delivery'],['sent','confirmed_by_owner'],true),'requestId'=>$requestId];
         // Only these fixed fields reach the fixed mail recipient; no client mail options are accepted.
         $payload = ['_subject'=>'Заявка ' . $requestId . ' с сайта: ' . $topic, '_template'=>'table', '_captcha'=>'false',
             'Номер заявки'=>$requestId,'ФИО'=>$fio,'Телефон'=>$phone,'Дом'=>$house,'Квартира'=>$flat,'Тема'=>$topic,'Описание'=>$text,'Согласие на обработку персональных данных'=>'Да'];
+        $emailSent=false;
         try {
             if ($photos) $this->sendPhotos($payload,$photos);
             else {
                 $reply = JksCaptcha::post(JksCaptcha::FORM_URL, $payload, false, $this->transport);
                 if (($reply['status'] ?? 0) < 200 || ($reply['status'] ?? 0) >= 300 || !in_array($reply['data']['success'] ?? null, [true, 'true'], true)) throw new RuntimeException('Delivery not confirmed');
             }
-        } catch (Throwable $error) { throw new JksApiError(502, 'delivery_unconfirmed', 'Отправка не подтверждена. Повторите проверку «Я не робот» и попробуйте снова либо свяжитесь с УК по телефону или почте.'); }
-        return ['success'=>true, 'requestId'=>$requestId];
+            $emailSent=true;
+        } catch (Throwable $error) { /* The saved request remains available to authenticated administrators. */ }
+        try { $store->delivery($saved['record']['id'],$emailSent?'sent':'unconfirmed'); }
+        catch(Throwable $error) { error_log('JKS request delivery status update failed'); }
+        return ['success'=>true,'saved'=>true,'emailSent'=>$emailSent,'requestId'=>$requestId];
     }
     public function dispatch(): array {
         if (!in_array($_SERVER['HTTPS'] ?? '', ['on','1'], true) || ($_SERVER['HTTP_HOST'] ?? '') !== 'jks.ooo') throw new JksApiError(403, 'host', 'Форма доступна только на https://jks.ooo.');
