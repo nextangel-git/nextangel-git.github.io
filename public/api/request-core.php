@@ -4,6 +4,12 @@ require_once __DIR__ . '/captcha-core.php';
 
 final class JksRequestApi {
     const BODY_LIMIT = 32768;
+    const PHOTO_COUNT = 5;
+    const PHOTO_LIMIT = 5000000;
+    const PHOTOS_LIMIT = 10000000;
+    const MULTIPART_LIMIT = self::PHOTOS_LIMIT + self::BODY_LIMIT + 65536;
+    const ATTACHMENT_URL = 'https://formsubmit.co/uk@jks.ooo';
+    const ACCEPTED_URL = 'https://jks.ooo/request?service=accepted';
     const TOPICS = ['Сантехника','Электрика','Отопление','Уборка подъезда / территории','Шум / соседи','Вопрос по квитанции','Заказ платной услуги','Другое'];
     private $privateDir;
     private $captcha;
@@ -49,8 +55,79 @@ final class JksRequestApi {
         } catch (Throwable $error) { throw new JksApiError(503, 'request_unavailable', 'Отправка обращений временно недоступна.');
         } finally { flock($file, LOCK_UN); fclose($file); }
     }
-    public function submit(stdClass $body): array {
-        if (array_diff(array_keys(get_object_vars($body)), ['fio','phone','house','flat','topic','text','pdn','company','captchaToken','requestId'])) throw new JksApiError(422, 'validation', 'Некорректные поля обращения.');
+    private static function photos(array $files, int $expected): array {
+        if ($expected<0 || $expected>self::PHOTO_COUNT || array_diff(array_keys($files),['photos'])) throw new JksApiError(422,'photos_count','Можно прикрепить не более 5 фотографий.');
+        if (!$files && $expected===0) return [];
+        $upload=$files['photos'] ?? null;
+        if (!is_array($upload)) throw new JksApiError(422,'photos_missing','Фотографии не загрузились. Выберите их заново.');
+        foreach (['name','tmp_name','size','error'] as $field) {
+            if (!isset($upload[$field]) || !is_array($upload[$field]) || !array_is_list($upload[$field]) || count($upload[$field])!==$expected) throw new JksApiError(422,'photos_missing','Не все фотографии загрузились. Выберите их заново.');
+        }
+        $result=[]; $total=0;
+        foreach ($upload['error'] as $i=>$error) {
+            if (in_array($error,[UPLOAD_ERR_INI_SIZE,UPLOAD_ERR_FORM_SIZE],true)) throw new JksApiError(413,'photo_size','Каждая фотография должна быть не больше 5 МБ.');
+            if ($error!==UPLOAD_ERR_OK || !is_string($upload['tmp_name'][$i]) || !is_uploaded_file($upload['tmp_name'][$i])) throw new JksApiError(422,'photo_upload','Фотография загрузилась не полностью. Выберите её заново.');
+            $path=$upload['tmp_name'][$i]; $size=filesize($path);
+            if ($size===false || $size<1 || $size>self::PHOTO_LIMIT) throw new JksApiError(413,'photo_size','Каждая фотография должна быть от 1 байта до 5 МБ.');
+            $total+=$size;
+            if ($total>self::PHOTOS_LIMIT) throw new JksApiError(413,'photos_size','Общий размер фотографий не должен превышать 10 МБ.');
+            if (!class_exists('finfo')) throw new JksApiError(503,'photos_unavailable','Загрузка фотографий временно недоступна.');
+            $mime=(new finfo(FILEINFO_MIME_TYPE))->file($path);
+            $extensions=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'];
+            $info=@getimagesize($path);
+            if (!isset($extensions[$mime]) || !$info || ($info['mime'] ?? '')!==$mime || $info[0]<1 || $info[1]<1) throw new JksApiError(422,'photo_type','Допустимы только фотографии JPG, PNG и WebP. Файл повреждён или имеет другой формат.');
+            // Original names and client MIME types never become mail headers or server paths.
+            $result[]=['path'=>$path,'mime'=>$mime,'name'=>'photo-'.($i+1).'.'.$extensions[$mime]];
+        }
+        return $result;
+    }
+    private function sendPhotos(array $payload, array $photos): void {
+        $payload['_next']=self::ACCEPTED_URL;
+        $payload['_url']='https://jks.ooo/request';
+        $payload['Фотографий']=count($photos);
+        // File uploads use FormSubmit's documented multipart endpoint, not its JSON AJAX endpoint.
+        if ($this->transport!==null) $reply=call_user_func($this->transport,self::ATTACHMENT_URL,$payload,$photos);
+        else {
+            if (!function_exists('curl_init') || !class_exists('CURLFile')) throw new RuntimeException('Transport unavailable');
+            foreach ($photos as $i=>$photo) $payload['attachment'.($i+1)]=new CURLFile($photo['path'],$photo['mime'],$photo['name']);
+            $curl=curl_init(self::ATTACHMENT_URL); $location=''; $buffer='';
+            curl_setopt_array($curl,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT_FOLLOWLOCATION=>false,
+                CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,
+                CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>30,CURLOPT_USERAGENT=>'JKS-Server-Forms',
+                CURLOPT_HTTPHEADER=>['Origin: https://jks.ooo','Referer: https://jks.ooo/request','Expect:'],
+                CURLOPT_HEADERFUNCTION=>static function($c,string $line) use (&$location): int {
+                    if (preg_match('/^HTTP\//i',$line)) $location='';
+                    if (stripos($line,'Location:')===0) $location=trim(substr($line,9));
+                    return strlen($line);
+                },
+                CURLOPT_WRITEFUNCTION=>static function($c,string $chunk) use (&$buffer): int { if (strlen($buffer)+strlen($chunk)>65536) return 0; $buffer.=$chunk; return strlen($chunk); }]);
+            try {
+                if (curl_exec($curl)===false) throw new RuntimeException('Delivery unavailable');
+                $reply=['status'=>(int)curl_getinfo($curl,CURLINFO_HTTP_CODE),'location'=>$location,'body'=>$buffer];
+            } finally { if (PHP_VERSION_ID < 80000) curl_close($curl); }
+        }
+        if (!self::deliveryAccepted($reply)) throw new RuntimeException('Attachment delivery not confirmed');
+    }
+    public static function deliveryAccepted(array $reply): bool {
+        if (in_array($reply['status'] ?? 0,[302,303],true) && ($reply['location'] ?? '')===self::ACCEPTED_URL) return true;
+        // FormSubmit also serves its success page as HTTP 200 instead of following _next.
+        // A generic HTTP 200, an activation page or an echoed message is not confirmation.
+        $html=$reply['body'] ?? null;
+        if (($reply['status'] ?? 0)!==200 || !is_string($html) || strlen($html)>65536 || !class_exists('DOMDocument')) return false;
+        $previous=libxml_use_internal_errors(true);
+        try {
+            $dom=new DOMDocument();$dom->resolveExternals=false;$dom->substituteEntities=false;
+            if (!$dom->loadHTML($html,LIBXML_NONET|LIBXML_NOERROR|LIBXML_NOWARNING)) return false;
+            $xpath=new DOMXPath($dom);
+            $headings=$xpath->query('//h1');
+            if ($headings->length!==1 || trim($headings->item(0)->textContent)!=='Thanks!' || $xpath->query('//form')->length) return false;
+            $paragraph=$xpath->query('following-sibling::p[1]',$headings->item(0))->item(0);
+            if (!$paragraph || strpos(trim($paragraph->textContent),'The form was submitted successfully. Return to original site:')!==0) return false;
+            return $xpath->query('./a[@href="https://jks.ooo/request"]',$paragraph)->length===1;
+        } finally { libxml_clear_errors();libxml_use_internal_errors($previous); }
+    }
+    public function submit(stdClass $body, array $files = []): array {
+        if (array_diff(array_keys(get_object_vars($body)), ['fio','phone','house','flat','topic','text','pdn','company','captchaToken','requestId','photoCount'])) throw new JksApiError(422, 'validation', 'Некорректные поля обращения.');
         if (($body->company ?? '') !== '') throw new JksApiError(422, 'validation', 'Не удалось отправить обращение. Проверьте поля формы.');
         if (($body->pdn ?? null) !== true) throw new JksApiError(422, 'consent_required', 'Подтвердите согласие на обработку персональных данных.');
         $fio = self::field($body->fio ?? null, 150); $phone = self::field($body->phone ?? null, 30);
@@ -60,14 +137,20 @@ final class JksRequestApi {
         if (!preg_match('/\A[+0-9() .-]+\z/D', $phone) || strlen($digits) < 10 || strlen($digits) > 15 || !in_array($topic, self::TOPICS, true)) throw new JksApiError(422, 'validation', 'Проверьте телефон и тему обращения.');
         $requestId = $body->requestId ?? null;
         if (!is_string($requestId) || !preg_match('/\AЖКС-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}\z/iDu', $requestId)) throw new JksApiError(422, 'validation', 'Некорректный код обращения. Обновите страницу.');
+        $photoCount=$body->photoCount ?? 0;
+        if (!is_int($photoCount)) throw new JksApiError(422,'photos_count','Некорректное количество фотографий.');
+        $photos=self::photos($files,$photoCount);
         $this->rateLimit();
         $this->captcha->verify($body->captchaToken ?? null);
         // Only these fixed fields reach the fixed mail recipient; no client mail options are accepted.
         $payload = ['_subject'=>'Заявка ' . $requestId . ' с сайта: ' . $topic, '_template'=>'table', '_captcha'=>'false',
             'Номер заявки'=>$requestId,'ФИО'=>$fio,'Телефон'=>$phone,'Дом'=>$house,'Квартира'=>$flat,'Тема'=>$topic,'Описание'=>$text,'Согласие на обработку персональных данных'=>'Да'];
         try {
-            $reply = JksCaptcha::post(JksCaptcha::FORM_URL, $payload, false, $this->transport);
-            if (($reply['status'] ?? 0) < 200 || ($reply['status'] ?? 0) >= 300 || !in_array($reply['data']['success'] ?? null, [true, 'true'], true)) throw new RuntimeException('Delivery not confirmed');
+            if ($photos) $this->sendPhotos($payload,$photos);
+            else {
+                $reply = JksCaptcha::post(JksCaptcha::FORM_URL, $payload, false, $this->transport);
+                if (($reply['status'] ?? 0) < 200 || ($reply['status'] ?? 0) >= 300 || !in_array($reply['data']['success'] ?? null, [true, 'true'], true)) throw new RuntimeException('Delivery not confirmed');
+            }
         } catch (Throwable $error) { throw new JksApiError(502, 'delivery_unconfirmed', 'Отправка не подтверждена. Повторите проверку «Я не робот» и попробуйте снова либо свяжитесь с УК по телефону или почте.'); }
         return ['success'=>true, 'requestId'=>$requestId];
     }
@@ -75,7 +158,15 @@ final class JksRequestApi {
         if (!in_array($_SERVER['HTTPS'] ?? '', ['on','1'], true) || ($_SERVER['HTTP_HOST'] ?? '') !== 'jks.ooo') throw new JksApiError(403, 'host', 'Форма доступна только на https://jks.ooo.');
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { header('Allow: POST'); throw new JksApiError(405, 'method', 'Нужен POST-запрос.'); }
         if (($_SERVER['HTTP_ORIGIN'] ?? '') !== 'https://jks.ooo' || ($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '') === 'cross-site') throw new JksApiError(403, 'origin', 'Запрос с другого сайта отклонён.');
-        if (strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0])) !== 'application/json') throw new JksApiError(415, 'content_type', 'Нужен JSON-запрос.');
+        $type=strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
+        if ($type==='multipart/form-data') {
+            if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0)>self::MULTIPART_LIMIT) throw new JksApiError(413,'too_large','Общий размер фотографий не должен превышать 10 МБ.');
+            if (array_keys($_POST)!==['payload'] || !is_string($_POST['payload']) || strlen($_POST['payload'])>self::BODY_LIMIT) throw new JksApiError(422,'photos_upload','Данные или фотографии не загрузились. Проверьте размеры файлов и повторите.');
+            $body=json_decode($_POST['payload'],false,16);
+            if (json_last_error()!==JSON_ERROR_NONE || !$body instanceof stdClass) throw new JksApiError(400,'invalid_json','Некорректные данные обращения.');
+            return $this->submit($body,$_FILES);
+        }
+        if ($type !== 'application/json') throw new JksApiError(415, 'content_type', 'Нужен JSON или multipart-запрос.');
         if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > self::BODY_LIMIT) throw new JksApiError(413, 'too_large', 'Слишком большой запрос.');
         $raw = file_get_contents('php://input', false, null, 0, self::BODY_LIMIT + 1);
         if ($raw === false || strlen($raw) > self::BODY_LIMIT) throw new JksApiError(413, 'too_large', 'Слишком большой запрос.');

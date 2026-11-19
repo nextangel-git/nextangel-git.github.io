@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { mountSmartCaptcha } from '../src/lib/smartcaptcha.js';
 import { mockSmartCaptcha } from './helpers/smartcaptcha.mjs';
+import { mountRequestPhotos } from '../src/lib/request-photos.js';
 
 // Exercise the actual form and event handlers in memory. No browser or network is used.
 const source = fs.readFileSync(new URL('../src/pages/request.astro', import.meta.url), 'utf8');
@@ -19,6 +20,9 @@ async function setup(t, fetchImpl, url = 'https://example.test/request') {
   w.housesAll = [{ street: 'Тестовая', num: '1' }];
   const captcha = mockSmartCaptcha(w);
   w.mountSmartCaptcha = mountSmartCaptcha;
+  w.mountRequestPhotos = mountRequestPhotos;
+  w.URL.createObjectURL = () => 'blob:test-photo';
+  w.URL.revokeObjectURL = () => {};
   w.fetch = fetchImpl;
   w.AbortSignal = AbortSignal;
   w.HTMLElement.prototype.scrollIntoView = () => {};
@@ -147,4 +151,37 @@ test('GitHub Pages does not initialize a widget or send a request and links to p
   assert.equal(form.hidden, true);
   assert.equal(captcha.widgets.size, 0);
   assert.equal(w.document.querySelector('#request-unavailable a').href, 'https://jks.ooo/request');
+});
+
+test('photos use multipart, survive failure and are explicitly excluded from the mailto fallback', async t => {
+  const calls = [];
+  const {w,form,submit} = await setup(t, async (...args) => { calls.push(args); throw new Error('Offline'); });
+  const input = w.document.getElementById('request-photo-input');
+  const files = [new w.File(['image1'],'one.jpg',{type:'image/jpeg'}),new w.File(['image2'],'two.png',{type:'image/png'})];
+  Object.defineProperty(input,'files',{configurable:true,value:files});
+  input.dispatchEvent(new w.Event('change'));
+  submit(); submit(); await settled(w);
+  assert.equal(calls.length,1);
+  const body = calls[0][1].body;
+  assert.equal(calls[0][1].headers['Content-Type'],undefined,'Browser supplies boundary');
+  assert.equal(JSON.parse(body.get('payload')).photoCount,2);
+  assert.deepEqual(body.getAll('photos[]').map(f=>f.name),['one.jpg','two.png']);
+  assert.match(w.document.getElementById('request-done').textContent,/прикрепите их вручную/);
+  w.document.getElementById('request-back').click();
+  assert.equal(w.document.querySelectorAll('[data-photo-list] li').length,2);
+  assert.equal(form.hidden,false);
+  w.document.querySelector('[aria-label="Удалить фото: one.jpg"]').click();
+  assert.equal(w.document.querySelectorAll('[data-photo-list] li').length,1);
+});
+
+test('oversized or excessive photo selection blocks submission until corrected or cleared', async t => {
+  const {w,submit} = await setup(t,()=>assert.fail('Invalid photos must not be submitted'));
+  const input=w.document.getElementById('request-photo-input');
+  Object.defineProperty(input,'files',{configurable:true,value:Array.from({length:6},(_,i)=>new w.File(['x'],`${i}.jpg`,{type:'image/jpeg'}))});
+  input.dispatchEvent(new w.Event('change')); submit();
+  assert.equal(input.checkValidity(),false);
+  assert.match(w.document.getElementById('request-photo-error').textContent,/не более 5/);
+  w.document.querySelector('[data-photo-clear]').click();
+  assert.equal(input.checkValidity(),true);
+  assert.equal(w.document.querySelectorAll('[data-photo-list] li').length,0);
 });

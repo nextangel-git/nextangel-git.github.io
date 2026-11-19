@@ -48,6 +48,15 @@ import Base from '../layouts/Base.astro';
             <span>Описание проблемы *</span>
             <textarea name="text" rows="5" maxlength="5000" required placeholder="Что случилось, где, когда началось…"></textarea>
           </label>
+          <div id="request-photos" class="form__field form__field--wide request-photos">
+            <label for="request-photo-input">Фотографии</label>
+            <p id="request-photo-help">Необязательно. До 5 фото: JPG, PNG или WebP. До 5 МБ каждое, до 10 МБ суммарно. Можно добавлять по одному или выбрать несколько сразу.</p>
+            <input id="request-photo-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple aria-describedby="request-photo-help request-photo-error" />
+            <p data-photo-status role="status" aria-live="polite"></p>
+            <ul data-photo-list class="request-photos__list"></ul>
+            <p id="request-photo-error" data-photo-error role="alert"></p>
+            <button type="button" class="btn btn--ghost" data-photo-clear>Убрать все фото</button>
+          </div>
           <label class="form__check form__field--wide">
             <input type="checkbox" name="pdn" required />
             <span>Согласен на обработку персональных данных в соответствии с <a href="/privacy">политикой конфиденциальности</a> *</span>
@@ -95,6 +104,7 @@ import Base from '../layouts/Base.astro';
   <script>
     import housesAll from '../data/houses.json';
     import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
+    import { mountRequestPhotos } from '../lib/request-photos.js';
     function initRequestForm() {
     if (location.hostname.endsWith('.github.io')) {
       document.getElementById('request-unavailable').innerHTML = 'Отправить заявку можно на основном сайте: <a href="https://jks.ooo/request">Открыть форму jks.ooo</a>.';
@@ -135,6 +145,7 @@ import Base from '../layouts/Base.astro';
     let submitting = false;
     const btn = form.querySelector('button[type=submit]');
     const errorNote = document.getElementById('request-error');
+    const photos = mountRequestPhotos(document.getElementById('request-photos'));
     const captcha = mountSmartCaptcha(document.getElementById('request-captcha'), token => { btn.disabled = submitting || !token; });
 
     form.addEventListener('submit', async (e) => {
@@ -161,15 +172,25 @@ import Base from '../layouts/Base.astro';
       btn.textContent = 'Отправляем…';
 
       const fd = new FormData(form);
+      const selectedPhotos = photos.files;
       const payload = Object.fromEntries(['fio', 'phone', 'house', 'flat', 'topic', 'text'].map(name => [name, String(fd.get(name)).trim()]));
       Object.assign(payload, { pdn: true, company: '', captchaToken: captcha.token, requestId: num });
+      let requestBody = JSON.stringify(payload);
+      const headers = { 'Accept': 'application/json' };
+      if (selectedPhotos.length) {
+        const upload = new FormData();
+        upload.append('payload', JSON.stringify({ ...payload, photoCount: selectedPhotos.length }));
+        for (const file of selectedPhotos) upload.append('photos[]', file, file.name);
+        requestBody = upload;
+      } else headers['Content-Type'] = 'application/json';
+      photos.lock(true);
       let sent = false;
       try {
         const res = await fetch('/api/request.php', {
           method: 'POST', credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(35000),
+          headers,
+          body: requestBody,
+          signal: AbortSignal.timeout(selectedPhotos.length ? 90000 : 35000),
         });
         const data = await res.json().catch(() => null);
         if (res.status >= 400 && res.status < 500) {
@@ -180,6 +201,7 @@ import Base from '../layouts/Base.astro';
       } catch { sent = false; }
       finally {
         submitting = false;
+        photos.lock(false);
         captcha.reset();
         btn.disabled = true;
         btn.textContent = 'Отправить заявку';
@@ -198,10 +220,11 @@ import Base from '../layouts/Base.astro';
       } else {
         document.getElementById('request-heading').textContent = 'Отправка не подтверждена';
         note.textContent = 'Не удалось подтвердить отправку. Откройте готовое письмо и отправьте его из своей почты на uk@jks.ooo либо скопируйте текст ниже. Повторное письмо может продублировать обращение, если сервис успел его принять. Можно позвонить: 8 (391-31) 2-13-74.';
+        if (selectedPhotos.length) note.textContent += ' Фотографии в готовое письмо автоматически не добавляются: прикрепите их вручную в своей почтовой программе. При возврате к форме выбранные фото сохранятся.';
         note.style.background = '#fffbeb';
         const body = [
           `Номер заявки: ${num}`, `ФИО: ${fd.get('fio')}`, `Телефон: ${fd.get('phone')}`,
-          `Дом: ${houseInput.value}`, `Квартира: ${fd.get('flat') || '—'}`,
+          `Дом: ${payload.house}`, `Квартира: ${fd.get('flat') || '—'}`,
           `Тема: ${fd.get('topic')}`, '', fd.get('text'),
         ].join('\n');
         mailtoBtn.href = `mailto:uk@jks.ooo?subject=${encodeURIComponent('Заявка ' + num + ': ' + fd.get('topic'))}&body=${encodeURIComponent(body)}`;
@@ -232,7 +255,7 @@ import Base from '../layouts/Base.astro';
       button.textContent = 'Отправить заявку';
       form.elements.fio.focus();
     });
-    form.addEventListener('input', e => e.target.setCustomValidity?.(''));
+    form.addEventListener('input', e => { if (e.target.type !== 'file') e.target.setCustomValidity?.(''); });
     // Make controls available only after every handler is installed. Without JS the
     // browser must not send personal data through a native form submission.
     document.getElementById('request-fields').disabled = false;
@@ -243,5 +266,17 @@ import Base from '../layouts/Base.astro';
   </script>
   <style>
     .request-fields { grid-column: 1 / -1; display: grid; grid-template-columns: inherit; gap: inherit; min-width: 0; margin: 0; padding: 0; border: 0; }
+    .request-photos { min-width: 0; }
+    .request-photos > label { font-weight: 600; }
+    .request-photos p { margin: 0; font-size: .9rem; }
+    .request-photos input { max-width: 100%; min-width: 0; box-sizing: border-box; }
+    .request-photos > button { align-self: flex-start; }
+    .request-photos__list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .request-photos__list :global(li) { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; border: 1px solid #dce3ed; border-radius: 10px; padding: 10px; }
+    .request-photos__list :global(img) { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; }
+    .request-photos__list :global(span) { flex: 1; min-width: 100px; overflow-wrap: anywhere; }
+    #request-photo-error { color: #a52020; }
+    :global(html.vi) .request-photos__list :global(li) { border: 2px solid #000; }
+    :global(html.vi) #request-photo-error { color: #000; font-weight: bold; }
   </style>
 </Base>

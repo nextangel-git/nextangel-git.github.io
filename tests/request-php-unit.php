@@ -68,6 +68,11 @@ try {
         $old=$_SERVER[$field]; $_SERVER[$field]=$value; verifyReject(static function () use ($api) {$api->dispatch();},403); $_SERVER[$field]=$old;
     }
     $_SERVER['CONTENT_LENGTH']=32769; verifyReject(static function () use ($api) {$api->dispatch();},413);
+    $success='<div><h1>Thanks!</h1><p>The form was submitted successfully. Return to original site: <a href="https://jks.ooo/request">Return</a></p></div>';
+    verifyCheck(JksRequestApi::deliveryAccepted(['status'=>200,'body'=>$success]),'HTML success is recognized');
+    foreach (['Thanks!'=>'Activation required','https://jks.ooo/request'=>'https://evil.invalid','<div>'=>'<div><form></form>','The form was submitted successfully.'=>'Delivery failed.'] as $from=>$to) {
+        verifyCheck(!JksRequestApi::deliveryAccepted(['status'=>200,'body'=>str_replace($from,$to,$success)]),'Unconfirmed page rejected');
+    }
     echo json_encode(['passed'=>$passed,'network_used'=>false]) . "\n";
 } finally {
     foreach (glob($directory.'/*') as $file) unlink($file);
