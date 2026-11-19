@@ -12,6 +12,12 @@ ErrorDocument 404 /404.html
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  # Revalidate page shells after each release, including internal /admin/index.html.
+  # PHP owns its no-store policy; hashed assets retain their existing caching.
+  <FilesMatch "\.html$">
+    Header onsuccess unset Cache-Control
+    Header always set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </FilesMatch>
 </IfModule>
 
 <FilesMatch "^\.">

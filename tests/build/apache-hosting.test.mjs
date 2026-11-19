@@ -86,6 +86,23 @@ test('Astro pages use their generated indexes and preserve asset paths', () => {
   assert.deepEqual(request('/nonexistent-page'), { status: 404, target: '/404.html' });
 });
 
+test('HTML shells revalidate while PHP and hashed assets keep their own cache policies', () => {
+  const scopes = [...source.matchAll(/<FilesMatch\s+"([^"]+)">([\s\S]*?)<\/FilesMatch>/g)]
+    .filter(([, , directives]) => /Header\s+.*Cache-Control/i.test(directives));
+  assert.equal(scopes.length, 1, 'cache policy must have one explicit file scope');
+  const [, pattern, directives] = scopes[0];
+  const matches = filename => new RegExp(pattern).test(path.posix.basename(filename));
+  const header = directives.match(/Header\s+always\s+set\s+Cache-Control\s+"([^"]+)"/);
+  assert.ok(header, 'cache header must cover normal and error HTML responses');
+  const tokens = new Set(header[1].split(',').map(value => value.trim().toLowerCase()));
+  for (const token of ['no-cache', 'max-age=0', 'must-revalidate']) assert.ok(tokens.has(token), token);
+  assert.match(directives, /Header\s+onsuccess\s+unset\s+Cache-Control/, 'avoid duplicate normal-response headers');
+  for (const route of ['/', '/admin', '/about', '/404.html']) assert.ok(matches(request(route).target), route);
+  for (const filename of ['/api/admin.php', '/_astro/admin.Abc123.js', '/_astro/style.Def456.css', '/documents/report.pdf']) assert.equal(matches(filename), false, filename);
+  const outsideScope = source.replace(scopes[0][0], '');
+  assert.doesNotMatch(outsideScope, /^\s*Header\s+.*Cache-Control/im, 'no global override of API or asset caching');
+});
+
 test('TLS and www canonicalization do not loop behind NIC TLS termination', () => {
   assert.equal(request('/about', { https: 'off', envHttps: 'on' }).status, 200);
   assert.equal(request('/about', { https: 'on', envHttps: '' }).status, 200);

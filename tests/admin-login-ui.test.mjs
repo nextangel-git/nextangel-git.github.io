@@ -172,3 +172,23 @@ test('admin accessibility button delegates to shared VI and stays synchronized t
   assert.ok(document.querySelector('.authcard [data-admin-vi]'));
   assert.equal(button().getAttribute('aria-pressed'), 'true');
 });
+
+
+test('mobile icon navigation keeps explicit accessible names and tooltips when text is hidden', async t => {
+  const { window } = await setup(t);
+  const document = window.document;
+  document.getElementById('username').value = 'editor';
+  document.getElementById('pass').value = 'correct password';
+  submit(window, 'admin-login-form');
+  await tick(); await tick();
+  const links = [...document.querySelectorAll('.snav a')];
+  assert.equal(links.length, Object.keys(COLLECTIONS).length + 3);
+  for (const link of links) {
+    const visibleLabel = link.querySelector('.t').textContent.replace(' ↗', '');
+    assert.ok(link.getAttribute('aria-label').includes(visibleLabel));
+    assert.equal(link.title, link.getAttribute('aria-label'));
+  }
+  for (const [name, cfg] of Object.entries(COLLECTIONS)) {
+    assert.equal(document.querySelector(`.snav a[href="#/c/${name}"]`).getAttribute('aria-label'), cfg.label);
+  }
+});
