@@ -5,6 +5,7 @@ import { getHouses, getNews, getShutdowns } from '../lib/content.js';
 import { getOrgLegend } from '../lib/orgs.js';
 import vkPosts from '../data/vk_posts.json';
 import usefulData from '../data/useful.json';
+import mingkhSync from '../data/mingkh_sync.json';
 
 const orgLegend = getOrgLegend();
 
@@ -71,7 +72,7 @@ function tagFor(title) {
           </span>
         ))}
       </div>
-      <p class="map-note">Наши дома — по действующему перечню УК (минус договоры, прекращённые в марте 2026). Другие УК/ТСЖ — по открытым данным ГИС ЖКХ и сайтов УК, могут быть неактуальны.</p>
+      <p class="map-note">Дома и координаты — по <a href={mingkhSync.companyUrl + 'houses/'} target="_blank" rel="noopener">данным МинЖКХ ↗</a>, обновлено <time datetime={mingkhSync.checkedAt}>{new Date(mingkhSync.checkedAt + 'T12:00:00Z').toLocaleDateString('ru-RU', { timeZone: 'Asia/Krasnoyarsk' })}</time>. Справочник может отставать от изменений; официальные сведения — в <a href="/disclosure">ГИС ЖКХ</a>.</p>
       <div id="map" class="map" role="application" aria-label="Карта домов в управлении"></div>
     </div>
   </section>
@@ -122,17 +123,12 @@ function tagFor(title) {
   <!-- Раскрытие информации -->
   <section class="section section--gray" id="disclosure">
     <div class="container">
-      <div class="section__head">
-        <h2>Раскрытие информации</h2>
-        <span class="section__note">Документы и сведения управляющей компании</span>
-      </div>
-      <div class="disc-grid">
-        <a href="/disclosure" class="disc-card"><h3>Общая информация</h3><p>Лицензия, устав, реквизиты, руководство</p></a>
-        <a href="/disclosure?cat=Отчёты по договору управления" class="disc-card"><h3>Отчёты по договору управления</h3><p>Ежегодные отчёты по каждому дому</p></a>
-        <a href="/disclosure?cat=Протоколы собраний" class="disc-card"><h3>Протоколы собраний</h3><p>Протоколы общих собраний собственников</p></a>
-        <a href="/disclosure?cat=Бухгалтерская отчётность" class="disc-card"><h3>Бухгалтерская отчётность</h3><p>Балансы и финансовые результаты</p></a>
-        <a href="/disclosure?cat=Сведения о выполняемых работах" class="disc-card"><h3>Сведения о работах</h3><p>Перечень и стоимость работ по содержанию</p></a>
-        <a href="/disclosure?cat=Нормативно-правовые акты" class="disc-card"><h3>Нормативные акты</h3><p>Законы и постановления в сфере ЖКХ</p></a>
+      <div class="disclosure-banner">
+        <div>
+          <h2>Документы и отчёты — в ГИС ЖКХ</h2>
+          <p class="section__note">Выберите свой дом, чтобы перейти к сведениям об управлении, документам и годовым отчётам.</p>
+        </div>
+        <a href="/disclosure#gis-houses-title" class="btn btn--primary">Найти свой дом →</a>
       </div>
     </div>
   </section>
@@ -260,7 +256,7 @@ function tagFor(title) {
     const bounds = [];
     for (const h of housesGeo) {
       if (!Number.isFinite(h.lat) || !Number.isFinite(h.lon)) continue;
-      const addr = `ул. ${h.street}, ${h.num}`;
+      const addr = `${h.street.startsWith('пр-т ') ? '' : 'ул. '}${h.street}, ${h.num}`;
       const url = `/house?street=${encodeURIComponent(h.street)}&num=${encodeURIComponent(h.num)}`;
       L.marker([h.lat, h.lon], { icon: markerIcon(orgColor(OURS_NAME), true), title: addr })
         .addTo(map)

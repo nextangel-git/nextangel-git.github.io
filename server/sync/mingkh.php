@@ -5,6 +5,7 @@ declare(strict_types=1);
 final class JksMingkhSync {
     const BASE = 'https://dom.mingkh.ru';
     const CITY = '/krasnoyarskiy-kray/sosnovoborsk/';
+    const COMPANY = 'https://mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/1067760313180/';
     const EXTRA = ['serie','condition','wear','kadastr','landArea','livingArea','commonArea','nonlivingArea','balconies','heating','hotwater','gas','sewage','electricInputs','kapremont'];
     private $fetch;
     private $pause;
@@ -53,7 +54,7 @@ final class JksMingkhSync {
         } finally { libxml_clear_errors(); libxml_use_internal_errors($previous); }
     }
     private function request(string $url, ?array $post = null): string {
-        if (!preg_match('~\Ahttps://dom\.mingkh\.ru/krasnoyarskiy-kray/sosnovoborsk/(?:[0-9]+|\?page=[0-9]+)\z~D', $url)) throw new RuntimeException('Source URL rejected');
+        if ($url!==self::COMPANY && $url!==self::COMPANY.'houses/' && !preg_match('~\Ahttps://dom\.mingkh\.ru/krasnoyarskiy-kray/sosnovoborsk/(?:[0-9]+|\?page=[0-9]+)\z~D', $url)) throw new RuntimeException('Source URL rejected');
         if (++$this->requests > 1000) throw new RuntimeException('Source request budget exceeded');
         call_user_func($this->pause);
         $html = call_user_func($this->fetch, $url, $post);
@@ -83,7 +84,7 @@ final class JksMingkhSync {
         return $integer ? (int)$number : $number;
     }
     private static function date(?string $date): ?string {
-        if ($date === null || $date === '' || $date === '01.01.1970') return null;
+        if ($date === null || $date === '' || $date === '01.01.1970' || $date === '—' || $date === '-') return null;
         if (!preg_match('/\A(\d{2})\.(\d{2})\.(\d{4})\z/D',$date,$m) || !checkdate((int)$m[2],(int)$m[1],(int)$m[3]) || (int)$m[3]<1900 || (int)$m[3]>(int)date('Y')+1) throw new RuntimeException('Invalid management date');
         return $date;
     }
@@ -115,6 +116,12 @@ final class JksMingkhSync {
         if (preg_match('/(?:под управлением|Управляющая компания)\s+(.{2,180}?)\s+с\s+(\d{2}\.\d{2}\.\d{4})/u',$text,$m)) { $uk=self::text($m[1]); $since=self::date($m[2]); }
         elseif (isset($labels['Управляющая компания']) && !preg_match('/нет данных|не указано/iu',$labels['Управляющая компания'])) $uk=$labels['Управляющая компания'];
         $record=['addr'=>$address,'sourceId'=>$id,'sourceUrl'=>self::BASE.self::CITY.$id,'uk'=>$uk,'ukSince'=>$since];
+        // Coordinates of the house's own map, not the company office or a geocoder guess.
+        foreach (['lat'=>['mapcenterlat',55.9,56.4],'lon'=>['mapcenterlng',93.1,93.6]] as $coordinateField=>$rule) {
+            $node=$xpath->query('//input[@id="'.$rule[0].'"]')->item(0);
+            $raw=$node ? $node->getAttribute('value') : '';
+            $record[$coordinateField]=($raw==='' || $raw==='0') ? null : self::number($raw,$rule[1],$rule[2]);
+        }
         $numeric=[
             'year'=>[['Год постройки'],'/(?:Год постройки\s+|построен в\s+)(\d{4})/u',1700,(int)date('Y')+2,true],
             'floors'=>[['Количество этажей'],'/(?:Количество этажей\s+)(\d+(?:\s*-\s*\d+)?)/u',1,100,true],
@@ -177,6 +184,39 @@ final class JksMingkhSync {
         if (count(array_filter([$record['year'],$record['floors'],$record['flats'],$record['area'],$record['uk']],static function($v){return $v!==null;}))<3) throw new RuntimeException('House core fields incomplete');
         return $record;
     }
+    public function collectPortfolio(): array {
+        return self::parsePortfolio($this->page(self::COMPANY),$this->page(self::COMPANY.'houses/'));
+    }
+    public static function parsePortfolio(string $companyHtml, string $listHtml): array {
+        [, $company, $text]=self::document($companyHtml);
+        if (strpos($text,'7703617600')===false || strpos($text,'1067760313180')===false || strpos($text,'Сосновоборск')===false) throw new RuntimeException('Company identity missing');
+        $count=null;
+        foreach ($company->query('//dd[a[@href="'.self::CITY.'1067760313180/houses"]]') as $node) {
+            if (preg_match('/\A([0-9]+)\s/u',self::text($node->textContent),$m)) $count=(int)$m[1];
+        }
+        if ($count===null || $count<1 || $count>500) throw new RuntimeException('Company house count missing');
+        [, $list, $listText]=self::document($listHtml);
+        if (strpos($listText,'Жилкомсервис')===false || strpos($listText,'Сосновоборск')===false) throw new RuntimeException('Wrong company listing');
+        $rows=[]; $ids=[]; $addresses=[];
+        foreach ($list->query('//tbody/tr') as $row) {
+            $cells=$list->query('./td',$row); $anchor=$list->query('./td/a[@href]',$row)->item(0);
+            if (!$anchor) continue;
+            $url=$anchor->getAttribute('href');
+            if (!preg_match('~\A'.preg_quote(self::BASE.self::CITY,'~').'([0-9]+)\z~D',$url,$m) || $cells->length!==7) throw new RuntimeException('Company listing schema changed');
+            $address=preg_replace('/,\s*Сосновоборск\z/u','',self::text($anchor->textContent));
+            [$street,$num]=self::address($address); $key=self::key($street,$num);
+            if (isset($ids[$m[1]]) || isset($addresses[$key])) throw new RuntimeException('Duplicate company house');
+            $ids[$m[1]]=true; $addresses[$key]=true;
+            $entry=['addr'=>$address,'sourceId'=>$m[1],'street'=>$street,'num'=>$num,'ukSince'=>self::date(self::text($cells->item(2)->textContent))];
+            foreach (['flats'=>[4,0,10000,true],'area'=>[6,1,10000000,false]] as $field=>$rule) {
+                $entry[$field]=self::number(self::text($cells->item($rule[0])->textContent),$rule[1],$rule[2],$rule[3]);
+                if ($entry[$field]===null) throw new RuntimeException('Incomplete company totals');
+            }
+            $rows[]=$entry;
+        }
+        if (count($rows)!==$count) throw new RuntimeException('Company count and complete listing disagree');
+        return $rows;
+    }
     public function collect(): array {
         $this->requests=0; $links=[]; $maxPage=6;
         for ($page=1;$page<=$maxPage;$page++) {
@@ -211,7 +251,7 @@ final class JksMingkhSync {
         if ($missingUk>max(3,(int)floor(count($records)*0.05))) throw new RuntimeException('Management data completeness collapsed');
         return $records;
     }
-    public function rebuild(array $records, array $housesGeo, array $competitors, array $houses): array {
+    public function rebuild(array $records, array $housesGeo, array $competitors, array $houses, array $portfolio): array {
         $this->report=['warnings'=>[], 'ownershipRisks'=>[]];
         if (count($records)<100 || count($records)>500 || !$housesGeo || !$houses) throw new RuntimeException('Dataset size invalid');
         $byAddress=[]; $missingUk=0;
@@ -227,45 +267,76 @@ final class JksMingkhSync {
             $byAddress[$key]=[$record,$street,$num];
         }
         if ($missingUk>max(3,(int)floor(count($records)*0.05))) throw new RuntimeException('Management data completeness collapsed');
-        $own=[]; foreach ($houses as $house) if (empty($house['archived'])) $own[self::key($house['street'],$house['num'])]=true;
-        $old=[]; $coordinates=[];
-        foreach ($competitors as $house) { $key=self::key($house['street'],$house['num']); $old[$key]=$house; $coordinates[$key]=[$house['lat'] ?? null,$house['lon'] ?? null]; }
-        foreach ($housesGeo as $house) { $key=self::key($house['street'],$house['num']); $coordinates[$key]=[$house['lat'] ?? null,$house['lon'] ?? null]; }
-        foreach (array_keys($coordinates) as $key) if (!isset($byAddress[$key])) throw new RuntimeException('Previously known address disappeared; manual review required');
-        $resultGeo=$housesGeo;
-        foreach ($resultGeo as &$house) {
-            $key=self::key($house['street'],$house['num']); if (!isset($byAddress[$key])) continue;
-            $record=$byAddress[$key][0];
-            foreach (array_merge(['year','floors','flats','area','entrances','ukSince'],self::EXTRA) as $field) {
-                if ($field==='ukSince' && isset($own[$key],$record['uk']) && !self::ownUk($record['uk'])) continue;
-                if (isset($record[$field]) && $record[$field]!=='' && $record[$field]!==[]) $house[$field]=$record[$field];
-                elseif (isset($house[$field])) $this->report['warnings'][]=['type'=>'preserved_missing_field','street'=>$house['street'],'num'=>$house['num'],'field'=>$field];
+        if (!$portfolio || count($portfolio)>count($records)) throw new RuntimeException('Invalid company portfolio');
+        $own=[];
+        foreach ($portfolio as $entry) {
+            $key=self::key($entry['street'],$entry['num']);
+            if (isset($own[$key]) || !isset($byAddress[$key]) || (string)$byAddress[$key][0]['sourceId']!==(string)$entry['sourceId']) throw new RuntimeException('Company and city house identities disagree');
+            foreach (['area'=>[1,10000000,false],'flats'=>[0,10000,true]] as $field=>$rule) {
+                if (!isset($entry[$field])) throw new RuntimeException('Incomplete company totals');
+                $entry[$field]=self::number((string)$entry[$field],$rule[0],$rule[1],$rule[2]);
             }
+            $entry['ukSince']=self::date($entry['ukSince'] ?? null);
+            $own[$key]=$entry;
         }
-        unset($house);
-        $resultCompetitors=[];
+        $old=[]; $geo=[]; $membership=[]; $active=[];
+        foreach ($competitors as $h) $old[self::key($h['street'],$h['num'])]=$h;
+        foreach ($housesGeo as $h) $geo[self::key($h['street'],$h['num'])]=$h;
+        foreach ($houses as $h) {
+            $key=self::key($h['street'],$h['num']); $membership[$key]=$h;
+            if (empty($h['archived'])) $active[$key]=true;
+        }
+        foreach (array_unique(array_merge(array_keys($old),array_keys($active))) as $key) {
+            if (!isset($byAddress[$key])) throw new RuntimeException('Previously known address disappeared; incomplete city dataset');
+        }
+        $this->report['membership']=['active'=>count($own),'added'=>count(array_diff_key($own,$active)),'removed'=>count(array_diff_key($active,$own))];
+        $resultHouses=[]; $resultGeo=[]; $resultCompetitors=[];
         foreach ($byAddress as $key=>$source) {
             [$record,$street,$num]=$source;
+            $coordinates=[$record['lat'] ?? $geo[$key]['lat'] ?? $old[$key]['lat'] ?? null,$record['lon'] ?? $geo[$key]['lon'] ?? $old[$key]['lon'] ?? null];
+            foreach ($coordinates as $i=>$coordinate) if ($coordinate!==null) self::number((string)$coordinate,$i===0?55.9:93.1,$i===0?56.4:93.6);
             if (isset($own[$key])) {
-                if (isset($record['uk']) && !self::ownUk($record['uk'])) $this->report['ownershipRisks'][]=['street'=>$street,'num'=>$num,'sourceUk'=>$record['uk'],'sourceSince'=>$record['ukSince']];
-                continue;
+                $member=$membership[$key] ?? ['street'=>$street,'num'=>$num];
+                unset($member['archived'],$member['archiveReason']);
+                $member['src']='МинЖКХ: перечень УК'; $resultHouses[]=$member;
+                $house=$geo[$key] ?? ['street'=>$street,'num'=>$num];
+                unset($house['archived'],$house['archiveReason']);
+                $house['src']='МинЖКХ: перечень УК и карточка дома';
+                foreach (array_merge(['year','floors','flats','area','entrances','ukSince'],self::EXTRA) as $field) {
+                    if (isset($record[$field]) && $record[$field]!=='' && $record[$field]!==[]) $house[$field]=$record[$field];
+                    elseif (isset($house[$field])) $this->report['warnings'][]=['type'=>'preserved_missing_field','street'=>$street,'num'=>$num,'field'=>$field];
+                }
+                // Membership and totals use the same company list; individual cards can lag behind it.
+                foreach (['area','flats','ukSince'] as $field) $house[$field]=$own[$key][$field];
+                [$house['lat'],$house['lon']]=$coordinates;
+                if ($house['lat']===null || $house['lon']===null) throw new RuntimeException('Active house has no verified map coordinates');
+                $house['sourceUrl']=$record['sourceUrl'];
+                $resultGeo[]=$house;
+                if (isset($record['uk']) && !self::ownUk($record['uk'])) $this->report['ownershipRisks'][]=['street'=>$street,'num'=>$num,'sourceUk'=>$record['uk'],'type'=>'company_list_card_disagree'];
+            } else {
+                $entry=$old[$key] ?? ['street'=>$street,'num'=>$num];
+                unset($entry['archived']);
+                $entry['uk']=$record['uk'] ?? ($entry['uk'] ?? 'нет данных об УК');
+                $entry['ukSince']=$record['ukSince'] ?? ($entry['ukSince'] ?? null);
+                [$entry['lat'],$entry['lon']]=$coordinates;
+                if ($entry['lat']===null || $entry['lon']===null) $this->report['warnings'][]=['type'=>'coordinates_missing','street'=>$street,'num'=>$num];
+                if (self::ownUk($entry['uk'])) {
+                    $this->report['ownershipRisks'][]=['street'=>$street,'num'=>$num,'sourceUk'=>$entry['uk'],'type'=>'card_absent_from_company_list'];
+                    $entry['uk']='УК уточняется';
+                }
+                $resultCompetitors[]=$entry;
             }
-            if (self::ownUk($record['uk'] ?? null)) {
-                $this->report['ownershipRisks'][]=['street'=>$street,'num'=>$num,'sourceUk'=>$record['uk'],'sourceSince'=>$record['ukSince'],'type'=>'source_own_not_in_membership'];
-                // Preserve an existing competitor until the membership discrepancy is reviewed.
-                if (isset($old[$key])) $resultCompetitors[]=$old[$key];
-                continue;
-            }
-            $entry=$old[$key] ?? ['street'=>$street,'num'=>$num];
-            $entry['uk']=$record['uk'] ?? ($entry['uk'] ?? 'нет данных об УК');
-            if ($record['ukSince']!==null) $entry['ukSince']=$record['ukSince'];
-            elseif (!array_key_exists('ukSince',$entry)) $entry['ukSince']=null;
-            [$entry['lat'],$entry['lon']]=$coordinates[$key] ?? [null,null];
-            if ($entry['lat']===null || $entry['lon']===null) $this->report['warnings'][]=['type'=>'coordinates_missing','street'=>$street,'num'=>$num];
-            $resultCompetitors[]=$entry;
         }
-        if (!$resultCompetitors) throw new RuntimeException('Empty competitor dataset rejected');
-        usort($resultCompetitors,static function($a,$b){return strcmp(self::key($a['street'],$a['num']),self::key($b['street'],$b['num']));});
-        return ['houses_geo.json'=>$resultGeo,'competitors.json'=>$resultCompetitors];
+        // Preserve removed houses and their custom fields in the archive; exclude them everywhere public.
+        foreach ($membership as $key=>$h) if (!isset($own[$key])) {
+            $h['archived']=true; $h['archiveReason']='Отсутствует в полном перечне УК на МинЖКХ'; $resultHouses[]=$h;
+        }
+        foreach ($geo as $key=>$h) if (!isset($own[$key])) {
+            $h['archived']=true; $h['archiveReason']='Отсутствует в полном перечне УК на МинЖКХ'; $resultGeo[]=$h;
+        }
+        $sort=static function($a,$b){return strnatcmp(self::key($a['street'],$a['num']),self::key($b['street'],$b['num']));};
+        usort($resultHouses,$sort); usort($resultGeo,$sort); usort($resultCompetitors,$sort);
+        $meta=['checkedAt'=>(new DateTimeImmutable('now',new DateTimeZone('Asia/Krasnoyarsk')))->format('Y-m-d'),'companyUrl'=>self::COMPANY,'sourceHouseCount'=>count($own)];
+        return ['houses.json'=>$resultHouses,'houses_geo.json'=>$resultGeo,'competitors.json'=>$resultCompetitors,'mingkh_sync.json'=>$meta];
     }
 }

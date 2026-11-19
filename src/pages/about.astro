@@ -4,13 +4,14 @@ import Base from '../layouts/Base.astro';
 import { getHouses } from '../lib/content.js';
 import housesGeoAll from '../data/houses_geo.json';
 import gis from '../data/gis-links.json';
+import mingkhSync from '../data/mingkh_sync.json';
 
-// точные цифры — считаются из данных по домам, а не пишутся руками; архивные (ушли из управления) не считаем
+// Все показатели рассчитаны по одному перечню МинЖКХ; архивные дома не считаем.
 const houses = await getHouses();
 const activeAddresses = new Set(houses.map(h => `${h.street}|${h.num}`));
 const housesGeo = housesGeoAll.filter(h => !h.archived && activeAddresses.has(`${h.street}|${h.num}`));
 const houseCount = houses.length;
-const totalArea = Math.round(housesGeo.reduce((s, h) => s + (h.area || 0), 0));
+const totalArea = Math.round(housesGeo.reduce((s, h) => s + (h.area || 0), 0) * 100) / 100;
 const totalFlats = housesGeo.reduce((s, h) => s + (h.flats || 0), 0);
 const years = housesGeo.map((h) => h.year).filter(Boolean);
 const oldest = years.length ? Math.min(...years) : null;
@@ -32,7 +33,7 @@ const fmt = (n) => n.toLocaleString('ru-RU');
     <div class="about-text">
       <p>Управляющая компания «Жилкомсервис» оказывает услуги по управлению и обслуживанию многоквартирных жилых домов с 2007 года. В управлении находятся {houseCount} {russianPlural(houseCount, ['жилой дом', 'жилых дома', 'жилых домов'])} города Сосновоборска общей площадью {fmt(totalArea)} м². {oldest && `Самый ранний год постройки в реестре — ${oldest}.`}</p>
       <p>Главная цель компании — профессиональное предоставление качественных жилищно-коммунальных услуг жителям. Приоритетным направлением с самого начала деятельности стало качество услуг в рамках договора управления и обеспечение технической эксплуатации многоквартирных домов.</p>
-      <p class="section__note" style="margin-top:14px">Цифры по портфелю — точные, рассчитаны по перечню домов на {new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}.</p>
+      <p class="section__note" style="margin-top:14px">Показатели рассчитаны по <a href={mingkhSync.companyUrl + 'houses/'} target="_blank" rel="noopener">перечню домов УК на МинЖКХ ↗</a>. Обновлено <time datetime={mingkhSync.checkedAt}>{new Date(mingkhSync.checkedAt + 'T12:00:00Z').toLocaleDateString('ru-RU', { timeZone: 'Asia/Krasnoyarsk' })}</time>. Это справочные данные; официальные сведения — в <a href="/disclosure">ГИС ЖКХ</a>.</p>
     </div>
 
     <div class="disc-grid" style="margin-top:28px">

@@ -17,6 +17,10 @@ foreach (['http://vk.com/widget_community.php?gid=189230176','https://vk.com.evi
 rejectsSync(static function () use ($http,$vk) { $http->fetch($vk, ['captcha_answer'=>1]); }, 'sync_url_forbidden');
 rejectsSync(static function () use ($http,$mingkh) { $http->fetch($mingkh, ['captcha_answer'=>1,'extra'=>2]); }, 'sync_post_forbidden');
 checkSync($calls === 2, 'Forbidden URLs never reach transport');
+checkSync($http->fetch('https://mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/1067760313180/houses/')==='<html>Привет</html>','Company listing allowed');
+rejectsSync(static function()use($http){$http->fetch('https://mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/1111111111111/houses');},'sync_url_forbidden');
+rejectsSync(static function()use($http){$http->fetch('https://mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/1067760313180/houses?anything=1');},'sync_url_forbidden');
+
 $encoded = iconv('UTF-8','Windows-1251','<html>Новость УК</html>');
 foreach (['text/html; charset=windows-1251','text/html'] as $type) {
     $http = new JksSyncHttp(static function () use ($encoded,$type) { return ['status'=>200,'body'=>$encoded,'headers'=>['content-type'=>$type]]; });
@@ -71,7 +75,7 @@ $snapshot=$github->snapshot(['src/data/vk_posts.json','SUMMARY.md','src/data/hou
 $events=[];
 checkSync($github->commit($snapshot,['src/data/vk_posts.json'=>'[]'],'sync: no change')===['changed'=>false,'commit'=>$head], 'Nochange result');
 checkSync($events===[], 'Nochange performs no network calls/writes');
-rejectsSync(static function () use ($github,$snapshot) {$github->commit($snapshot,['src/data/houses.json'=>'[{"num":1}]'],'bad');},'sync_path_forbidden');
+rejectsSync(static function () use ($github,$snapshot) {$github->commit($snapshot,['src/data/unauthorized.json'=>'[{"num":1}]'],'bad');},'sync_path_forbidden');
 rejectsSync(static function () use ($github,$snapshot) {$github->commit($snapshot,['src/data/vk_posts.json'=>'{"wrong":"shape"}'],'bad');},'sync_json_invalid');
 $tampered=$snapshot; $tampered['tree']=str_repeat('f',40);
 rejectsSync(static function () use ($github,$tampered) {$github->commit($tampered,[],'tampered');},'sync_snapshot_invalid');

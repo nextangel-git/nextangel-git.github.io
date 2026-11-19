@@ -148,6 +148,12 @@ h2 { font-size: 1.7rem; letter-spacing: -0.01em; }
 
 /* Раскрытие информации */
 .disc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.disclosure-banner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.disclosure-banner h2 { margin: 0 0 12px; }
+.disclosure-banner p { margin: 0; max-width: 760px; }
+.disclosure-banner .btn { flex-shrink: 0; }
+@media (max-width: 700px) { .disclosure-banner { align-items: flex-start; flex-direction: column; } }
+html.vi .disclosure-banner { flex-wrap: wrap; }
 .disc-card {
   background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
   padding: 22px; color: var(--ink); transition: border-color .12s, transform .12s;

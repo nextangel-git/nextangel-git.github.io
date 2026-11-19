@@ -2,9 +2,9 @@
     {
         "street": "9-й Пятилетки",
         "num": "2",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1173726,
-        "lon": 93.3408753,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1174,
+        "lon": 93.3409,
         "year": 1984,
         "floors": 5,
         "flats": 60,
@@ -62,14 +62,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48463"
     },
     {
         "street": "9-й Пятилетки",
         "num": "3",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1222181,
-        "lon": 93.3326523,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1178,
+        "lon": 93.3417,
         "year": 1977,
         "floors": 9,
         "flats": 189,
@@ -130,14 +131,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48464"
     },
     {
         "street": "9-й Пятилетки",
         "num": "6",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1178839,
-        "lon": 93.339449,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1179,
+        "lon": 93.3394,
         "year": 1989,
         "floors": 9,
         "flats": 128,
@@ -198,14 +200,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 2066.4
+        "nonlivingArea": 2066.4,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48466"
     },
     {
         "street": "9-й Пятилетки",
         "num": "8",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1186104,
-        "lon": 93.3381317,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1187,
+        "lon": 93.338,
         "year": 1984,
         "floors": 9,
         "flats": 106,
@@ -266,14 +269,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 129.6
+        "nonlivingArea": 129.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48467"
     },
     {
         "street": "9-й Пятилетки",
         "num": "9",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1197454,
-        "lon": 93.3387609,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1198,
+        "lon": 93.3388,
         "tariff": 24.6,
         "year": 1975,
         "floors": 5,
@@ -328,14 +332,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48468"
     },
     {
         "street": "9-й Пятилетки",
         "num": "10",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1173893,
-        "lon": 93.3366306,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1174,
+        "lon": 93.3366,
         "year": 1984,
         "floors": 4,
         "flats": 60,
@@ -393,14 +398,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48469"
     },
     {
         "street": "9-й Пятилетки",
         "num": "11",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1212061,
-        "lon": 93.3340861,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1213,
+        "lon": 93.334,
         "year": 1981,
         "floors": 4,
         "flats": 89,
@@ -458,14 +464,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 37.7
+        "nonlivingArea": 37.7,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48470"
     },
     {
         "street": "9-й Пятилетки",
         "num": "12",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1181692,
-        "lon": 93.3368386,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1182,
+        "lon": 93.3368,
         "year": 1983,
         "floors": 9,
         "flats": 108,
@@ -526,14 +533,15 @@
                 "year": 2043
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48471"
     },
     {
         "street": "9-й Пятилетки",
         "num": "17",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.123307,
-        "lon": 93.3313826,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1233,
+        "lon": 93.3314,
         "year": 1983,
         "floors": 4,
         "flats": 90,
@@ -599,14 +607,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48472"
     },
     {
         "street": "9-й Пятилетки",
         "num": "18",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1206317,
-        "lon": 93.3335256,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1206,
+        "lon": 93.3336,
         "year": 1990,
         "floors": 5,
         "flats": 116,
@@ -664,14 +673,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 34
+        "nonlivingArea": 34,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48473"
     },
     {
         "street": "9-й Пятилетки",
         "num": "19",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1237225,
-        "lon": 93.3291993,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1237,
+        "lon": 93.3292,
         "year": 1983,
         "floors": 9,
         "flats": 286,
@@ -691,14 +701,15 @@
         "gas": "нет",
         "sewage": "Централизованная канализация",
         "electricInputs": 4,
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48474"
     },
     {
         "street": "9-й Пятилетки",
         "num": "20",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1205108,
-        "lon": 93.3319398,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1205,
+        "lon": 93.332,
         "year": 1988,
         "floors": 4,
         "flats": 88,
@@ -755,14 +766,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 49
+        "nonlivingArea": 49,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48475"
     },
     {
         "street": "9-й Пятилетки",
         "num": "26",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1216012,
-        "lon": 93.329583,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1216,
+        "lon": 93.3296,
         "year": 1987,
         "floors": 5,
         "flats": 89,
@@ -820,14 +832,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48477"
     },
     {
         "street": "9-й Пятилетки",
         "num": "28",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1223002,
-        "lon": 93.3292898,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1224,
+        "lon": 93.3293,
         "year": 1989,
         "floors": 9,
         "flats": 128,
@@ -889,14 +902,15 @@
                 "year": 2043
             }
         ],
-        "nonlivingArea": 2084.3
+        "nonlivingArea": 2084.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48478"
     },
     {
         "street": "9-й Пятилетки",
         "num": "30",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1216215,
-        "lon": 93.3281691,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1217,
+        "lon": 93.3281,
         "year": 1988,
         "floors": 5,
         "flats": 117,
@@ -949,14 +963,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48479"
     },
     {
         "street": "Весенняя",
         "num": "1",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1148762,
-        "lon": 93.3369731,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1149,
+        "lon": 93.3369,
         "tariff": 27.21,
         "year": 1985,
         "floors": 9,
@@ -1019,14 +1034,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48480"
     },
     {
         "street": "Весенняя",
         "num": "5",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1162155,
-        "lon": 93.3338725,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1163,
+        "lon": 93.3338,
         "year": 1988,
         "floors": 9,
         "flats": 152,
@@ -1088,14 +1104,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48481"
     },
     {
         "street": "Весенняя",
         "num": "6",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1139216,
-        "lon": 93.3342988,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1139,
+        "lon": 93.3344,
         "year": 2012,
         "floors": 5,
         "flats": 80,
@@ -1149,14 +1166,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48482"
     },
     {
         "street": "Весенняя",
         "num": "7",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1167698,
-        "lon": 93.3339392,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1168,
+        "lon": 93.3338,
         "year": 1986,
         "floors": 9,
         "flats": 152,
@@ -1218,14 +1236,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48483"
     },
     {
         "street": "Весенняя",
         "num": "8",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1152348,
-        "lon": 93.3338015,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1155,
+        "lon": 93.3331,
         "year": 2012,
         "floors": 10,
         "flats": 261,
@@ -1287,14 +1306,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 341.1
+        "nonlivingArea": 341.1,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48484"
     },
     {
         "street": "Весенняя",
         "num": "10",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1146182,
-        "lon": 93.3328034,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1146,
+        "lon": 93.3329,
         "year": 2012,
         "floors": 5,
         "flats": 80,
@@ -1352,14 +1372,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48485"
     },
     {
         "street": "Весенняя",
         "num": "11",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1168338,
-        "lon": 93.3324346,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.117,
+        "lon": 93.3321,
         "year": 2008,
         "floors": 10,
         "flats": 239,
@@ -1421,14 +1442,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 62.3
+        "nonlivingArea": 62.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48486"
     },
     {
         "street": "Весенняя",
         "num": "12",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1159298,
-        "lon": 93.3323017,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1161,
+        "lon": 93.3316,
         "year": 2012,
         "floors": 10,
         "flats": 228,
@@ -1490,14 +1512,15 @@
                 "year": 2043
             }
         ],
-        "nonlivingArea": 614.8
+        "nonlivingArea": 614.8,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48487"
     },
     {
         "street": "Весенняя",
         "num": "13",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1181337,
-        "lon": 93.329101,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1182,
+        "lon": 93.3291,
         "year": 1991,
         "floors": 8,
         "flats": 144,
@@ -1559,14 +1582,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48488"
     },
     {
         "street": "Весенняя",
         "num": "14",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1152059,
-        "lon": 93.3316487,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1152,
+        "lon": 93.3316,
         "year": 2012,
         "floors": 5,
         "flats": 60,
@@ -1620,14 +1644,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48489"
     },
     {
         "street": "Весенняя",
         "num": "15",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1189379,
-        "lon": 93.3297253,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1189,
+        "lon": 93.3297,
         "year": 1991,
         "floors": 4,
         "flats": 96,
@@ -1685,7 +1710,8 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 52.94
+        "nonlivingArea": 52.94,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48490"
     },
     {
         "street": "Весенняя",
@@ -1754,14 +1780,16 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "archived": true,
+        "archiveReason": "Отсутствует в полном перечне УК на МинЖКХ"
     },
     {
         "street": "Весенняя",
         "num": "18",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.117384,
-        "lon": 93.3290837,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1174,
+        "lon": 93.3291,
         "year": 1995,
         "floors": 9,
         "flats": 144,
@@ -1822,14 +1850,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48492"
     },
     {
         "street": "Весенняя",
         "num": "34",
-        "src": "сайт УК",
-        "lat": 56.1179023,
-        "lon": 93.3237225,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1181,
+        "lon": 93.324,
         "year": 2020,
         "floors": 10,
         "flats": 289,
@@ -1849,14 +1878,15 @@
         "gas": "нет",
         "sewage": "Централизованная канализация",
         "electricInputs": 1,
-        "nonlivingArea": 158.2
+        "nonlivingArea": 158.2,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/1209633"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "1",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1248703,
-        "lon": 93.3438635,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.125,
+        "lon": 93.3439,
         "year": 1976,
         "floors": 8,
         "flats": 201,
@@ -1918,14 +1948,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 843.2
+        "nonlivingArea": 843.2,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48494"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "2",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1249053,
-        "lon": 93.3413205,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1248,
+        "lon": 93.3412,
         "year": 1979,
         "floors": 9,
         "flats": 430,
@@ -1987,14 +2018,85 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48495"
+    },
+    {
+        "street": "Ленинского Комсомола",
+        "num": "3",
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "year": 1976,
+        "floors": 11,
+        "flats": 207,
+        "area": 6948.1,
+        "entrances": 1,
+        "ukSince": "17.04.2015",
+        "serie": "164-80-4, Кирпичный",
+        "condition": "Исправный",
+        "wear": 32,
+        "kadastr": "24:56:0201001:61",
+        "landArea": 5278,
+        "livingArea": 4097.2,
+        "commonArea": 1919.7,
+        "nonlivingArea": 630.5,
+        "balconies": 33,
+        "heating": "Центральная",
+        "hotwater": "Центральное (открытая система)",
+        "gas": "нет",
+        "sewage": "Централизованная канализация",
+        "electricInputs": 2,
+        "kapremont": [
+            {
+                "work": "Ремонт крыши",
+                "year": 2019
+            },
+            {
+                "work": "Ремонт систем электроснабжения",
+                "year": 2034
+            },
+            {
+                "work": "Ремонт или замена лифтового оборудования",
+                "year": 2034
+            },
+            {
+                "work": "Ремонт систем теплоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт внутридомовых инжен. систем горячего водоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт внутридомовых инжен. систем холодного водоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт систем водоотведения",
+                "year": 2043
+            },
+            {
+                "work": "Ремонт подвальных помещений",
+                "year": 2043
+            },
+            {
+                "work": "Ремонт фасада",
+                "year": 2046
+            },
+            {
+                "work": "Ремонт фундамента дома",
+                "year": 2046
+            }
+        ],
+        "lat": 56.1242,
+        "lon": 93.3429,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48496"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "4",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.12276,
-        "lon": 93.3380384,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1228,
+        "lon": 93.3381,
         "year": 1986,
         "floors": 9,
         "flats": 128,
@@ -2055,14 +2157,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 3439.8
+        "nonlivingArea": 3439.8,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48497"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "8",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1231484,
-        "lon": 93.3359981,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1232,
+        "lon": 93.336,
         "year": 1981,
         "floors": 5,
         "flats": 60,
@@ -2120,14 +2223,15 @@
                 "year": 2043
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48499"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "9",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1210793,
-        "lon": 93.3399262,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1211,
+        "lon": 93.3399,
         "year": 1975,
         "floors": 9,
         "flats": 72,
@@ -2189,14 +2293,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48500"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "12",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1229815,
-        "lon": 93.3344762,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.123,
+        "lon": 93.3345,
         "year": 1985,
         "floors": 8,
         "flats": 128,
@@ -2258,14 +2363,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 2332.3
+        "nonlivingArea": 2332.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48502"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "13",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1208477,
-        "lon": 93.3381673,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1208,
+        "lon": 93.3381,
         "year": 1975,
         "floors": 9,
         "flats": 72,
@@ -2327,14 +2433,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48503"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "14",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1217527,
-        "lon": 93.336358,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1218,
+        "lon": 93.3364,
         "year": 1983,
         "floors": 9,
         "flats": 309,
@@ -2396,14 +2503,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 353.7
+        "nonlivingArea": 353.7,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48504"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "18",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1198295,
-        "lon": 93.3338441,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1199,
+        "lon": 93.3339,
         "year": 1991,
         "floors": 9,
         "flats": 127,
@@ -2465,14 +2573,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 1729.1
+        "nonlivingArea": 1729.1,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48505"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "22",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1197841,
-        "lon": 93.3317322,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1198,
+        "lon": 93.3318,
         "year": 1989,
         "floors": 9,
         "flats": 108,
@@ -2534,14 +2643,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48506"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "26",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1186583,
-        "lon": 93.3319108,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1187,
+        "lon": 93.3318,
         "year": 1994,
         "floors": 9,
         "flats": 357,
@@ -2603,14 +2713,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 53.6
+        "nonlivingArea": 53.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48507"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "31",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1173453,
-        "lon": 93.3356361,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1174,
+        "lon": 93.3356,
         "year": 1984,
         "floors": 9,
         "flats": 107,
@@ -2671,14 +2782,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48508"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "32",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1156664,
-        "lon": 93.3276736,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1157,
+        "lon": 93.3277,
         "year": 1997,
         "floors": 10,
         "flats": 107,
@@ -2740,12 +2852,13 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48509"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "44",
-        "src": "сайт УК + ГИС ЖКХ",
+        "src": "МинЖКХ: перечень УК и карточка дома",
         "lat": 56.1166683,
         "lon": 93.323347,
         "year": 2011,
@@ -2766,14 +2879,15 @@
         "gas": "нет",
         "sewage": "Централизованная канализация",
         "electricInputs": 2,
-        "nonlivingArea": 123.9
+        "nonlivingArea": 123.9,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48510"
     },
     {
         "street": "Ленинского Комсомола",
         "num": "46",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1170048,
-        "lon": 93.3226093,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.117,
+        "lon": 93.3225,
         "year": 2010,
         "floors": 5,
         "flats": 88,
@@ -2830,14 +2944,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48511"
     },
     {
         "street": "Новоселов",
         "num": "4",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1216331,
-        "lon": 93.3474552,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1216,
+        "lon": 93.3474,
         "tariff": 25.54,
         "year": 1973,
         "floors": 5,
@@ -2904,14 +3019,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 643.6
+        "nonlivingArea": 643.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48512"
     },
     {
         "street": "Новоселов",
         "num": "6",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.122221,
-        "lon": 93.3474748,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1222,
+        "lon": 93.3475,
         "tariff": 23.07,
         "year": 1973,
         "floors": 5,
@@ -2970,14 +3086,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48513"
     },
     {
         "street": "Новоселов",
         "num": "10",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1227694,
-        "lon": 93.3469944,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1228,
+        "lon": 93.347,
         "tariff": 22.23,
         "year": 1973,
         "floors": 4,
@@ -3036,14 +3153,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48514"
     },
     {
         "street": "Новоселов",
         "num": "20",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1231853,
-        "lon": 93.3453826,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1232,
+        "lon": 93.3454,
         "tariff": 23.03,
         "year": 1973,
         "floors": 5,
@@ -3102,14 +3220,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48516"
     },
     {
         "street": "Новоселов",
         "num": "22",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1234524,
-        "lon": 93.3447873,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1235,
+        "lon": 93.3448,
         "tariff": 23.21,
         "year": 1973,
         "floors": 5,
@@ -3168,14 +3287,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48517"
     },
     {
         "street": "Новоселов",
         "num": "24",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1232137,
-        "lon": 93.3438979,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1233,
+        "lon": 93.3439,
         "tariff": 23.5,
         "year": 1974,
         "floors": 5,
@@ -3234,14 +3354,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 267
+        "nonlivingArea": 267,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48518"
     },
     {
         "street": "Новоселов",
         "num": "28",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1237755,
-        "lon": 93.3439122,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1238,
+        "lon": 93.3439,
         "tariff": 23.85,
         "year": 1974,
         "floors": 5,
@@ -3300,14 +3421,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 337.5
+        "nonlivingArea": 337.5,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48519"
     },
     {
         "street": "Солнечная",
         "num": "1",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1223959,
-        "lon": 93.3494345,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1224,
+        "lon": 93.3494,
         "tariff": 23.13,
         "year": 1976,
         "floors": 5,
@@ -3366,14 +3488,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48523"
     },
     {
         "street": "Солнечная",
         "num": "5",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1209196,
-        "lon": 93.3472759,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1209,
+        "lon": 93.3473,
         "tariff": 25.36,
         "year": 1976,
         "floors": 5,
@@ -3436,14 +3559,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48524"
     },
     {
         "street": "Солнечная",
         "num": "7",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1196336,
-        "lon": 93.3453988,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1197,
+        "lon": 93.3454,
         "tariff": 25.57,
         "year": 1976,
         "floors": 9,
@@ -3506,14 +3630,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48525"
     },
     {
         "street": "Солнечная",
         "num": "8",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1173877,
-        "lon": 93.3472464,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1177,
+        "lon": 93.3465,
         "tariff": 28.21,
         "year": 2012,
         "floors": 12,
@@ -3575,14 +3700,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 1490.4
+        "nonlivingArea": 1490.4,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48526"
     },
     {
         "street": "Солнечная",
         "num": "9",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1197746,
-        "lon": 93.3436337,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1198,
+        "lon": 93.3437,
         "tariff": 23.84,
         "year": 1974,
         "floors": 5,
@@ -3641,14 +3767,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 109.3
+        "nonlivingArea": 109.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48527"
     },
     {
         "street": "Солнечная",
         "num": "11",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1188589,
-        "lon": 93.3440089,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1189,
+        "lon": 93.344,
         "tariff": 27.09,
         "year": 1974,
         "floors": 9,
@@ -3710,14 +3837,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48528"
     },
     {
         "street": "Солнечная",
         "num": "13",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1188789,
-        "lon": 93.3423915,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1189,
+        "lon": 93.3424,
         "tariff": 24.52,
         "year": 1974,
         "floors": 5,
@@ -3776,14 +3904,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 106
+        "nonlivingArea": 106,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48529"
     },
     {
         "street": "Солнечная",
         "num": "14",
-        "src": "сайт УК",
-        "lat": 56.115318,
-        "lon": 93.3419292,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1152,
+        "lon": 93.3416,
         "year": 2015,
         "floors": 10,
         "flats": 233,
@@ -3845,14 +3974,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 29.6
+        "nonlivingArea": 29.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/579778"
     },
     {
         "street": "Солнечная",
         "num": "15",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1179026,
-        "lon": 93.3428684,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1179,
+        "lon": 93.3429,
         "tariff": 27.25,
         "year": 1977,
         "floors": 9,
@@ -3915,14 +4045,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48530"
     },
     {
         "street": "Солнечная",
         "num": "17",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1168939,
-        "lon": 93.3410259,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1169,
+        "lon": 93.341,
         "tariff": 28.03,
         "year": 1984,
         "floors": 4,
@@ -3977,14 +4108,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48531"
     },
     {
         "street": "Солнечная",
         "num": "21",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1165515,
-        "lon": 93.3396152,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1166,
+        "lon": 93.3396,
         "tariff": 27.56,
         "year": 1984,
         "floors": 4,
@@ -4043,14 +4175,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48532"
     },
     {
         "street": "Солнечная",
         "num": "23",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.116055,
-        "lon": 93.3397857,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1161,
+        "lon": 93.3398,
         "tariff": 29.39,
         "year": 1985,
         "floors": 4,
@@ -4109,14 +4242,15 @@
                 "year": 2043
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48533"
     },
     {
         "street": "Солнечная",
         "num": "29",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1157112,
-        "lon": 93.3384742,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1157,
+        "lon": 93.3384,
         "tariff": 29.37,
         "year": 1985,
         "floors": 4,
@@ -4174,14 +4308,15 @@
             }
         ],
         "nonlivingArea": 0,
-        "hotwater": "Центральное (открытая система)"
+        "hotwater": "Центральное (открытая система)",
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48534"
     },
     {
         "street": "Солнечная",
         "num": "31",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1152206,
-        "lon": 93.3386293,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1153,
+        "lon": 93.3386,
         "tariff": 23.27,
         "year": 1985,
         "floors": 4,
@@ -4240,12 +4375,13 @@
                 "year": 2043
             }
         ],
-        "nonlivingArea": 630.8
+        "nonlivingArea": 630.8,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48535"
     },
     {
         "street": "Труда",
         "num": "1",
-        "src": "сайт УК + ГИС ЖКХ",
+        "src": "МинЖКХ: перечень УК и карточка дома",
         "lat": 56.1229937,
         "lon": 93.3490813,
         "tariff": 22.76,
@@ -4268,14 +4404,15 @@
         "gas": "нет",
         "sewage": "Централизованная канализация",
         "electricInputs": 2,
-        "nonlivingArea": 47.3
+        "nonlivingArea": 47.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48536"
     },
     {
         "street": "Труда",
         "num": "7",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1244482,
-        "lon": 93.3457753,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1244,
+        "lon": 93.3458,
         "tariff": 24.01,
         "year": 1976,
         "floors": 5,
@@ -4334,12 +4471,13 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48537"
     },
     {
         "street": "Труда",
         "num": "9",
-        "src": "сайт УК + ГИС ЖКХ",
+        "src": "МинЖКХ: перечень УК и карточка дома",
         "lat": 56.1244369,
         "lon": 93.344597,
         "tariff": 25.69,
@@ -4362,14 +4500,15 @@
         "gas": "нет",
         "sewage": "Централизованная канализация",
         "electricInputs": 2,
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48538"
     },
     {
         "street": "Труда",
         "num": "15",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.12631,
-        "lon": 93.3415766,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1263,
+        "lon": 93.3416,
         "tariff": 27.73,
         "year": 1980,
         "floors": 9,
@@ -4432,14 +4571,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48539"
     },
     {
         "street": "Труда",
         "num": "17",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1260152,
-        "lon": 93.3402725,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.126,
+        "lon": 93.3403,
         "tariff": 23.72,
         "year": 1977,
         "floors": 4,
@@ -4498,14 +4638,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 378.8
+        "nonlivingArea": 378.8,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48540"
     },
     {
         "street": "Труда",
         "num": "19",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1266554,
-        "lon": 93.3399161,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1267,
+        "lon": 93.3399,
         "tariff": 23.59,
         "year": 1977,
         "floors": 5,
@@ -4564,14 +4705,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 214.5
+        "nonlivingArea": 214.5,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48541"
     },
     {
         "street": "Труда",
         "num": "23",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1276987,
-        "lon": 93.3375854,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1278,
+        "lon": 93.3376,
         "tariff": 26.95,
         "year": 1979,
         "floors": 9,
@@ -4634,14 +4776,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48542"
     },
     {
         "street": "Труда",
         "num": "25",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1283477,
-        "lon": 93.3370517,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1284,
+        "lon": 93.337,
         "tariff": 26.43,
         "year": 1980,
         "floors": 9,
@@ -4704,14 +4847,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48543"
     },
     {
         "street": "Энтузиастов",
         "num": "4",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1209786,
-        "lon": 93.3461595,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.121,
+        "lon": 93.3461,
         "year": 1976,
         "floors": 4,
         "flats": 100,
@@ -4765,14 +4909,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 205.6
+        "nonlivingArea": 205.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48544"
     },
     {
         "street": "Энтузиастов",
         "num": "5",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1204548,
-        "lon": 93.3451992,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1205,
+        "lon": 93.3452,
         "year": 1974,
         "floors": 4,
         "flats": 80,
@@ -4830,14 +4975,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 1674.1
+        "nonlivingArea": 1674.1,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48545"
     },
     {
         "street": "Энтузиастов",
         "num": "6",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1215924,
-        "lon": 93.3457456,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1216,
+        "lon": 93.3457,
         "year": 1974,
         "floors": 5,
         "flats": 68,
@@ -4895,14 +5041,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 107.6
+        "nonlivingArea": 107.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48546"
     },
     {
         "street": "Энтузиастов",
         "num": "7",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1204656,
-        "lon": 93.3438174,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1205,
+        "lon": 93.3438,
         "year": 1974,
         "floors": 4,
         "flats": 96,
@@ -4960,14 +5107,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 332.2
+        "nonlivingArea": 332.2,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48547"
     },
     {
         "street": "Энтузиастов",
         "num": "9",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1207709,
-        "lon": 93.3431601,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1208,
+        "lon": 93.3432,
         "year": 1975,
         "floors": 5,
         "flats": 95,
@@ -5025,14 +5173,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 237.5
+        "nonlivingArea": 237.5,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48548"
     },
     {
         "street": "Энтузиастов",
         "num": "10",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1224291,
-        "lon": 93.3429482,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1225,
+        "lon": 93.3429,
         "year": 1977,
         "floors": 5,
         "flats": 75,
@@ -5090,14 +5239,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48549"
     },
     {
         "street": "Энтузиастов",
         "num": "11",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1215151,
-        "lon": 93.3428449,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1215,
+        "lon": 93.3429,
         "year": 1975,
         "floors": 4,
         "flats": 80,
@@ -5155,14 +5305,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 1078.3
+        "nonlivingArea": 1078.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48550"
     },
     {
         "street": "Энтузиастов",
         "num": "12",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1229702,
-        "lon": 93.3425075,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.123,
+        "lon": 93.3425,
         "year": 1975,
         "floors": 4,
         "flats": 48,
@@ -5220,14 +5371,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 1136.1
+        "nonlivingArea": 1136.1,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48551"
     },
     {
         "street": "Энтузиастов",
         "num": "13",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1205348,
-        "lon": 93.3419972,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1205,
+        "lon": 93.342,
         "year": 1975,
         "floors": 4,
         "flats": 66,
@@ -5284,14 +5436,15 @@
             }
         ],
         "nonlivingArea": 208.9,
-        "hotwater": "Центральное (открытая система)"
+        "hotwater": "Центральное (открытая система)",
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48552"
     },
     {
         "street": "Энтузиастов",
         "num": "15",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1215047,
-        "lon": 93.3412674,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1215,
+        "lon": 93.3413,
         "year": 1976,
         "floors": 9,
         "flats": 215,
@@ -5353,14 +5506,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 53.4
+        "nonlivingArea": 53.4,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48553"
     },
     {
         "street": "Энтузиастов",
         "num": "18",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.124299,
-        "lon": 93.3388386,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1243,
+        "lon": 93.3389,
         "year": 1978,
         "floors": 9,
         "flats": 144,
@@ -5422,14 +5576,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48554"
     },
     {
         "street": "Энтузиастов",
         "num": "19",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1235401,
-        "lon": 93.3379699,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1236,
+        "lon": 93.3379,
         "tariff": 30.37,
         "year": 1980,
         "floors": 9,
@@ -5496,14 +5651,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 168.6
+        "nonlivingArea": 168.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48555"
     },
     {
         "street": "Энтузиастов",
         "num": "20",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1248737,
-        "lon": 93.3395584,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1249,
+        "lon": 93.3396,
         "year": 1978,
         "floors": 4,
         "flats": 80,
@@ -5561,14 +5717,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 1870.5
+        "nonlivingArea": 1870.5,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48556"
     },
     {
         "street": "Энтузиастов",
         "num": "21",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1241219,
-        "lon": 93.3371909,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1242,
+        "lon": 93.3371,
         "year": 1981,
         "floors": 9,
         "flats": 143,
@@ -5630,14 +5787,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 38.9
+        "nonlivingArea": 38.9,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48557"
     },
     {
         "street": "Энтузиастов",
         "num": "23",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1238019,
-        "lon": 93.3358613,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1238,
+        "lon": 93.3359,
         "year": 1981,
         "floors": 5,
         "flats": 90,
@@ -5695,14 +5853,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48558"
     },
     {
         "street": "Энтузиастов",
         "num": "24",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1249115,
-        "lon": 93.3384229,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1249,
+        "lon": 93.3384,
         "year": 1977,
         "floors": 5,
         "flats": 63,
@@ -5764,14 +5923,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 347.8
+        "nonlivingArea": 347.8,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48559"
     },
     {
         "street": "Энтузиастов",
         "num": "27",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1247107,
-        "lon": 93.3340395,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1248,
+        "lon": 93.3341,
         "year": 1982,
         "floors": 4,
         "flats": 90,
@@ -5829,14 +5989,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48560"
     },
     {
         "street": "Энтузиастов",
         "num": "29",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1247609,
-        "lon": 93.3327063,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1248,
+        "lon": 93.3327,
         "year": 1981,
         "floors": 4,
         "flats": 90,
@@ -5893,14 +6054,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48561"
     },
     {
         "street": "Энтузиастов",
         "num": "31",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1253728,
-        "lon": 93.334437,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1254,
+        "lon": 93.3344,
         "year": 1981,
         "floors": 9,
         "flats": 108,
@@ -5962,14 +6124,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48562"
     },
     {
         "street": "Энтузиастов",
         "num": "33",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1256153,
-        "lon": 93.3333994,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1256,
+        "lon": 93.3334,
         "year": 1981,
         "floors": 9,
         "flats": 108,
@@ -6031,14 +6194,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48563"
     },
     {
         "street": "Юности",
         "num": "1",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1285463,
-        "lon": 93.335776,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1286,
+        "lon": 93.3358,
         "tariff": 27.84,
         "year": 1979,
         "floors": 8,
@@ -6101,14 +6265,85 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 33.9
+        "nonlivingArea": 33.9,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48564"
+    },
+    {
+        "street": "Юности",
+        "num": "5",
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "year": 1986,
+        "floors": 8,
+        "flats": 252,
+        "area": 7876,
+        "entrances": 1,
+        "ukSince": "17.04.2015",
+        "serie": "1-447С-54/73, Кирпичный",
+        "condition": "Исправный",
+        "wear": 24,
+        "kadastr": "24:56:0201002:35",
+        "landArea": 5143,
+        "livingArea": 4129.2,
+        "commonArea": 1997.74,
+        "nonlivingArea": 255.3,
+        "balconies": 40,
+        "heating": "Центральная",
+        "hotwater": "Центральное (открытая система)",
+        "gas": "нет",
+        "sewage": "Централизованная канализация",
+        "electricInputs": 2,
+        "kapremont": [
+            {
+                "work": "Ремонт или замена лифтового оборудования",
+                "year": 2019
+            },
+            {
+                "work": "Ремонт крыши",
+                "year": 2019
+            },
+            {
+                "work": "Ремонт систем электроснабжения",
+                "year": 2034
+            },
+            {
+                "work": "Ремонт систем теплоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт внутридомовых инжен. систем горячего водоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт внутридомовых инжен. систем холодного водоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт систем водоотведения",
+                "year": 2043
+            },
+            {
+                "work": "Ремонт подвальных помещений",
+                "year": 2043
+            },
+            {
+                "work": "Ремонт фасада",
+                "year": 2046
+            },
+            {
+                "work": "Ремонт фундамента дома",
+                "year": 2046
+            }
+        ],
+        "lat": 56.1276,
+        "lon": 93.3347,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48566"
     },
     {
         "street": "Юности",
         "num": "11",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.125466,
-        "lon": 93.3317634,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1255,
+        "lon": 93.3318,
         "tariff": 30.04,
         "year": 1982,
         "floors": 4,
@@ -6167,14 +6402,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48568"
     },
     {
         "street": "Юности",
         "num": "13",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.124958,
-        "lon": 93.3305264,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.125,
+        "lon": 93.3305,
         "tariff": 27.73,
         "year": 1982,
         "floors": 4,
@@ -6233,14 +6469,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48569"
     },
     {
         "street": "Юности",
         "num": "17",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1239341,
-        "lon": 93.3309592,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.124,
+        "lon": 93.3309,
         "tariff": 26.47,
         "year": 1982,
         "floors": 4,
@@ -6295,14 +6532,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48570"
     },
     {
         "street": "Юности",
         "num": "19",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1233948,
-        "lon": 93.3277033,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1238,
+        "lon": 93.3292,
         "tariff": 30.13,
         "year": 1982,
         "floors": 9,
@@ -6364,14 +6602,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48571"
     },
     {
         "street": "Юности",
         "num": "21",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1225969,
-        "lon": 93.3276948,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1227,
+        "lon": 93.3277,
         "tariff": 26.71,
         "year": 1991,
         "floors": 9,
@@ -6433,14 +6672,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48572"
     },
     {
         "street": "Юности",
         "num": "23",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1222545,
-        "lon": 93.3270196,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1223,
+        "lon": 93.327,
         "tariff": 25.49,
         "year": 1991,
         "floors": 9,
@@ -6503,14 +6743,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48573"
     },
     {
         "street": "Юности",
         "num": "27",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1213687,
-        "lon": 93.3259928,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1214,
+        "lon": 93.326,
         "tariff": 28.13,
         "year": 1987,
         "floors": 9,
@@ -6572,14 +6813,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48574"
     },
     {
         "street": "Юности",
         "num": "35",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1194718,
-        "lon": 93.3234331,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1196,
+        "lon": 93.3235,
         "tariff": 25.14,
         "year": 2011,
         "floors": 10,
@@ -6642,14 +6884,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 877.6
+        "nonlivingArea": 877.6,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48575"
     },
     {
         "street": "Юности",
         "num": "37",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1189192,
-        "lon": 93.3238658,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.119,
+        "lon": 93.3238,
         "tariff": 27.09,
         "year": 2010,
         "floors": 5,
@@ -6708,14 +6951,15 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 0
+        "nonlivingArea": 0,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48576"
     },
     {
         "street": "Юности",
         "num": "47",
-        "src": "сайт УК + ГИС ЖКХ",
-        "lat": 56.1185038,
-        "lon": 93.3211399,
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "lat": 56.1186,
+        "lon": 93.3212,
         "tariff": 25.43,
         "year": 2010,
         "floors": 10,
@@ -6778,6 +7022,73 @@
                 "year": 2046
             }
         ],
-        "nonlivingArea": 886.3
+        "nonlivingArea": 886.3,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48579"
+    },
+    {
+        "street": "Юности",
+        "num": "49",
+        "src": "МинЖКХ: перечень УК и карточка дома",
+        "year": 2011,
+        "floors": 5,
+        "flats": 50,
+        "area": 3799.1,
+        "entrances": 4,
+        "ukSince": "17.04.2015",
+        "serie": "инд.проект, Кирпичный",
+        "condition": "Исправный",
+        "wear": 3,
+        "kadastr": "24:56:0000000:4428",
+        "landArea": 6343,
+        "livingArea": 3443.3,
+        "commonArea": 355.6,
+        "nonlivingArea": 0,
+        "balconies": 50,
+        "heating": "Центральная",
+        "hotwater": "Центральное (открытая система)",
+        "gas": "нет",
+        "sewage": "Централизованная канализация",
+        "electricInputs": 2,
+        "kapremont": [
+            {
+                "work": "Ремонт крыши",
+                "year": 2031
+            },
+            {
+                "work": "Ремонт систем электроснабжения",
+                "year": 2034
+            },
+            {
+                "work": "Ремонт систем теплоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт внутридомовых инжен. систем горячего водоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт внутридомовых инжен. систем холодного водоснабжения",
+                "year": 2037
+            },
+            {
+                "work": "Ремонт подвальных помещений",
+                "year": 2040
+            },
+            {
+                "work": "Ремонт систем водоотведения",
+                "year": 2043
+            },
+            {
+                "work": "Ремонт фасада",
+                "year": 2046
+            },
+            {
+                "work": "Ремонт фундамента дома",
+                "year": 2046
+            }
+        ],
+        "lat": 56.1179,
+        "lon": 93.3215,
+        "sourceUrl": "https://dom.mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/48580"
     }
 ]

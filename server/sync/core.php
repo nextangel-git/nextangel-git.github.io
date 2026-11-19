@@ -25,6 +25,10 @@ final class JksSyncHttp {
             if ($post !== null && (array_keys($post) !== ['captcha_answer'] || !is_scalar($post['captcha_answer']) || !preg_match('/\A-?[0-9]{1,8}\z/D', (string)$post['captcha_answer']))) throw new JksSyncError('sync_post_forbidden');
             return $host;
         }
+        if ($host === 'mingkh.ru' && in_array($path, ['/krasnoyarskiy-kray/sosnovoborsk/1067760313180/','/krasnoyarskiy-kray/sosnovoborsk/1067760313180/houses/'],true) && !$query) {
+            if ($post !== null && (array_keys($post) !== ['captcha_answer'] || !is_scalar($post['captcha_answer']) || !preg_match('/\A-?[0-9]{1,8}\z/D', (string)$post['captcha_answer']))) throw new JksSyncError('sync_post_forbidden');
+            return $host;
+        }
         throw new JksSyncError('sync_url_forbidden');
     }
     private function once(string $url, ?array $post, string $host): array {
@@ -90,8 +94,8 @@ final class JksSyncHttp {
 
 final class JksSyncGithub {
     const REPO = '/repos/nextangel-git/nextangel-git.github.io';
-    const WRITE_PATHS = ['src/data/vk_posts.json','src/data/houses_geo.json','src/data/competitors.json','SUMMARY.md'];
-    const READ_PATHS = ['src/data/vk_posts.json','src/data/houses_geo.json','src/data/competitors.json','SUMMARY.md','src/data/houses.json'];
+    const WRITE_PATHS = ['src/data/vk_posts.json','src/data/houses_geo.json','src/data/competitors.json','src/data/houses.json','src/data/mingkh_sync.json','SUMMARY.md'];
+    const READ_PATHS = self::WRITE_PATHS;
     const LIMIT = 2097152;
     private $token;
     private $transport;
@@ -176,7 +180,7 @@ final class JksSyncGithub {
             if (!is_string($content) || trim($content) === '' || strlen($content) > self::LIMIT || !preg_match('//u', $content)) throw new JksSyncError('sync_content_invalid');
             if ($path !== 'SUMMARY.md') {
                 $decoded = json_decode($content);
-                if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) throw new JksSyncError('sync_json_invalid');
+                if (json_last_error() !== JSON_ERROR_NONE || ($path==='src/data/mingkh_sync.json' ? !is_object($decoded) : !is_array($decoded))) throw new JksSyncError('sync_json_invalid');
             }
             if ($content !== $snapshot['files'][$path]['content']) $changes[$path] = $content;
         }

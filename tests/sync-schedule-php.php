@@ -21,7 +21,7 @@ for($i=0;$i<35;$i++) $summary=jksSyncSummary($summary,'vk',['src/data/vk_posts.j
 scheduleCheck(strpos($summary,'Keep this.')!==false);
 scheduleCheck(substr_count($summary,'<!-- jks-source-sync:start -->')===1);
 scheduleCheck(substr_count($summary,'cron NIC.RU, VK;')===30);
-scheduleCheck(strpos(jksSyncSummary($summary,'mingkh',['src/data/houses_geo.json'=>'[]'],147,['ownershipRisks'=>[['street'=>'A']]]),'Смена УК требует ручной сверки: 1')!==false);
+scheduleCheck(strpos(jksSyncSummary($summary,'mingkh',['src/data/houses_geo.json'=>'[]'],147,['ownershipRisks'=>[['street'=>'A']]]),'Расхождения перечня УК и отдельных карточек МинЖКХ: 1')!==false);
 $directory=sys_get_temp_dir().'/jks-sync-runtime-'.bin2hex(random_bytes(8)); mkdir($directory,0700);
 try {
     jksSyncWrite($directory.'/settings.json',['dry_run'=>true,'vk'=>true,'mingkh'=>false]);
