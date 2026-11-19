@@ -13,7 +13,7 @@ const entries = usefulEntries(useful);
     <p class="disc-intro">Статьи и ответы на частые вопросы жителей. Новые публикации — в начале списка. Официальные документы по дому доступны через <a href="/disclosure">«Раскрытие информации»</a>.</p>
     <div class="disc-grid">
       {entries.map(([slug, a]) => (
-        <a href={`/useful/${slug}`} class="disc-card"><h3>{a.title}</h3>{publicationInfo(a.publishedAt) && <p><time datetime={publicationInfo(a.publishedAt).iso}>{a.publishedAt}</time> · Красноярск</p>}</a>
+        <a href={`/useful/${slug}`} class="disc-card"><h3>{a.title}</h3>{publicationInfo(a.publishedAt) && <p><time datetime={publicationInfo(a.publishedAt).iso}>{a.publishedAt}</time></p>}</a>
       ))}
       <a href="/faq" class="disc-card"><h3>Вопросы и ответы</h3><p>Частые вопросы жителей</p></a>
       <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener" class="disc-card"><h3>Приложение «Госуслуги Дом»</h3><p>Показания, оплата и голосования — в приложении</p></a>

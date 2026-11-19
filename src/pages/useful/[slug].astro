@@ -16,7 +16,7 @@ const { a } = Astro.props;
     <nav class="crumbs"><a href="/">Главная</a> → <a href="/useful">Полезное</a> → <span>{a.title}</span></nav>
     <article class="article">
       <h1 class="article__title">{a.title}</h1>
-      {publicationInfo(a.publishedAt) && <p class="section__note">Опубликовано: <time datetime={publicationInfo(a.publishedAt).iso}>{a.publishedAt}</time> · Красноярск</p>}
+      {publicationInfo(a.publishedAt) && <p class="section__note">Опубликовано: <time datetime={publicationInfo(a.publishedAt).iso}>{a.publishedAt}</time></p>}
       <div class="article__body" set:html={articleHtml(a.body)} />
     </article>
   </div>

@@ -60,7 +60,7 @@ export const COLLECTIONS = {
     label: 'Полезное (статьи)', file: 'useful.json', singular: 'статья', dict: true,
     fields: [
       { key: 'title', label: 'Заголовок', type: 'text', required: true },
-      { key: 'publishedAt', label: 'Дата и время публикации (Красноярск)', type: 'datetime', required: true },
+      { key: 'publishedAt', label: 'Дата и время публикации', type: 'datetime', required: true },
       { key: 'body', label: 'Текст (HTML)', type: 'textarea', required: true },
       { key: 'source', label: 'Источник (ссылка)', type: 'url' },
     ],

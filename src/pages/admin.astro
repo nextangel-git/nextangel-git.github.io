@@ -261,7 +261,7 @@ import Base from '../layouts/Base.astro';
         return `<article class="card request-card">
           <button type="button" class="request-toggle" aria-expanded="false" aria-controls="request-details-${result.page}-${index}" aria-label="Развернуть заявку ${esc(item.requestId)}" data-request-code="${esc(item.requestId)}"><span class="request-toggle-sign" aria-hidden="true">+</span><span class="request-line" title="${esc(`${stamp} · ${item.house}${item.flat ? ', кв. ' + item.flat : ''} · ${item.topic} · ${item.fio}`)}">${esc(`${stamp} · ${item.house}${item.flat ? ', кв. ' + item.flat : ''} · ${item.topic} · ${item.fio}`)}</span></button>
           <div class="request-details" id="request-details-${result.page}-${index}" hidden>
-          <div class="request-meta"><time datetime="${esc(item.createdAt)}">${esc(stamp)} · Красноярск</time><span>${esc(statuses[item.delivery] || statuses.sending)}</span></div>
+          <div class="request-meta"><time datetime="${esc(item.createdAt)}">${esc(stamp)}</time><span>${esc(statuses[item.delivery] || statuses.sending)}</span></div>
           <h2>${esc(item.topic)}</h2>${item.test ? '<p><strong>ТЕСТ — не требует обработки</strong></p>' : ''}
           <p class="request-code">${esc(item.requestId)}</p>
           <dl><dt>ФИО</dt><dd>${esc(item.fio)}</dd><dt>Телефон</dt><dd>${esc(item.phone || 'Не указан')}</dd><dt>Дом</dt><dd>${esc(item.house)}</dd><dt>Квартира</dt><dd>${esc(item.flat || 'Не указана')}</dd></dl>
