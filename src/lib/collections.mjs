@@ -1,3 +1,4 @@
+import { publicationNow } from './useful-order.js';
 // Конфиг коллекций админки ЖКС: файл данных + поля формы.
 // type: text | textarea | number | url | checkbox
 export const COLLECTIONS = {
@@ -59,10 +60,12 @@ export const COLLECTIONS = {
     label: 'Полезное (статьи)', file: 'useful.json', singular: 'статья', dict: true,
     fields: [
       { key: 'title', label: 'Заголовок', type: 'text', required: true },
+      { key: 'publishedAt', label: 'Дата и время публикации (Красноярск)', type: 'datetime', required: true },
       { key: 'body', label: 'Текст (HTML)', type: 'textarea', required: true },
       { key: 'source', label: 'Источник (ссылка)', type: 'url' },
     ],
-    display: (x) => x.title,
+    defaults: () => ({ publishedAt: publicationNow() }),
+    display: (x) => `${x.publishedAt || 'Дата не указана'} — ${x.title}`,
   },
   services: {
     label: 'Платные услуги', file: 'services.json', singular: 'услуга', nested: true,

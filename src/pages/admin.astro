@@ -10,6 +10,7 @@ import Base from '../layouts/Base.astro';
 
     import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
     import { photoSize } from '../lib/request-photos.js';
+    import { usefulEntries } from '../lib/useful-order.js';
 
     const rootEl = document.getElementById('admin-root');
     let FILESHA = {};
@@ -250,7 +251,7 @@ import Base from '../layouts/Base.astro';
       if (version !== authVersion || hash !== location.hash) return;
       CNT.requests = result.total;
       const statuses = { sent: 'Письмо отправлено', unconfirmed: 'Отправка письма не подтверждена', confirmed_by_owner: 'Получение письма подтверждено', sending: 'Статус отправки письма уточняется' };
-      const cards = result.data.map(item => {
+      const cards = result.data.map((item, index) => {
         const date = new Date(item.createdAt);
         const stamp = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('ru-RU', { timeZone: 'Asia/Krasnoyarsk' });
         const photos = (item.photos || []).filter(p => /^[a-f0-9]{64}$/.test(item.id) && /^photo-[1-5]\.(jpg|png|webp)$/.test(p.name)).map((p, i) => {
@@ -258,19 +259,31 @@ import Base from '../layouts/Base.astro';
           return `<figure><a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="Фото ${i + 1} к заявке" loading="lazy"></a><figcaption><a href="${esc(url)}&amp;download=1">Скачать фото ${i + 1}</a> · ${esc(photoSize(p.size))}</figcaption></figure>`;
         }).join('');
         return `<article class="card request-card">
+          <button type="button" class="request-toggle" aria-expanded="false" aria-controls="request-details-${result.page}-${index}" aria-label="Развернуть заявку ${esc(item.requestId)}" data-request-code="${esc(item.requestId)}"><span class="request-toggle-sign" aria-hidden="true">+</span><span class="request-line" title="${esc(`${stamp} · ${item.house}${item.flat ? ', кв. ' + item.flat : ''} · ${item.topic} · ${item.fio}`)}">${esc(`${stamp} · ${item.house}${item.flat ? ', кв. ' + item.flat : ''} · ${item.topic} · ${item.fio}`)}</span></button>
+          <div class="request-details" id="request-details-${result.page}-${index}" hidden>
           <div class="request-meta"><time datetime="${esc(item.createdAt)}">${esc(stamp)} · Красноярск</time><span>${esc(statuses[item.delivery] || statuses.sending)}</span></div>
           <h2>${esc(item.topic)}</h2>${item.test ? '<p><strong>ТЕСТ — не требует обработки</strong></p>' : ''}
           <p class="request-code">${esc(item.requestId)}</p>
           <dl><dt>ФИО</dt><dd>${esc(item.fio)}</dd><dt>Телефон</dt><dd>${esc(item.phone || 'Не указан')}</dd><dt>Дом</dt><dd>${esc(item.house)}</dd><dt>Квартира</dt><dd>${esc(item.flat || 'Не указана')}</dd></dl>
           <p class="request-description">${esc(item.text)}</p>
           ${photos ? `<div class="request-images">${photos}</div>` : '<p class="muted">Без фотографий</p>'}
+          </div>
         </article>`;
       }).join('');
       const paging = `<nav class="request-paging" aria-label="Страницы заявок">${result.page > 1 ? `<a class="btn ghost" href="#/c/requests/${result.page - 1}">← Назад</a>` : ''}<span>Страница ${result.page} из ${result.pages}</span>${result.page < result.pages ? `<a class="btn ghost" href="#/c/requests/${result.page + 1}">Далее →</a>` : ''}</nav>`;
-      shell('Заявки с сайта', `<p class="muted">Обращения и фотографии доступны только после входа. Всего заявок: ${result.total}.</p>
+      shell('Заявки с сайта', `<p class="muted">Новые заявки — первыми. Нажмите «+», чтобы открыть обращение, и «−», чтобы свернуть. Всего заявок: ${result.total}. Данные и фотографии доступны только после входа.</p>
         <div class="toolbar"><label class="search"><span class="sr-only">Поиск на текущей странице</span><input id="request-search" placeholder="Поиск на этой странице…"></label><button type="button" class="btn ghost" id="requests-refresh">Обновить</button></div>
         <div id="request-list">${cards || '<p>Пока нет заявок с сайта.</p>'}</div><p id="request-no-match" hidden>На этой странице ничего не найдено.</p>${paging}`, 'requests');
       document.getElementById('requests-refresh').onclick = () => route();
+      document.querySelectorAll('.request-toggle').forEach(button => {
+        button.onclick = () => {
+          const expanded = button.getAttribute('aria-expanded') !== 'true';
+          button.setAttribute('aria-expanded', String(expanded));
+          button.setAttribute('aria-label', `${expanded ? 'Свернуть' : 'Развернуть'} заявку ${button.dataset.requestCode}`);
+          button.querySelector('.request-toggle-sign').textContent = expanded ? '−' : '+';
+          document.getElementById(button.getAttribute('aria-controls')).hidden = !expanded;
+        };
+      });
       document.getElementById('request-search').oninput = event => {
         const query = event.target.value.trim().toLocaleLowerCase('ru');
         const items = [...document.querySelectorAll('.request-card')];
@@ -301,7 +314,7 @@ import Base from '../layouts/Base.astro';
         if (arch.length) rows += `<tr class="cat"><td colspan="2">Архив — ушли из управления (${arch.length})</td></tr>` +
           arch.map(([idx, x]) => `<tr style="opacity:.6"><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%;text-align:right">${btn(`#/c/houses/restore/${idx}`, 'Вернуть из архива')}</td></tr>`).join('');
       } else {
-        const list = cfg.dict ? Object.entries(data) : data.map((x, i) => [i, x]);
+        const list = cfg.dict ? (name === 'useful' ? usefulEntries(data) : Object.entries(data)) : data.map((x, i) => [i, x]);
         list.forEach(([idx, x]) => {
           const disp = cfg.display ? cfg.display(x) : (x.title || x.name || JSON.stringify(x).slice(0, 60));
           rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%;text-align:right">${cfg.readonly ? '' : btn(`#/c/${name}/edit/${idx}`, 'Изменить') + ' ' + btn(`#/c/${name}/del/${idx}`, '✕', 1)}</td></tr>`;
@@ -325,7 +338,7 @@ import Base from '../layouts/Base.astro';
       if (f.type === 'textarea') return `<textarea name="${esc(f.key)}" ${f.required ? 'required' : ''}>${esc(v)}</textarea>`;
       if (f.type === 'checkbox') return `<label style="display:flex;gap:9px;align-items:center;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" ${v ? 'checked' : ''} style="width:18px;height:18px"> да</label>`;
       if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
-      if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}">`;
+      if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}" ${f.required ? 'required' : ''}>`;
       if (f.type === 'date') return `<input name="${esc(f.key)}" type="date" value="${esc(String(v || '').slice(0, 10))}">`;
       if (f.type === 'house') return `<select name="${esc(f.key)}"><option value="">— общий документ (все дома) —</option>${extra.houseOpts.map(h => `<option ${h === v ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select>`;
       if (f.type === 'street') {
@@ -371,7 +384,7 @@ import Base from '../layouts/Base.astro';
       }
       if (fields.some(f => f.type === 'street')) extra.streets = await streetMap();
 
-      const keyField = cfg.dict ? `<label>Ключ <span class="hint">латиницей, напр. tariffs</span></label><input name="__key" value="${isNew ? '' : esc(idx)}" ${isNew ? 'required' : 'readonly'}>` : '';
+      const keyField = cfg.dict ? `<label>Ключ <span class="hint">латиницей, напр. sovety-zhitelyam</span></label><input name="__key" value="${isNew ? '' : esc(idx)}" ${isNew ? 'required' : 'readonly'}>` : '';
       const catField = (cfg.nested && isNew) ? `<label>Категория</label><select name="__cat">${data.map((c, i) => `<option value="${i}">${esc(c.cat)}</option>`).join('')}</select>` : '';
 
       shell((isNew ? 'Новая запись' : 'Изменение') + ' · ' + cfg.label, `
@@ -664,6 +677,13 @@ import Base from '../layouts/Base.astro';
     html.vi .admin-vi-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
     .admin-vi-options button{font:inherit;min-height:44px;min-width:44px;background:#fff;color:#000;border:2px solid #000;border-radius:6px;cursor:pointer}
     .request-card{margin-bottom:18px;overflow-wrap:anywhere;min-width:0}
+    .adm-fixed .request-card{padding:0}
+    .request-toggle{display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:56px;padding:12px 16px;border:0;border-radius:14px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+    .request-toggle:hover{background:#eaf0f8}.request-toggle:focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
+    .request-toggle-sign{flex:none;font-size:1.5em;font-weight:700;line-height:1;width:24px;text-align:center}
+    .request-line{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .request-details{padding:8px 22px 22px}.request-details[hidden],.request-card[hidden]{display:none}
+    html.vi .request-toggle:hover{background:#fff;color:#000}html.vi .request-toggle:focus-visible{outline-color:#000}
     .request-card h2{font-size:1.15em;margin:12px 0}
     .request-card dl{display:grid;grid-template-columns:minmax(70px,100px) minmax(0,1fr);gap:8px 12px}
     .request-card dt{font-weight:600}.request-card dd{margin:0}

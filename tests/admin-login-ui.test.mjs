@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
 import { mountSmartCaptcha } from '../src/lib/smartcaptcha.js';
 import { photoSize } from '../src/lib/request-photos.js';
+import { usefulEntries } from '../src/lib/useful-order.js';
 import { mockSmartCaptcha } from './helpers/smartcaptcha.mjs';
 import * as dataHelpers from '../src/lib/admin-data.js';
 
@@ -27,7 +28,7 @@ async function setup(t, url = 'https://jks.ooo/admin', authenticated = false, re
   let state = { authenticated, user: authenticated ? { username: 'editor' } : null, csrf: 'session' };
   const calls = { session: 0, login: [], read: [], password: [], logout: 0, requests: [] };
   const deps = {
-    COLLECTIONS, ...dataHelpers, mountSmartCaptcha, photoSize,
+    COLLECTIONS, ...dataHelpers, mountSmartCaptcha, photoSize, usefulEntries,
     getSessionState: () => ({ ...state }),
     clearSession: () => { state = { authenticated: false, user: null, csrf: '' }; },
     refreshSession: async () => { calls.session++; return { ...state }; },
@@ -62,6 +63,12 @@ test('private requests render escaped contents, protected photos, refresh and pa
   const { window, calls } = await setup(t, 'https://jks.ooo/admin#/c/requests', true, [item]);
   const doc = window.document;
   assert.equal(doc.querySelectorAll('.request-card').length, 1);
+  const toggle = doc.querySelector('.request-toggle'), detail = doc.querySelector('.request-details');
+  assert.equal(detail.hidden, true); assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  assert.equal(toggle.querySelector('.request-toggle-sign').textContent, '+');
+  toggle.click(); assert.equal(detail.hidden, false); assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(toggle.querySelector('.request-toggle-sign').textContent, '−');
+  toggle.click(); assert.equal(detail.hidden, true);
   assert.equal(doc.querySelectorAll('.request-card script,.request-card [onerror]').length, 0);
   assert.match(doc.querySelector('.request-card').textContent, /Получение письма подтверждено/);
   assert.equal(doc.querySelectorAll('.request-images img').length, 1);

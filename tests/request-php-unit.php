@@ -84,6 +84,17 @@ try {
     foreach (['Thanks!'=>'Activation required','https://jks.ooo/request'=>'https://evil.invalid','<div>'=>'<div><form></form>','The form was submitted successfully.'=>'Delivery failed.'] as $from=>$to) {
         verifyCheck(!JksRequestApi::deliveryAccepted(['status'=>200,'body'=>str_replace($from,$to,$success)]),'Unconfirmed page rejected');
     }
+    mkdir($directory.'/ordering',0700);$orderedStore=new JksRequestStore($directory.'/ordering');
+    for($i=0;$i<52;$i++) {
+        $stamp=(new DateTimeImmutable('2026-11-19T10:00:00+07:00'))->modify('+'.$i.' seconds')->format(DATE_ATOM);
+        $orderedStore->save(['requestId'=>'order-'.$i,'createdAt'=>$stamp],[]);
+    }
+    $oldId=hash('sha256','order-0');
+    $orderedStore->delivery($oldId,'sent');
+    touch($directory.'/ordering/requests/'.$oldId.'/request.json',time()+3600);
+    $first=$orderedStore->listing();$second=$orderedStore->listing(2);
+    verifyCheck($first['total']===52 && count($first['data'])===50 && $first['data'][0]['requestId']==='order-51','Newest created request first across pagination');
+    verifyCheck(array_column($second['data'],'requestId')===['order-1','order-0'],'Updating old delivery/mtime never raises old request');
     echo json_encode(['passed'=>$passed,'network_used'=>false]) . "\n";
 } finally {
     $items=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::CHILD_FIRST);

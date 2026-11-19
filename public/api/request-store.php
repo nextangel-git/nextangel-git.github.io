@@ -56,7 +56,7 @@ final class JksRequestStore {
                     if (!copy($p['path'],$target) || !chmod($target,0600)) throw new RuntimeException('Attachment save failed');
                     $attachments[]=['name'=>$p['name'],'mime'=>$p['mime'],'size'=>filesize($target)];
                 }
-                $record=$fields+['id'=>$id,'createdAt'=>(new DateTimeImmutable('now',new DateTimeZone('Asia/Krasnoyarsk')))->format(DATE_ATOM),'delivery'=>'sending','photos'=>$attachments,'fingerprint'=>$fingerprint];
+                $record=$fields+['id'=>$id,'createdAt'=>(new DateTimeImmutable('now',new DateTimeZone('Asia/Krasnoyarsk')))->format('Y-m-d\TH:i:s.uP'),'delivery'=>'sending','photos'=>$attachments,'fingerprint'=>$fingerprint];
                 self::write($folder,$record);
             } catch(Throwable $e) {
                 // Only this freshly-created private directory, never an existing request.
@@ -75,10 +75,19 @@ final class JksRequestStore {
     }
     public function listing(int $page=1): array {
         $paths=glob($this->directory.'/*/request.json') ?: [];
-        usort($paths,static function($a,$b){return filemtime($b)<=>filemtime($a) ?: strcmp($b,$a);});
+        $ordered=[];
+        foreach($paths as $path) {
+            $id=basename(dirname($path));$record=$this->record($id);$time=0;
+            if(!empty($record['createdAt'])) {
+                try { $time=(float)(new DateTimeImmutable($record['createdAt']))->format('U.u'); }
+                catch(Exception $e) { /* Legacy records without a valid date stay last. */ }
+            }
+            $ordered[]=['id'=>$id,'time'=>$time];
+        }
+        usort($ordered,static function($a,$b){return $b['time']<=>$a['time'] ?: strcmp($b['id'],$a['id']);});
         $total=count($paths);$pages=max(1,(int)ceil($total/50));$page=max(1,min($page,$pages));$data=[];
-        foreach (array_slice($paths,($page-1)*50,50) as $path) {
-            $record=$this->record(basename(dirname($path)));unset($record['fingerprint']);$data[]=$record;
+        foreach (array_slice($ordered,($page-1)*50,50) as $item) {
+            $record=$this->record($item['id']);unset($record['fingerprint']);$data[]=$record;
         }
         return ['data'=>$data,'total'=>$total,'page'=>$page,'pages'=>$pages,'sha'=>null];
     }

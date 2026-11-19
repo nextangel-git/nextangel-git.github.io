@@ -5,6 +5,7 @@ import { getHouses, getNews, getShutdowns } from '../lib/content.js';
 import { getOrgLegend } from '../lib/orgs.js';
 import vkPosts from '../data/vk_posts.json';
 import usefulData from '../data/useful.json';
+import { usefulEntries, publicationInfo } from '../lib/useful-order.js';
 import mingkhSync from '../data/mingkh_sync.json';
 
 const orgLegend = getOrgLegend();
@@ -159,8 +160,8 @@ function tagFor(title) {
   <section class="section" id="useful">    <div class="container">
       <div class="section__head"><h2>Полезное жителям</h2></div>
       <div class="useful-grid">
-        {Object.entries(usefulData).map(([slug, a]) => (
-          <a class="useful-card" href={`/useful/${slug}`}><svg viewBox="0 0 24 24" class="icon"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/></svg>{a.title}</a>
+        {usefulEntries(usefulData).map(([slug, a]) => (
+          <a class="useful-card" href={`/useful/${slug}`}><svg viewBox="0 0 24 24" class="icon"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/></svg><span>{a.title}{publicationInfo(a.publishedAt) && <small style="display:block;margin-top:6px"><time datetime={publicationInfo(a.publishedAt).iso}>{a.publishedAt}</time> · Красноярск</small>}</span></a>
         ))}
         <a class="useful-card" href="/faq"><svg viewBox="0 0 24 24" class="icon"><path d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 1 1-4-7.5L21 3l-1 4.5A8.9 8.9 0 0 1 21 12z"/></svg>Вопросы и ответы</a>
         <a class="useful-card" href="https://dom.gosuslugi.ru" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" class="icon"><path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H7V5h10z"/></svg>Приложение «Госуслуги Дом»</a>

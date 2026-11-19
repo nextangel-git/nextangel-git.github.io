@@ -16,6 +16,7 @@ foreach (JksAdminSchema::WRITE_FILES as $file) {
     JksAdminSchema::json($file, file_get_contents(dirname(__DIR__) . '/src/data/' . $file));
     check(true, 'existing data ' . $file);
 }
+rejects(static function(){JksAdminSchema::json('useful.json','{"test":{"title":"Test","body":"Text","publishedAt":"31.02.2026 10:00"}}');},422,'invalid article publication date');
 rejects(static function () { JksAdminSchema::readFile('../.env'); }, 422, 'read traversal');
 rejects(static function () { JksAdminSchema::ref('other-branch'); }, 422, 'branch allowlist');
 rejects(static function () { JksAdminSchema::password('short'); }, 422, 'short password');

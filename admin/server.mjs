@@ -20,6 +20,7 @@ import { npmCommand, runLogged } from './process.mjs';
 import { localSyncBlockReason } from './sync-owner.mjs';
 import { fileURLToPath } from 'node:url';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
+import { usefulEntries } from '../src/lib/useful-order.js';
 import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../src/lib/admin-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -446,7 +447,7 @@ app.get('/c/:name', auth, (req, res) => {
     if (arch.length) rows += `<tr class="cat"><td colspan="2">Архив — ушли из управления (${arch.length})</td></tr>` +
       arch.map(([idx, x]) => `<tr style="opacity:.6"><td>${esc(cfg.display(x))}</td><td style="white-space:nowrap;width:1%;text-align:right">${btn(`/c/houses/restore/${idx}`, 'Вернуть из архива')}</td></tr>`).join('');
   } else {
-    const list = cfg.dict ? Object.entries(data) : data.map((x, i) => [i, x]);
+    const list = cfg.dict ? (req.params.name === 'useful' ? usefulEntries(data) : Object.entries(data)) : data.map((x, i) => [i, x]);
     list.forEach(([idx, x]) => {
       const disp = cfg.display ? cfg.display(x) : (x.title || x.name || JSON.stringify(x).slice(0, 60));
       rows += `<tr><td>${esc(disp)}</td><td style="white-space:nowrap;width:1%;text-align:right">${cfg.readonly ? '' : btn(`/c/${req.params.name}/edit/${idx}`, 'Изменить') + ' ' + btn(`/c/${req.params.name}/del/${idx}`, '✕', 'red')}</td></tr>`;

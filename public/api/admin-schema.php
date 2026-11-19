@@ -91,6 +91,7 @@ final class JksAdminSchema {
             foreach ($data as $slug => $row) {
                 if (!preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/D', $slug) || strlen($slug) > 120 || in_array($slug, ['constructor', 'prototype'], true) || !$row instanceof stdClass) self::fail('Некорректный ключ статьи.');
                 self::field($row, 'title', 300, true); self::field($row, 'body', 524288, true);
+                if (isset($row->publishedAt)) { self::field($row, 'publishedAt', 16, true); self::date($row->publishedAt, false, true); }
                 if (isset($row->source)) self::url($row->source);
             }
         } else {

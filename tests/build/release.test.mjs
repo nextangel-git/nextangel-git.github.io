@@ -72,6 +72,8 @@ test('rendered local links and assets resolve within the release artifact', () =
       const url = new URL(raw.replaceAll('&amp;', '&'), pageUrl);
       if (url.origin !== origin) continue;
       const pathname = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+      assert.ok(!/^(?:tariffs(?:\/|$)|useful-info(?:\/|$)|documents\/?$|about\/(?:licence|ustav|confpolicy)\.php$|news\/\d+\.html$)/.test(pathname), `Obsolete section link: ${file} -> ${raw}`);
+      assert.ok(!(pathname.replace(/\/$/,'') === 'disclosure' && url.searchParams.has('cat')), `Obsolete disclosure category: ${raw}`);
       const clean = pathname.replace(/\/$/, '');
       const options = [pathname, `${pathname}.html`, clean ? `${clean}/index.html` : 'index.html'];
       if (!options.some((name) => {
