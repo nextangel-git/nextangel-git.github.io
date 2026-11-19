@@ -250,5 +250,6 @@ jks.ooo/
 <!-- jks-source-sync:start -->
 ## Журнал автоматического обновления
 
+- 19.11.2026 12:57 (Красноярск): cron NIC.RU, mingkh; получено записей: 147; обновлены src/data/houses_geo.json, src/data/competitors.json. Сборку и доставку выполняет GitHub Actions. Смена УК требует ручной сверки: 4; утверждённый перечень ЖКС не изменён.
 - 19.11.2026 12:45 (Красноярск): cron NIC.RU, VK; получено записей: 10; обновлены src/data/vk_posts.json. Сборку и доставку выполняет GitHub Actions.
 <!-- jks-source-sync:end -->
