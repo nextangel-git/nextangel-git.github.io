@@ -10,6 +10,7 @@ import Base from '../layouts/Base.astro';
     import housesAll from '../data/houses.json';
     import housesGeoAll from '../data/houses_geo.json';
     import docs from '../data/documents.json';
+    import gis from '../data/gis-links.json';
     import { escapeHtml as esc, safeHref } from '../lib/public-safety.js';
     const houses = housesAll.filter(h => !h.archived);
     const housesGeo = housesGeoAll.filter(h => !h.archived);
@@ -29,7 +30,8 @@ import Base from '../layouts/Base.astro';
     // реальные документы, привязанные к дому через админку (поле «Дом»)
     const houseDocsHtml = (addr) => {
       const mine = docs.filter((d) => norm(d.house) === norm(addr));
-      const gisLink = `<p class="house__note" style="margin-top:14px">${mine.length ? 'Также документы' : 'Документы'} по дому — в <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a> (реестр МКД, поиск по адресу).</p>`;
+      const source = gis.houses.find(h => norm(h.street) === norm(house?.street) && norm(h.num) === norm(house?.num));
+      const gisLink = `<p class="house__note" style="margin-top:14px">${source ? `<a href="${esc(safeHref(source.managementUrl + '&index=7'))}" target="_blank" rel="noopener">Отчёты по управлению в ГИС ЖКХ ↗</a><br />` : ''}<a href="${esc(safeHref(source?.managementUrl || gis.housesUrl))}" target="_blank" rel="noopener">Документы и управление в ГИС ЖКХ ↗</a>${source ? ` · <a href="${esc(safeHref(source.houseUrl))}" target="_blank" rel="noopener">Карточка дома в ГИС ЖКХ ↗</a>` : ''}</p><p class="house__note" style="margin-top:10px">Договор, сведения о работах и услугах публикуются в ГИС ЖКХ. <a href="/disclosure?street=${encodeURIComponent(house?.street || '')}&num=${encodeURIComponent(house?.num || '')}">Как найти нужный документ</a></p>`;
       if (!mine.length) return gisLink;
       const byCat = Object.create(null);
       for (const d of mine) (byCat[d.cat] ??= []).push(d);
@@ -81,7 +83,7 @@ import Base from '../layouts/Base.astro';
           </div>
           <div class="house__grid">
             <div class="house__docs">
-              ${docs.some((d) => norm(d.house) === norm(addr)) ? '<h2>Документы по дому</h2>' : ''}
+              <h2>Документы по дому</h2>
               ${houseDocsHtml(addr)}
               ${(() => {
                 const now = new Date().getFullYear();
@@ -102,13 +104,13 @@ import Base from '../layouts/Base.astro';
                 ].filter(Boolean);
                 const techHtml = techRows.length ? `
                   <section class="doc-group" style="margin-top:26px">
-                    <h3>Технические данные <span class="doc-group__n">ГИС ЖКХ</span></h3>
+                    <h3>Технические данные <span class="doc-group__n">МинЖКХ</span></h3>
                     <table class="tech-tbl">${techRows.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table>
                   </section>` : '';
                 const kap = house.kapremont;
                 const kapHtml = kap && kap.length ? `
                   <section class="doc-group" style="margin-top:26px">
-                    <h3>Капитальный ремонт <span class="doc-group__n">план ГИС ЖКХ</span></h3>
+                    <h3>Капитальный ремонт <span class="doc-group__n">план · МинЖКХ</span></h3>
                     <ul class="doc-list">
                       ${kap.map(k => `<li class="doc-item" style="cursor:default">${docIcon}
                         <span class="doc-item__name">${esc(k.work)}</span>

@@ -3,6 +3,7 @@ import { russianPlural } from '../lib/public-safety.js';
 import Base from '../layouts/Base.astro';
 import { getHouses } from '../lib/content.js';
 import housesGeoAll from '../data/houses_geo.json';
+import gis from '../data/gis-links.json';
 
 // точные цифры — считаются из данных по домам, а не пишутся руками; архивные (ушли из управления) не считаем
 const houses = await getHouses();
@@ -35,9 +36,10 @@ const fmt = (n) => n.toLocaleString('ru-RU');
     </div>
 
     <div class="disc-grid" style="margin-top:28px">
-      <a href="/disclosure" class="disc-card"><h3>Лицензия и устав</h3><p>Лицензия на управление МКД, уставные документы</p></a>
+      <a href="/disclosure" class="disc-card"><h3>Сведения в ГИС ЖКХ</h3><p>Лицензия, реквизиты и ссылки на документы домов</p></a>
       <a href="/#contacts" class="disc-card"><h3>Реквизиты</h3><p>ИНН, ОГРН, юридический адрес — в разделе контактов</p></a>
       <a href="/news" class="disc-card"><h3>Новости</h3><p>Что происходит в компании и ваших домах</p></a>
     </div>
+    <p class="section__note" style="margin-top:24px">Дополнительная справочная информация — <a href={gis.mingkhUrl} target="_blank" rel="noopener">карточка УК на МинЖКХ ↗</a>. Это независимый справочник; официальные сведения и документы размещаются в ГИС ЖКХ.</p>
   </div>
 </Base>

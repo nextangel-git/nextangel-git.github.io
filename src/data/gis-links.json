@@ -1,0 +1,634 @@
+{
+  "checkedAt": "2026-11-19",
+  "organizationUrl": "https://dom.gosuslugi.ru/#!/organizationView/f7cfc50d-33f2-4cd8-b112-a60bcd9d59e7",
+  "informationUrl": "https://dom.gosuslugi.ru/#!/org-info?index=0&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+  "housesUrl": "https://dom.gosuslugi.ru/#!/org-info-mkd?orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+  "licenseeHousesUrl": "https://dom.gosuslugi.ru/#!/licensee-houses-info/f7cfc50d-33f2-4cd8-b112-a60bcd9d59e7",
+  "mingkhUrl": "https://mingkh.ru/krasnoyarskiy-kray/sosnovoborsk/1067760313180/",
+  "houses": [
+    {
+      "street": "9-й Пятилетки",
+      "num": "2",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=8d63c795-ccb3-4f04-b8ef-4b065288a993&houseGuid=3c6ddd12-26a5-4f90-ae02-71f4811f4ff4&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=3c6ddd12-26a5-4f90-ae02-71f4811f4ff4&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "3",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b00b55f9-bc1d-4b5f-b6a0-32672da900e1&houseGuid=ab369a7a-77c3-4e82-85c9-d7913a15fb24&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ab369a7a-77c3-4e82-85c9-d7913a15fb24&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "6",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6ce59ccb-eb11-4bd9-9a68-60e5579859e1&houseGuid=9756b5c4-bc15-43f4-82b5-7bca5166c7ec&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=9756b5c4-bc15-43f4-82b5-7bca5166c7ec&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "8",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2b003e90-2f3c-45d4-8d0e-2e587836eebd&houseGuid=c601ae39-f324-4ddf-9225-6cbd2eff399c&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=c601ae39-f324-4ddf-9225-6cbd2eff399c&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "9",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=4ae0c12f-ce40-4894-a67a-27440e24d03c&houseGuid=eabd9f2f-7cd9-4bf5-af20-a7bd95e8a162&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=eabd9f2f-7cd9-4bf5-af20-a7bd95e8a162&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "10",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=36a2473c-7433-4744-9c73-aab84d765498&houseGuid=a45ceb70-e83d-414a-99b3-d176f29d0769&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=a45ceb70-e83d-414a-99b3-d176f29d0769&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "11",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=7af2c04d-64b0-4224-af68-fbae296a61d0&houseGuid=c616a395-fcee-4e93-a9c7-b663a6984725&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=c616a395-fcee-4e93-a9c7-b663a6984725&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "12",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6df71993-356b-4f0d-beca-120f5930b320&houseGuid=c4360898-8156-44f5-847d-4af66bc383f2&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=c4360898-8156-44f5-847d-4af66bc383f2&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "17",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=41de5b4c-e699-46d1-b5f9-53a6a19364ac&houseGuid=befec7c8-aae4-4d86-bd2e-06a3ad9bbcc8&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=befec7c8-aae4-4d86-bd2e-06a3ad9bbcc8&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "18",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=d7f49010-47ad-4c8f-a0b5-d39c49b16a95&houseGuid=2aedf450-d4f5-4174-9ecb-ac242ca68220&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=2aedf450-d4f5-4174-9ecb-ac242ca68220&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "19",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=dc1f3458-38c2-4fbc-8258-285b37ca08ec&houseGuid=3b4c8775-9f35-430e-b2b0-22f3b663efb8&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=3b4c8775-9f35-430e-b2b0-22f3b663efb8&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "20",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=99ca70c2-70f7-47fc-af03-50740b304b0b&houseGuid=fb44be10-1423-414a-9c14-daa4ffe777f5&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=fb44be10-1423-414a-9c14-daa4ffe777f5&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "26",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=02bea3f2-abfd-4d5d-8aa3-b8030b35544c&houseGuid=954cc692-0885-4548-bcc0-ff2f15c21250&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=954cc692-0885-4548-bcc0-ff2f15c21250&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "28",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=a1a2e8c5-128e-46e4-8403-4763a85c7d1e&houseGuid=b7cb8774-0701-40d4-a0de-ffa0a943b59c&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=b7cb8774-0701-40d4-a0de-ffa0a943b59c&typeCode=1"
+    },
+    {
+      "street": "9-й Пятилетки",
+      "num": "30",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=c3462f1a-09b4-411a-a607-906656ad410b&houseGuid=4585cb59-a61d-4ec8-afab-a39da74c24f3&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=4585cb59-a61d-4ec8-afab-a39da74c24f3&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "1",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=c54e4714-5d4a-413a-bcaa-661f11c23089&houseGuid=17d4428e-5feb-4731-8e8f-88ac78181eeb&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=17d4428e-5feb-4731-8e8f-88ac78181eeb&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "5",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=eccc9cd8-859c-4141-9c26-0957f67727ae&houseGuid=963cfcfc-f83a-4a1a-afe9-2331535612bc&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=963cfcfc-f83a-4a1a-afe9-2331535612bc&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "6",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=4772272f-f946-4edf-8afd-8a7ef9817337&houseGuid=d4a878b4-2493-4de9-be86-25fcb4e7d8f7&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=d4a878b4-2493-4de9-be86-25fcb4e7d8f7&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "7",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=cfe99827-520d-4707-ada6-b5d658d9b641&houseGuid=ef960b0f-ad86-4db7-8cf4-2501ced977d5&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ef960b0f-ad86-4db7-8cf4-2501ced977d5&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "8",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=32ee987f-5f59-4e4a-b4cc-4edc8a3fedaf&houseGuid=ef9aaa73-b131-492d-8140-53dc682354dc&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ef9aaa73-b131-492d-8140-53dc682354dc&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "10",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=5644af68-4b86-4e60-983c-c4b33c28e79c&houseGuid=45ff6baa-3c09-47af-adc2-6d9c475c603a&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=45ff6baa-3c09-47af-adc2-6d9c475c603a&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "11",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=493f723b-fc8c-4b23-a8f2-d04f5a7e6816&houseGuid=647f1536-ab56-400a-9522-a72a56d6161b&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=647f1536-ab56-400a-9522-a72a56d6161b&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "12",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=fea0766c-0425-4ee0-b562-92509e57eb6b&houseGuid=944b85fd-9b83-4be0-8f41-6504553b0103&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=944b85fd-9b83-4be0-8f41-6504553b0103&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "13",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=5c1f56cc-125d-4796-a951-632da5a82594&houseGuid=027f84f6-de13-4a23-8031-d6591fc793c7&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=027f84f6-de13-4a23-8031-d6591fc793c7&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "14",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=5f464a05-c42c-4eb2-88a9-1756b0f9dc97&houseGuid=098c2e8b-58d2-4569-9076-7593c481acf8&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=098c2e8b-58d2-4569-9076-7593c481acf8&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "15",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=32e2fc28-061b-47e1-839a-7840213f6e22&houseGuid=5cb2e6a8-fc4b-4c30-9d21-ccddd8a69f82&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=5cb2e6a8-fc4b-4c30-9d21-ccddd8a69f82&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "17",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=df95a3f4-e906-4d0c-8ea7-eb08c893286a&houseGuid=4681ba45-3d0d-4bed-a43f-b09f699151a0&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=4681ba45-3d0d-4bed-a43f-b09f699151a0&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "18",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6c2a447c-117f-4916-84a2-8f4e8e004dcb&houseGuid=cc9d3353-5a7d-44b7-a5df-473d8a36291c&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=cc9d3353-5a7d-44b7-a5df-473d8a36291c&typeCode=1"
+    },
+    {
+      "street": "Весенняя",
+      "num": "34",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6f7d7869-0f4a-48ea-969c-3c2c14bb242a&houseGuid=5502b8ec-f04f-4db6-a0b1-0b14144e5644&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=5502b8ec-f04f-4db6-a0b1-0b14144e5644&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "1",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=ca130370-aa52-4db8-bce7-96f47487b561&houseGuid=4170ff1a-8e41-4802-b2a8-28ce138d58c5&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=4170ff1a-8e41-4802-b2a8-28ce138d58c5&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "2",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=f518ed5a-5756-49d7-94cf-90149bc01e19&houseGuid=21615167-47bf-4ee1-99b6-eb7ac91b20ca&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=21615167-47bf-4ee1-99b6-eb7ac91b20ca&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "4",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=95f85913-d0af-4241-ba4f-501478929895&houseGuid=5e8b3981-5e64-4f4e-ae90-1575d7b8b888&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=5e8b3981-5e64-4f4e-ae90-1575d7b8b888&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "8",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=8f69e063-d09e-4edb-a36d-1b4e89e2d61f&houseGuid=9913e32c-6eec-4721-a04b-7b81fd048aed&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=9913e32c-6eec-4721-a04b-7b81fd048aed&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "9",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=52b114b0-6e55-42b9-8110-6f38243daf19&houseGuid=ce675a25-b29b-432f-9dfd-5875db135913&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ce675a25-b29b-432f-9dfd-5875db135913&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "12",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=8518aae3-9ed6-44fa-8c32-9134addf1361&houseGuid=501f4c2d-2d5a-4415-8baa-36a5478393a5&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=501f4c2d-2d5a-4415-8baa-36a5478393a5&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "13",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=282cd3e8-d091-4656-8e4a-4f421331bb50&houseGuid=3160963c-3166-4642-8b60-5f245292f296&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=3160963c-3166-4642-8b60-5f245292f296&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "14",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=41b76473-9dbd-4353-a0ce-ed2aa24f87c0&houseGuid=fe36d355-a5fe-4ae9-89e0-826dc629ea02&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=fe36d355-a5fe-4ae9-89e0-826dc629ea02&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "18",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=f5008fc1-2723-4b66-80dc-4c48c007e1da&houseGuid=ea84aa9a-900f-4e9d-ad1e-68a5c935fa2e&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ea84aa9a-900f-4e9d-ad1e-68a5c935fa2e&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "22",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=787b59ec-7e3b-453b-9ff9-df0bfa1369ce&houseGuid=5211c40e-9db7-41c1-a6d9-fe783b585e11&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=5211c40e-9db7-41c1-a6d9-fe783b585e11&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "26",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6a91b1e7-7194-4ca2-8dce-c9d8311d1397&houseGuid=32e360c4-a080-46aa-8f2b-76b2108cd2c6&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=32e360c4-a080-46aa-8f2b-76b2108cd2c6&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "31",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b061f426-cd32-4e30-a966-ffdcb1ddd115&houseGuid=97480873-04f6-4e3a-9b15-0eadb05ec815&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=97480873-04f6-4e3a-9b15-0eadb05ec815&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "32",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=595de3a5-82bb-4b92-8172-b1439d26b72c&houseGuid=ba436370-46e5-47f0-825d-5b7fbd7fe090&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ba436370-46e5-47f0-825d-5b7fbd7fe090&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "44",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=cd13793a-21ad-4f1a-8e9c-889fde775074&houseGuid=ad01f3b5-c959-4f1c-bd71-fb97dfed7382&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ad01f3b5-c959-4f1c-bd71-fb97dfed7382&typeCode=1"
+    },
+    {
+      "street": "Ленинского Комсомола",
+      "num": "46",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=7164bbd9-76aa-402e-9bd6-17492e37a2e3&houseGuid=97892269-074d-401e-bb2b-0e333d697d37&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=97892269-074d-401e-bb2b-0e333d697d37&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "4",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=0575fce9-b884-4585-9a9a-7150e5a59e7d&houseGuid=07bd647c-1abf-455d-a45c-cb1f658ddfec&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=07bd647c-1abf-455d-a45c-cb1f658ddfec&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "6",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6a1cbc9f-b677-4a82-9457-6b67913346d8&houseGuid=9b57cafb-d1e5-4e8f-95ac-d043c22f28c2&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=9b57cafb-d1e5-4e8f-95ac-d043c22f28c2&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "10",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b7bbce55-1287-4105-a48a-485d77adca01&houseGuid=bdfb2fd6-5c7c-4701-a05a-fa880ee5be15&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=bdfb2fd6-5c7c-4701-a05a-fa880ee5be15&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "20",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=1b723b1b-9333-42c3-9635-07a590c62e65&houseGuid=2e5d0ba6-d1be-462c-b712-a415b29413fa&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=2e5d0ba6-d1be-462c-b712-a415b29413fa&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "22",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=d7490957-cd78-4483-b9af-d97d50d09f6c&houseGuid=b5e0b092-1533-4368-8ffd-9ff887f8bcfd&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=b5e0b092-1533-4368-8ffd-9ff887f8bcfd&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "24",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=795f42f4-d3a5-462a-a5ad-2f1b6ba8283b&houseGuid=2cddfcc4-89f0-42f1-9b77-912f6dc8d7dc&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=2cddfcc4-89f0-42f1-9b77-912f6dc8d7dc&typeCode=1"
+    },
+    {
+      "street": "Новоселов",
+      "num": "28",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2292a96f-6ec5-4516-b498-b6ac505d5f59&houseGuid=a8589d6f-7e99-4253-9a2d-d73dae9074e0&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=a8589d6f-7e99-4253-9a2d-d73dae9074e0&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "1",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=044bfdf7-195a-433b-9b1d-1c76af790c13&houseGuid=8ee4797d-ef85-4938-81e0-650e4af9817a&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=8ee4797d-ef85-4938-81e0-650e4af9817a&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "5",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=f39fe482-aa62-441b-844c-8185e74add16&houseGuid=7ab45da5-8657-4b4c-8a5d-6090be481f74&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=7ab45da5-8657-4b4c-8a5d-6090be481f74&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "7",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=89aef8a0-d8bf-404e-892c-79a09d4ece0a&houseGuid=c28c4b52-8848-44c8-8086-3acfd232db38&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=c28c4b52-8848-44c8-8086-3acfd232db38&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "8",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=04cfb219-6a7f-4c71-9f84-12754ed6b25e&houseGuid=3a2fc0cc-e8e9-4271-915a-64e8fee84708&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=3a2fc0cc-e8e9-4271-915a-64e8fee84708&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "9",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=ca378261-3c53-4d17-ac4d-11239c5e56c9&houseGuid=98aa160a-0059-4447-94f5-f74617f7e594&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=98aa160a-0059-4447-94f5-f74617f7e594&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "11",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=1af701a5-b131-4943-a68b-78bbc416ea91&houseGuid=4a0ed510-0a21-4d3a-ac2f-431d6037f1c6&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=4a0ed510-0a21-4d3a-ac2f-431d6037f1c6&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "13",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b0780d5e-704a-4e2f-8b20-6419913f5e2e&houseGuid=efb3d069-721d-4706-96a1-3f327b6109b4&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=efb3d069-721d-4706-96a1-3f327b6109b4&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "14",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=d5f16393-1500-443c-a8b7-714146033d67&houseGuid=0e4efd0c-7685-4912-b8a7-4f44640dc710&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=0e4efd0c-7685-4912-b8a7-4f44640dc710&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "15",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2ec38bd2-6554-43e8-8f3d-bfe512dedab0&houseGuid=7693afee-cbcc-41e5-ac2b-aef4834b843a&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=7693afee-cbcc-41e5-ac2b-aef4834b843a&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "17",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=648bb03d-b5fe-4659-a7c1-4572e58066fc&houseGuid=8b9f67cd-e0d9-4881-b5ea-f07234484733&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=8b9f67cd-e0d9-4881-b5ea-f07234484733&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "21",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=85690f58-8fe6-49f6-af97-1b3e50549f98&houseGuid=c6d0ff44-a9e1-4d14-bf5c-0b1dabc64d02&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=c6d0ff44-a9e1-4d14-bf5c-0b1dabc64d02&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "23",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2a5c032e-bcc4-47ad-a913-3a83b61af43e&houseGuid=1dc887fb-3619-4ac9-877b-7323cbfcbc35&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=1dc887fb-3619-4ac9-877b-7323cbfcbc35&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "29",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2174508c-36bb-4e40-a5b2-246f7075a571&houseGuid=f2a7aedf-c76d-4b20-8995-f7d38da162f5&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=f2a7aedf-c76d-4b20-8995-f7d38da162f5&typeCode=1"
+    },
+    {
+      "street": "Солнечная",
+      "num": "31",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2819fde4-aa1e-420a-ae74-e0fc8d7acd67&houseGuid=e679b1a4-52c3-4e8d-a791-b8c9bb27b929&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=e679b1a4-52c3-4e8d-a791-b8c9bb27b929&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "1",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=0b793802-b3d5-4b67-8990-6fef9b873ce4&houseGuid=0cc4086f-fbdc-45df-b0a3-5c5da8d315eb&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=0cc4086f-fbdc-45df-b0a3-5c5da8d315eb&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "7",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=a797c8ca-002b-4dab-8f5a-f3cd89b6c395&houseGuid=8d85d330-c044-4041-84d4-610d824a149c&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=8d85d330-c044-4041-84d4-610d824a149c&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "9",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=ac5a0685-0670-4ec9-87ec-e19a26c4afe5&houseGuid=d60d4381-0e30-42f1-8702-166b6e13524e&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=d60d4381-0e30-42f1-8702-166b6e13524e&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "15",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=8adb4b82-d841-4326-aa44-18b9fe2589e0&houseGuid=69908c7c-f409-4da9-8db7-4da3ff097103&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=69908c7c-f409-4da9-8db7-4da3ff097103&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "17",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=21d8ae2e-d470-4769-937b-516474b54db4&houseGuid=e4b76a10-786f-4c8b-a656-fba60e079303&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=e4b76a10-786f-4c8b-a656-fba60e079303&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "19",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=38b28f7d-0c5e-42fc-9fe1-354af71320e7&houseGuid=8d1e6948-6537-4a87-b52b-82760cb0d6cf&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=8d1e6948-6537-4a87-b52b-82760cb0d6cf&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "23",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=5f3360d7-17af-4796-8072-a0a924809fb4&houseGuid=e47a7a4e-bfde-43cd-894f-cdfc105c1f64&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=e47a7a4e-bfde-43cd-894f-cdfc105c1f64&typeCode=1"
+    },
+    {
+      "street": "Труда",
+      "num": "25",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=a934d288-101d-459d-a2d7-7f98a818aef8&houseGuid=d95907f0-f026-47a5-8150-cce214587c80&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=d95907f0-f026-47a5-8150-cce214587c80&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "4",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=5b26768a-4285-4709-b586-ca2cdf077edd&houseGuid=aacdc4c7-80aa-4aa0-82f8-b65e37fde668&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=aacdc4c7-80aa-4aa0-82f8-b65e37fde668&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "5",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=870dc615-c4d1-48cd-ba55-d79203435795&houseGuid=83e40cd9-2cf2-40fe-ae93-5c78f5fdcb4f&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=83e40cd9-2cf2-40fe-ae93-5c78f5fdcb4f&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "6",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=f3717ba0-d476-4fd1-a8a1-ad4482c0ad63&houseGuid=694e5670-cf35-41ca-89ce-34b1cc2cf23b&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=694e5670-cf35-41ca-89ce-34b1cc2cf23b&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "7",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=4e20dcdc-2925-469f-949b-d3c573cb273d&houseGuid=3842424f-20ce-42c2-b303-e254acf04f47&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=3842424f-20ce-42c2-b303-e254acf04f47&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "9",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6ddd0aa6-5c0a-4525-b043-66cf0222303e&houseGuid=96715706-3efc-423c-b9bf-a3bb25755fc1&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=96715706-3efc-423c-b9bf-a3bb25755fc1&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "10",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=03cb74ed-8836-41f7-8629-2365089bef2a&houseGuid=b422a031-23d4-41ba-81fc-cdbc0f6689d1&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=b422a031-23d4-41ba-81fc-cdbc0f6689d1&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "11",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=63686b6c-5f6f-4249-9493-8538f0362ccc&houseGuid=0e3a16ec-fadb-4d64-b2b3-7cf8a381723d&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=0e3a16ec-fadb-4d64-b2b3-7cf8a381723d&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "12",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b53d357b-dd18-4b40-adb7-6af6a195158c&houseGuid=f3dcd175-d8fc-41b2-a803-cfe149ff056d&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=f3dcd175-d8fc-41b2-a803-cfe149ff056d&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "13",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=f28a0d61-fa79-441d-ada4-53ead37267cc&houseGuid=f9fbd1e9-8858-45ef-a6be-caf76ddc49ae&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=f9fbd1e9-8858-45ef-a6be-caf76ddc49ae&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "15",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=26629a5a-49b0-444d-9209-27726e95cdf3&houseGuid=eeb789e9-4db8-416b-87cc-2c93b802b613&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=eeb789e9-4db8-416b-87cc-2c93b802b613&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "18",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=922b7253-e258-400c-a1e9-81c2b7f3ce10&houseGuid=98703cb0-c3cc-42d2-9873-2da2ca2231c1&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=98703cb0-c3cc-42d2-9873-2da2ca2231c1&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "19",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6b49636f-fb67-48d2-b4d1-5713e344ec07&houseGuid=1b1019f1-3103-404d-9795-694172b2adc2&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=1b1019f1-3103-404d-9795-694172b2adc2&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "20",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=98c7ebb8-9b5d-4ad0-97d3-860fe0d08460&houseGuid=c395337c-76b9-4bca-ba8a-d56b6557e109&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=c395337c-76b9-4bca-ba8a-d56b6557e109&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "21",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=cee9c849-43af-44c5-a601-dc7138eec3b4&houseGuid=6378a7bf-5794-4ad1-9703-835bfbb92424&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=6378a7bf-5794-4ad1-9703-835bfbb92424&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "23",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=248ed023-642d-4dda-9209-5f80b143e219&houseGuid=dbcf4dd8-89dd-4aaa-a5ac-eb43e583c6a3&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=dbcf4dd8-89dd-4aaa-a5ac-eb43e583c6a3&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "24",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=ea612620-5192-4ffb-acaf-cc226f5326dc&houseGuid=53c603c4-b009-4ab4-819b-014620eb4b00&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=53c603c4-b009-4ab4-819b-014620eb4b00&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "27",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=bcb78438-8af5-41d7-9c80-dc29d3d04308&houseGuid=ece6f5ec-1da3-467a-9223-189d371f6f80&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ece6f5ec-1da3-467a-9223-189d371f6f80&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "29",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=a01fa21b-1451-4ed0-82cb-013bfd2c4d5c&houseGuid=5ab762b7-6bfb-4ee8-a2ff-f1316b13896e&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=5ab762b7-6bfb-4ee8-a2ff-f1316b13896e&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "31",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6605a5e9-70df-4c44-b01e-b6414809c087&houseGuid=d748fcd7-2e21-4f61-82b6-4f4b7f12b11b&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=d748fcd7-2e21-4f61-82b6-4f4b7f12b11b&typeCode=1"
+    },
+    {
+      "street": "Энтузиастов",
+      "num": "33",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=79f97a02-056d-49ae-aa9f-8390132bf1a4&houseGuid=ae13c6d8-6017-4791-9d66-a997eb1aff9d&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=ae13c6d8-6017-4791-9d66-a997eb1aff9d&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "1",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=6ed9370c-81b2-4407-bc16-ebeba28cb9d4&houseGuid=544d87ee-b614-459b-8b2b-62e7601bc870&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=544d87ee-b614-459b-8b2b-62e7601bc870&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "11",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=9b922b22-8569-44d5-b16a-dc0c7f4cea74&houseGuid=4a697526-93d2-40ba-9661-7af06acb350f&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=4a697526-93d2-40ba-9661-7af06acb350f&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "13",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=44783189-6363-43e1-9234-6b6cde7579b0&houseGuid=92b80db0-ba60-43d0-a655-a0f0bb8526a2&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=92b80db0-ba60-43d0-a655-a0f0bb8526a2&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "17",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b3c38e59-21a2-4461-a231-948c92eb1019&houseGuid=9c8295b2-530c-4aaa-9d1c-dde9be98464f&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=9c8295b2-530c-4aaa-9d1c-dde9be98464f&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "19",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=1dc675e0-024f-4aee-88f0-45c308371059&houseGuid=5ab3e854-00cd-4a5b-b742-6c61868a26d9&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=5ab3e854-00cd-4a5b-b742-6c61868a26d9&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "21",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=52eb9a05-572f-41c2-b785-f39a3683cf1a&houseGuid=aaad062d-743e-4f0e-9199-4f421da17750&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=aaad062d-743e-4f0e-9199-4f421da17750&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "23",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=0ca9ba01-2b02-40f9-a49a-acfb482cee5f&houseGuid=842e4684-c3a0-4b67-b79a-fa4ca8db61d2&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=842e4684-c3a0-4b67-b79a-fa4ca8db61d2&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "27",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=2f135bbf-1371-4d4e-bdf8-55e1cb7598a7&houseGuid=08b7f155-5c6e-4e0a-b0c5-8224c3d76398&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=08b7f155-5c6e-4e0a-b0c5-8224c3d76398&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "35",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=440f5f8b-f351-4760-bbde-383ad4a2c306&houseGuid=f336d9d8-8223-4751-a1c6-3a73ab797545&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=f336d9d8-8223-4751-a1c6-3a73ab797545&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "37",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=a91a8028-b710-4dc3-a11b-12871485dc86&houseGuid=b4e30110-3e82-4891-9a6e-6a1e98948d4c&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=b4e30110-3e82-4891-9a6e-6a1e98948d4c&typeCode=1"
+    },
+    {
+      "street": "Юности",
+      "num": "47",
+      "managementUrl": "https://dom.gosuslugi.ru/#!/mkd?fiasHouseCode=b25ad9c2-a9a9-4f51-bf7b-ae70a0dd814e&houseGuid=cd1b1ab0-aa64-412b-a3af-1ced140cb954&orgRootGuid=6b6af071-029f-4c0f-9ad0-067997fb129c",
+      "houseUrl": "https://dom.gosuslugi.ru/#!/house-view?guid=cd1b1ab0-aa64-412b-a3af-1ced140cb954&typeCode=1"
+    }
+  ]
+}

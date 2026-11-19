@@ -1,99 +1,107 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getDocuments } from '../lib/content.js';
-
-const docs = await getDocuments();
-const CATS = [...new Set(docs.map((d) => d.cat))];
-const YEARS = [...new Set([...docs.map((d) => d.year).filter(Boolean)])].sort((a, b) => b - a);
+import { getHouses } from '../lib/content.js';
+import gis from '../data/gis-links.json';
+const houses = (await getHouses()).map(h => ({ ...h, gis: gis.houses.find(g => g.street === h.street && g.num === h.num) }));
+const streets = [...new Set(houses.map(h => h.street))].sort((a, b) => a.localeCompare(b, 'ru', { numeric: true }));
 ---
-<Base title="Раскрытие информации — УК «Жилкомсервис»"
-      description="Документы ООО УК «Жилкомсервис»: отчёты, протоколы, бухгалтерская отчётность и тарифы.">
-  <div class="container house__wrap">
+<Base title="Раскрытие информации — УК «Жилкомсервис»" description="Официальные сведения УК «Жилкомсервис» в ГИС ЖКХ: лицензия, договоры управления, отчёты и информация по вашему дому.">
+  <div class="container house__wrap disclosure">
     <nav class="crumbs"><a href="/">Главная</a> → <span>Раскрытие информации</span></nav>
     <h1>Раскрытие информации</h1>
-    <p class="disc-intro">
-      Отчёты, протоколы собраний и другие документы управляющей компании. Также информация размещается в{" "}
-      <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener">ГИС ЖКХ</a>.
-    </p>
-
-    <div class="disc-controls">
-      <div class="house-search disc-search">
-        <svg viewBox="0 0 24 24" class="icon"><path d="M15.5 14h-.8l-.3-.3a6.5 6.5 0 1 0-.7.7l.3.3v.8l5 5 1.5-1.5zm-6 0a4.5 4.5 0 1 1 4.5-4.5 4.5 4.5 0 0 1-4.5 4.5z"/></svg>
-        <input type="text" id="doc-search" aria-label="Поиск по документам" placeholder="Поиск по документам: улица, год, название…" autocomplete="off" />
+    <p class="disc-intro">Официальные сведения и документы ООО УК «Жилкомсервис» размещаются в ГИС ЖКХ. Здесь собраны ссылки на нашу организацию и дома — выберите адрес, чтобы перейти к опубликованной информации.</p>
+    <section class="gis-panel" aria-labelledby="gis-title">
+      <div>
+        <p class="gis-eyebrow">Официальный источник</p>
+        <h2 id="gis-title">Наша компания в ГИС ЖКХ</h2>
+        <p>Реквизиты, контакты, режим работы и сведения о лицензии.</p>
+        <p class="gis-requisites">ИНН 7703617600 · ОГРН 1067760313180<br />Лицензия № Л045-01326-24/00594973 от 17.04.2015</p>
       </div>
-      <select id="doc-year" aria-label="Год документа" class="disc-year">
-        <option value="">Все годы</option>
-        {YEARS.map((y) => <option value={String(y)}>{y} год</option>)}
-      </select>
-    </div>
-
-    <div class="disc-cats" id="doc-cats">
-      <button type="button" class="chip chip--active" data-cat="">Все документы · {docs.length}</button>
-      {CATS.map((c) => (
-        <button type="button" class="chip" data-cat={c}>{c} · {docs.filter((d) => d.cat === c).length}</button>
-      ))}
-    </div>
-    <p class="disc-count" id="doc-count" role="status"></p>
-    <div id="doc-list"></div>
-    <noscript><p class="house__note">Для поиска по документам включите JavaScript. Информацию также можно уточнить в приёмной: 8 (391-31) 2-13-74.</p></noscript>
+      <div class="gis-actions">
+        <a class="btn btn--primary" href={gis.informationUrl} target="_blank" rel="noopener">Сведения об УК в ГИС ЖКХ ↗</a>
+        <a href={gis.organizationUrl} target="_blank" rel="noopener">Карточка организации ↗</a>
+        <a href={gis.licenseeHousesUrl} target="_blank" rel="noopener">Дома и периоды управления ↗</a>
+      </div>
+    </section>
+    <section class="gis-section" aria-labelledby="gis-houses-title">
+      <h2 id="gis-houses-title">Информация по вашему дому</h2>
+      <p>Откройте годовые отчёты, договор управления или карточку дома в ГИС ЖКХ. В разделе отчётов выберите нужный период; в карточке дома доступны характеристики и сведения об управляющей организации.</p>
+      <div class="gis-search" id="gis-search-controls" hidden>
+        <label for="gis-search">Улица и номер дома</label>
+        <input id="gis-search" type="search" placeholder="Например: Солнечная, 8" autocomplete="off" aria-controls="gis-house-list" />
+        <p id="gis-count" role="status" aria-live="polite"></p>
+      </div>
+      <div id="gis-house-list">
+        {streets.map(street => (
+          <details class="gis-street" data-street={street}>
+            <summary>{street} <span>{houses.filter(h => h.street === street).length} адресов</span></summary>
+            <ul>{houses.filter(h => h.street === street).sort((a, b) => String(a.num).localeCompare(String(b.num), 'ru', { numeric: true })).map(h => (
+              <li class="gis-house" data-street={h.street} data-num={h.num}>
+                <strong>{h.street}, {h.num}</strong>
+                <div class="gis-house-links">
+                  {h.gis && <a href={`${h.gis.managementUrl}&index=7`} target="_blank" rel="noopener">Отчёты по управлению ↗</a>}
+                  <a href={h.gis?.managementUrl ?? gis.housesUrl} target="_blank" rel="noopener">{h.gis ? 'Документы и управление' : 'Найти в перечне ГИС ЖКХ'} ↗</a>
+                  {h.gis && <a href={h.gis.houseUrl} target="_blank" rel="noopener">Карточка дома ↗</a>}
+                </div>
+              </li>
+            ))}</ul>
+          </details>
+        ))}
+      </div>
+      <p id="gis-empty" class="house__note" hidden>Адрес не найден. Попробуйте указать только название улицы или откройте <a href={gis.housesUrl} target="_blank" rel="noopener">перечень домов в ГИС ЖКХ ↗</a>.</p>
+      <p class="gis-footnote">Адреса — из перечня домов на сайте. Актуальные периоды управления смотрите в ГИС ЖКХ. Ссылки сверены 19.11.2026.</p>
+    </section>
+    <section class="gis-help gis-section" aria-labelledby="gis-help-title">
+      <h2 id="gis-help-title">Как найти нужный документ</h2>
+      <ol>
+        <li>Выберите свой дом. Для годового отчёта откройте «Отчёты по управлению» и выберите отчётный период в ГИС ЖКХ.</li>
+        <li>По ссылке «Документы и управление» договор находится в разделе «Общая информация». Сведения о содержании и ремонте — в разделе «Выполняемые работы по содержанию и ремонту общего имущества».</li>
+        <li>Для протоколов собраний откройте «Карточка дома» и раздел об общих собраниях собственников. Доступность документов зависит от их размещения и прав доступа в ГИС ЖКХ; при необходимости войдите через Госуслуги.</li>
+      </ol>
+      <p>Не нашли отчёт или другой документ? Уточните его название и год в приёмной: <a href="tel:83913121374">8 (391-31) 2-13-74</a>, <a href="mailto:uk@jks.ooo">uk@jks.ooo</a>.</p>
+      <p>Если прямая ссылка временно не открывается, найдите УК в <a href="https://dom.gosuslugi.ru/" target="_blank" rel="noopener">ГИС ЖКХ</a> по ИНН 7703617600.</p>
+    </section>
   </div>
-
   <script>
-    import docs from '../data/documents.json';
-    import { escapeHtml as esc, safeHref } from '../lib/public-safety.js';
-    const searchInput = document.getElementById('doc-search');
-    const yearSelect = document.getElementById('doc-year');
-    const chips = document.querySelectorAll('#doc-cats .chip');
-    const listBox = document.getElementById('doc-list');
-    const countEl = document.getElementById('doc-count');
-
-    let activeCat = new URLSearchParams(location.search).get('cat') || '';
-    chips.forEach((c) => c.classList.toggle('chip--active', c.dataset.cat === activeCat));
-
-    const norm = (s) => String(s ?? '').toLowerCase().replace(/ё/g, 'е');
-
-    function renderList() {
-      const q = norm(searchInput.value);
-      const year = yearSelect.value;
-      const filtered = docs.filter((d) =>
-        (!activeCat || d.cat === activeCat) &&
-        (!year || String(d.year) === year) &&
-        (!q || norm(d.name).includes(q) || norm(d.house || '').includes(q))
-      );
-      countEl.innerHTML = filtered.length
-        ? `Найдено документов: ${filtered.length}`
-        : (docs.length === 0
-          ? 'Документы публикуются. Актуальные сведения также доступны в <a href="https://dom.gosuslugi.ru" target="_blank" rel="noopener" style="color:var(--blue,#1d4ed8)">ГИС ЖКХ</a> и в приёмной: 8 (391-31) 2-13-74.'
-          : 'Ничего не найдено — попробуйте изменить запрос или позвоните в приёмную: 8 (391-31) 2-13-74');
-
-      const groups = Object.create(null);
-      for (const d of filtered) (groups[d.cat] ??= []).push(d);
-
-      listBox.innerHTML = Object.entries(groups)
-        .map(([cat, items]) => `
-          <section class="doc-group">
-            <h3>${esc(cat)} <span class="doc-group__n">${items.length}</span></h3>
-            <ul class="doc-list">
-              ${items.map((d) => `
-                <li>
-                  <a class="doc-item" href="${esc(safeHref(d.url))}" target="_blank" rel="noopener">
-                    <svg viewBox="0 0 24 24" class="icon doc-item__icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8zm0-4H8v-2h8zm-3-5V3.5L18.5 9z"/></svg>
-                    <span class="doc-item__name">${esc(d.name)}</span>
-                    <span class="doc-item__meta">${d.house ? esc(d.house) + ' · ' : ''}${d.year ? esc(d.year) + ' · ' : ''}${esc(d.ext)}</span>
-                  </a>
-                </li>`).join('')}
-            </ul>
-          </section>`)
-        .join('');
-    }
-
-    chips.forEach((chip) => chip.addEventListener('click', () => {
-      activeCat = chip.dataset.cat;
-      chips.forEach((c) => c.classList.toggle('chip--active', c === chip));
-      renderList();
-    }));
-    searchInput.addEventListener('input', renderList);
-    yearSelect.addEventListener('change', renderList);
-    renderList();
+    import { initGisSearch } from '../lib/gis-search.js';
+    initGisSearch(document, location.search);
   </script>
 </Base>
+<style>
+  .disclosure { max-width: 1100px; }
+  .gis-panel { display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; padding: 28px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); margin: 28px 0 40px; }
+  .gis-eyebrow { color: var(--blue); font-weight: 700; margin-bottom: 8px; }
+  .gis-panel h2 { margin-bottom: 12px; }
+  .gis-requisites { font-size: .9em; color: var(--gray); margin-top: 16px; overflow-wrap: anywhere; }
+  .gis-actions { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 14px; }
+  .gis-section { margin-top: 36px; }
+  .gis-section > p { margin: 12px 0 20px; }
+  .gis-search { margin: 24px 0 16px; }
+  .gis-search label { display: block; font-weight: 600; margin-bottom: 8px; }
+  .gis-search input { width: 100%; max-width: 560px; font: inherit; padding: 13px 16px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #fff; }
+  #gis-count { margin-top: 8px; color: var(--gray); }
+  .gis-street { border: 1px solid var(--line); border-radius: 12px; margin-top: 10px; overflow: hidden; }
+  .gis-street summary { cursor: pointer; padding: 16px 20px; font-weight: 700; background: var(--bg); }
+  .gis-street summary span { font-weight: 400; color: var(--gray); margin-left: 12px; font-size: .9em; }
+  .gis-street ul { list-style: none; }
+  .gis-house { padding: 16px 20px; border-top: 1px solid var(--line); display: flex; align-items: flex-start; flex-direction: column; gap: 12px; }
+  .gis-house-links { display: flex; gap: 20px; flex-wrap: wrap; }
+  .gis-house-links a { font-size: .95em; }
+  .gis-footnote { color: var(--gray); font-size: .9em; }
+  .gis-help { border-top: 1px solid var(--line); padding-top: 28px; }
+  .gis-help ol { padding-left: 24px; margin: 18px 0; }
+  .gis-help li { margin-bottom: 12px; }
+  .disclosure a:hover { text-decoration: underline; }
+  .disclosure [hidden] { display: none !important; }
+  :global(html.vi) .gis-panel, :global(html.vi) .gis-street, :global(html.vi) .gis-search input { background: #fff; color: #000; border: 2px solid #000; }
+  :global(html.vi) .gis-street summary { background: #fff; }
+  :global(html.vi) .gis-panel p, :global(html.vi) .gis-street summary span, :global(html.vi) .gis-footnote, :global(html.vi) #gis-count { color: #000; }
+  :global(html.vi) .gis-house { border-color: #000; }
+  @media (max-width: 720px) {
+    .gis-panel { grid-template-columns: 1fr; padding: 20px; gap: 22px; }
+    .gis-house { align-items: flex-start; flex-direction: column; }
+    .gis-house-links { flex-direction: column; gap: 10px; }
+    .gis-street summary { padding: 16px; }
+    .gis-actions .btn { max-width: 100%; }
+  }
+</style>
