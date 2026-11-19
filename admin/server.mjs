@@ -17,6 +17,7 @@ import { randomBytes, randomUUID, createHash, timingSafeEqual } from 'node:crypt
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { npmCommand, runLogged } from './process.mjs';
+import { localSyncBlockReason } from './sync-owner.mjs';
 import { fileURLToPath } from 'node:url';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
 import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../src/lib/admin-data.js';
@@ -766,6 +767,7 @@ app.post('/c/houses/restore/:idx', auth, (req, res) => {
 });
 
 /* ---------------- синхронизация с внешними источниками ---------------- */
+const SYNC_OWNER_FILE = TEST_DIR ? path.join(STATE, 'sync-owner.json') : path.resolve(REPO, '..', 'migration', 'sync-owner.json');
 const PY = process.platform === 'win32' ? 'python' : 'python3';
 const SYNC = {
   mingkh: {
@@ -796,6 +798,7 @@ function syncRun(kind) {
 }
 
 app.get('/sync', auth, (req, res) => {
+  const blocked = localSyncBlockReason(SYNC_OWNER_FILE);
   const card = (kind) => {
     const cfg = SYNC[kind];
     const st = syncState[kind] || {};
@@ -805,21 +808,23 @@ app.get('/sync', auth, (req, res) => {
     else if (st.exit != null) status = `завершилась с ошибкой (код ${st.exit}) — смотрите лог`;
     return `<div class="card">
       <h2>${esc(cfg.label)}</h2>
-      <p class="muted">${esc(cfg.desc)}</p>
+      <p class="muted">${esc(blocked || cfg.desc)}</p>
       <p style="margin:10px 0">Статус: <b>${status}</b></p>
       <form method="post" action="/sync/${kind}" class="row">
-        <button class="btn" type="submit" ${st.running ? 'disabled' : ''}>▶ Запустить сейчас</button>
+        <button class="btn" type="submit" ${st.running || blocked ? 'disabled' : ''}>▶ Запустить сейчас</button>
         <a class="btn ghost" href="/sync-log/${kind}" target="_blank">Открыть лог</a>
       </form></div>`;
   };
   const anyRunning = Object.values(syncState).some(s => s.running);
   res.send(page('Синхронизация', `
     ${anyRunning ? '<meta http-equiv="refresh" content="5">' : ''}
-    <p class="muted" style="margin-top:0">Ручное обновление данных из внешних источников — в любое время, не дожидаясь расписания.${anyRunning ? ' Страница обновляется сама каждые 5 секунд.' : ''}</p>
+    <p class="muted" style="margin-top:0">${blocked ? esc(blocked) : 'Ручное обновление данных из внешних источников — в любое время, не дожидаясь расписания.'}${anyRunning ? ' Страница обновляется сама каждые 5 секунд.' : ''}</p>
     ${card('mingkh')}${card('vk')}`, req.user, 'sync'));
 });
 
 app.post('/sync/:kind', auth, (req, res) => {
+  const blocked = localSyncBlockReason(SYNC_OWNER_FILE);
+  if (blocked) return res.status(409).send(page('Локальная синхронизация отключена', `<p>${esc(blocked)}</p><p><a href="/sync">Назад к синхронизации</a></p>`, req.user, 'sync'));
   const started = syncRun(req.params.kind);
   res.redirect('/sync?' + (started ? 'ok' : 'err') + '=' + encodeURIComponent(started ? 'Синхронизация запущена' : 'Уже выполняется или неизвестная задача'));
 });

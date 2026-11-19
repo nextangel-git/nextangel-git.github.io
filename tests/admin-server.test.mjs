@@ -58,5 +58,21 @@ test('isolated admin: login, CSRF, metadata preservation, stale edits and upload
   const fd = new FormData(); fd.set('__csrf', token); fd.set('__revision', docHtml.match(/name="__revision" value="([^"]+)"/)[1]); fd.set('__file', new Blob(['<script>alert(1)</script>']), 'evil.html');
   res = await request('/c/documents/save/new', { method: 'POST', body: fd }); assert.ok(res.status >= 400);
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(dataDir, 'documents.json'), 'utf8')), []);
+  res = await request('/sync');
+  assert.match(await res.text(), /type="submit" >▶ Запустить сейчас/);
+  await fs.writeFile(path.join(dir, 'sync-owner.json'), JSON.stringify({ owner: 'nic' }));
+  res = await request('/sync');
+  const managedSync = await res.text();
+  assert.match(managedSync, /NIC\.RU/);
+  assert.equal([...managedSync.matchAll(/type="submit" disabled>▶ Запустить сейчас/g)].length, 2);
+  for (const kind of ['mingkh', 'vk']) {
+    res = await request('/sync/' + kind, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ __csrf: token }) });
+    assert.equal(res.status, 409);
+    assert.match(await res.text(), /Синхронизация передана серверу NIC\.RU/);
+    await assert.rejects(fs.stat(path.join(dir, `sync-${kind}.log`)), { code: 'ENOENT' });
+  }
+  await fs.unlink(path.join(dir, 'sync-owner.json'));
+  res = await request('/sync');
+  assert.match(await res.text(), /type="submit" >▶ Запустить сейчас/);
   assert.ok(!output.includes('git push'));
 });

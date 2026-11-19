@@ -34,6 +34,7 @@ jobs:
         run: |
           php --version
           for file in public/api/*.php; do php -l "$file"; done
+          for file in server/sync/*.php; do php -l "$file"; done
           php -l admin/provision-php.php
       - run: npm test
       - run: python3 -m unittest discover -s tests -p 'test_deploy_nic.py'
