@@ -24,7 +24,7 @@ test('robots and sitemap use one configured origin and omit non-indexable routes
     for (const [, raw] of fs.readFileSync(file, 'utf8').matchAll(/<loc>(.*?)<\/loc>/g)) {
       const url = new URL(raw);
       assert.equal(url.origin, origin);
-      assert.ok(!['/admin', '/404', '/house'].includes(url.pathname.replace(/\/$/, '')), raw);
+      assert.ok(!['/admin', '/404', '/house', '/tariffs'].includes(url.pathname.replace(/\/$/, '')), raw);
     }
   }
 });
@@ -33,6 +33,11 @@ test('HTML has consistent SEO, Russian language and a labelled main landmark', (
   assert.ok(htmlFiles.length >= 10);
   for (const file of htmlFiles) {
     const html = fs.readFileSync(file, 'utf8');
+    if (path.relative(dist, file).replaceAll('\\', '/') === 'tariffs/index.html') {
+      assert.match(html, /http-equiv="refresh" content="0;url=\/disclosure"/);
+      assert.match(html, /href="\/disclosure"/);
+      continue;
+    }
     assert.match(html, /<html[^>]*lang="ru"/, file);
     assert.match(html, /<title>[^<]+<\/title>/, file);
     assert.match(html, /<main[^>]*id="main-content"/, file);
