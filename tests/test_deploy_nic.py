@@ -1,11 +1,14 @@
 """Isolated FTPS deployment tests. No network calls or real credentials."""
 import ftplib
+import errno
 import importlib.util
 import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+import ssl
+from contextlib import redirect_stderr
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('deploy_nic', Path(__file__).resolve().parents[1] / 'scripts' / 'deploy-nic.py')
@@ -19,6 +22,7 @@ class FakeFTP:
         self.directories = {''}
         self.events = []
         self.fail_destination = None
+        self.closed = False
 
     @staticmethod
     def clean(name):
@@ -66,6 +70,12 @@ class FakeFTP:
     def mkd(self, name):
         self.directories.add(self.clean(name))
         self.events.append(('mkdir', self.clean(name)))
+
+    def quit(self):
+        self.closed = True
+
+    def close(self):
+        self.closed = True
 
 
 class DeploymentTests(unittest.TestCase):
@@ -225,6 +235,136 @@ class DeploymentTests(unittest.TestCase):
             ftp.login.assert_called_once_with('fake', 'fake')
             ftp.prot_p.assert_called_once_with()
             self.assertTrue(ctor.call_args.kwargs['context'].check_hostname)
+
+    def test_reconnect_resumes_partial_upload_preserving_foreign_and_changed_stale_files(self):
+        remote = self.initialized()
+        deploy.deploy(remote, {'index.html': b'old', 'old.html': b'owned old', '_astro/old.js': b'cached'})
+        remote.files['old.html'] = b'manual edit retained'
+        remote.files['foreign.txt'] = b'foreign retained'
+        artifact = {'index.html': b'new complete HTML', '_astro/new.js': b'new asset', '.htaccess': b'rules'}
+        sessions = []
+
+        class BrokenUpload(FakeFTP):
+            broken = False
+
+            def storbinary(self, command, stream):
+                name = self.clean(command.removeprefix('STOR '))
+                if name.endswith('-index.html'):
+                    self.files[name] = stream.read(3)
+                    self.broken = True
+                    raise EOFError('Private FTP response must not be logged')
+                super().storbinary(command, stream)
+
+            def delete(self, name):
+                if self.broken:
+                    raise EOFError('Disconnected')
+                super().delete(name)
+
+        def connect():
+            ftp = BrokenUpload() if not sessions else FakeFTP()
+            ftp.files, ftp.directories, ftp.events = remote.files, remote.directories, remote.events
+            sessions.append(ftp)
+            return ftp
+
+        messages = io.StringIO()
+        pauses = []
+        with redirect_stderr(messages):
+            result = deploy.publish_with_retries(artifact, connect, pauses.append)
+        self.assertEqual(len(sessions), 2)
+        self.assertTrue(all(ftp.closed for ftp in sessions))
+        self.assertEqual(pauses, [2])
+        self.assertNotIn('Private FTP response', messages.getvalue())
+        self.assertEqual(result['uploaded'], 3)
+        for name, data in artifact.items():
+            self.assertEqual(remote.files[name], data)
+        self.assertEqual(remote.files['foreign.txt'], b'foreign retained')
+        self.assertEqual(remote.files['old.html'], b'manual edit retained')
+        self.assertEqual(remote.files['_astro/old.js'], b'cached')
+        manifest = json.loads(remote.files[deploy.MANIFEST])['files']
+        self.assertEqual(manifest['index.html'], deploy.digest(artifact['index.html']))
+        self.assertNotIn('old.html', manifest)
+        self.assertTrue(all(not name.startswith('.jks-upload-') for name in manifest))
+
+    def test_reconnect_revalidates_marker_before_further_writes(self):
+        remote = self.initialized()
+        deploy.deploy(remote, {'index.html': b'old'})
+        attempts = []
+
+        def connect():
+            ftp = FakeFTP()
+            ftp.files, ftp.directories = remote.files, remote.directories
+            attempts.append(ftp)
+            if len(attempts) == 1:
+                ftp.storbinary = lambda *args: (_ for _ in ()).throw(TimeoutError())
+                # Simulate a disconnected socket: cleanup cannot contact the server.
+                ftp.delete = lambda *args: (_ for _ in ()).throw(EOFError())
+            else:
+                ftp.files[deploy.MARKER] = deploy.json_bytes({'domain': 'wrong.example'})
+            return ftp
+
+        with redirect_stderr(io.StringIO()), self.assertRaises(deploy.DeployError):
+            deploy.publish_with_retries({'index.html': b'new'}, connect, lambda _: None)
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(attempts[1].events, [])
+        self.assertEqual(remote.files['index.html'], b'old')
+
+    def test_retry_is_bounded_and_only_for_transient_failures(self):
+        for error in [EOFError(), TimeoutError(), ConnectionResetError(),
+                      OSError(errno.ENETUNREACH, 'network'), ftplib.error_temp('421 temporary'), ssl.SSLEOFError()]:
+            attempts = []
+            pauses = []
+            def connect():
+                attempts.append(1)
+                raise error
+            with redirect_stderr(io.StringIO()), self.assertRaises(type(error)):
+                deploy.publish_with_retries({'index.html': b'new'}, connect, pauses.append)
+            self.assertEqual(len(attempts), 3)
+            self.assertEqual(pauses, [2, 4])
+        for error in [ftplib.error_perm('550 denied'), PermissionError(errno.EACCES, 'denied'),
+                      ssl.SSLCertVerificationError('certificate'), deploy.DeployError('wrong marker'),
+                      ftplib.error_proto('bad protocol'), OSError('unspecified local failure')]:
+            attempts = []
+            def connect():
+                attempts.append(1)
+                raise error
+            with self.assertRaises(type(error)):
+                deploy.publish_with_retries({'index.html': b'new'}, connect, lambda _: self.fail('No retry'))
+            self.assertEqual(len(attempts), 1)
+
+    def test_lost_reply_after_successful_rename_or_quit_does_not_corrupt_release(self):
+        remote = self.initialized()
+        deploy.deploy(remote, {'index.html': b'old'})
+        sessions = []
+        def connect():
+            ftp = FakeFTP()
+            ftp.files, ftp.directories = remote.files, remote.directories
+            sessions.append(ftp)
+            if len(sessions) == 1:
+                original = ftp.rename
+                def rename(old, new):
+                    original(old, new)
+                    if new == '/index.html':
+                        raise ConnectionResetError()
+                ftp.rename = rename
+                ftp.delete = lambda *args: (_ for _ in ()).throw(EOFError())
+            else:
+                ftp.quit = lambda: (_ for _ in ()).throw(EOFError())
+            return ftp
+        with redirect_stderr(io.StringIO()):
+            deploy.publish_with_retries({'index.html': b'new'}, connect, lambda _: None)
+        self.assertEqual(len(sessions), 2, 'Lost QUIT does not republish a successful release')
+        self.assertEqual(remote.files['index.html'], b'new')
+        self.assertTrue(all(session.closed for session in sessions))
+
+    def test_connect_failure_closes_socket_without_masking_tls_error(self):
+        env = {'NIC_FTP_HOST': 'ftp.jksooo.nichost.ru', 'NIC_FTP_TLS_NAME': 'jksooo.nichost.ru', 'NIC_FTP_USER': 'fake', 'NIC_FTP_PASSWORD': 'fake'}
+        with patch.dict('os.environ', env), patch.object(deploy.ftplib, 'FTP_TLS') as ctor:
+            ftp = ctor.return_value
+            ftp.auth.side_effect = ssl.SSLCertVerificationError('certificate')
+            ftp.close.side_effect = EOFError()
+            with self.assertRaises(ssl.SSLCertVerificationError):
+                deploy.connect_from_environment()
+            ftp.close.assert_called_once()
 
 
 if __name__ == '__main__':

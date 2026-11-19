@@ -6,6 +6,7 @@ Initialization is a separate, explicit operation and requires an empty FTP root.
 Only files recorded in our manifest can ever be removed. No recursive deletion.
 """
 import argparse
+import errno
 import ftplib
 import hashlib
 import io
@@ -14,7 +15,9 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import ssl
+import socket
 import sys
+import time
 import uuid
 
 MARKER = '.jks-deploy-target.json'
@@ -26,6 +29,7 @@ EXPECTED_TARGET = {
     'ftp_root': '/',
 }
 MAX_METADATA = 8 * 1024 * 1024
+MAX_ATTEMPTS = 3
 HASH_RE = re.compile(r'^[a-f0-9]{64}$')
 PUBLIC_PHP_FILES = {'api/admin.php', 'api/admin-core.php', 'api/admin-schema.php',
                     'api/captcha-core.php', 'api/request.php', 'api/request-core.php'}
@@ -251,13 +255,74 @@ def connect_from_environment():
     if any(not os.environ.get(name) for name in names):
         raise DeployError('Required NIC_FTP_HOST/USER/PASSWORD/TLS_NAME environment is incomplete')
     ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=60)
-    ftp.connect(os.environ['NIC_FTP_HOST'], 21)
-    # Connect to the FTP endpoint, but authenticate the certificate's DNS name.
-    ftp.host = os.environ['NIC_FTP_TLS_NAME']
-    ftp.auth()
-    ftp.login(os.environ['NIC_FTP_USER'], os.environ['NIC_FTP_PASSWORD'])
-    ftp.prot_p()
+    try:
+        ftp.connect(os.environ['NIC_FTP_HOST'], 21)
+        # Connect to the FTP endpoint, but authenticate the certificate's DNS name.
+        ftp.host = os.environ['NIC_FTP_TLS_NAME']
+        ftp.auth()
+        ftp.login(os.environ['NIC_FTP_USER'], os.environ['NIC_FTP_PASSWORD'])
+        ftp.prot_p()
+    except BaseException:
+        close_connection(ftp)
+        raise
     return ftp
+
+
+def transient_error(error):
+    """Retry transport interruptions, never target, permission or TLS trust failures."""
+    if isinstance(error, (DeployError, ftplib.error_perm, ssl.SSLCertVerificationError)):
+        return False
+    if isinstance(error, (EOFError, TimeoutError, ConnectionError, ftplib.error_temp,
+                          ssl.SSLEOFError, ssl.SSLZeroReturnError)):
+        return True
+    if isinstance(error, socket.gaierror):
+        return error.errno == socket.EAI_AGAIN
+    return isinstance(error, OSError) and error.errno in {
+        errno.ECONNABORTED, errno.ECONNRESET, errno.ECONNREFUSED,
+        errno.EPIPE, errno.ETIMEDOUT, errno.ENETDOWN,
+        errno.ENETUNREACH, errno.EHOSTUNREACH,
+    }
+
+
+def close_connection(ftp, successful=False):
+    if ftp is None:
+        return
+    if successful:
+        try:
+            ftp.quit()
+            return
+        except ftplib.all_errors:
+            pass
+    # Do not wait for QUIT on an interrupted control connection.
+    try:
+        ftp.close()
+    except ftplib.all_errors:
+        pass
+
+
+def publish_with_retries(artifact, connector=None, sleep=None):
+    """Reconnect and revalidate the entire target before resuming an owned release."""
+    connector = connector or connect_from_environment
+    sleep = sleep or time.sleep
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        ftp = None
+        successful = False
+        try:
+            ftp = connector()
+            # deploy reads the marker, ownership manifest and full inventory afresh.
+            # A completed rename/delete whose reply was lost is handled by that state.
+            result = deploy(ftp, artifact)
+            successful = True
+            return result
+        except Exception as error:
+            if not transient_error(error) or attempt == MAX_ATTEMPTS:
+                raise
+            # Never echo arbitrary server responses or credentials into Actions logs.
+            print(f'FTPS interrupted ({type(error).__name__}); reconnecting for attempt '
+                  f'{attempt + 1}/{MAX_ATTEMPTS}.', file=sys.stderr)
+        finally:
+            close_connection(ftp, successful)
+        sleep(2 * attempt)
 
 
 def main():
@@ -267,24 +332,24 @@ def main():
     args = parser.parse_args()
     # Check the artifact before logging in, except for explicit initialization.
     artifact = None if args.initialize else local_artifact(args.dist)
-    ftp = connect_from_environment()
-    try:
-        if args.initialize:
-            initialize(ftp)
-            print('Initialized the jks.ooo target marker; no site files uploaded.')
-        else:
-            print(json.dumps(deploy(ftp, artifact), sort_keys=True))
-    finally:
+    if args.initialize:
+        # Initialization is deliberately not replayed after an ambiguous marker write.
+        ftp = connect_from_environment()
+        successful = False
         try:
-            ftp.quit()
-        except ftplib.all_errors:
-            ftp.close()
+            initialize(ftp)
+            successful = True
+            print('Initialized the jks.ooo target marker; no site files uploaded.')
+        finally:
+            close_connection(ftp, successful)
+    else:
+        print(json.dumps(publish_with_retries(artifact), sort_keys=True))
 
 
 if __name__ == '__main__':
     try:
         main()
-    except (DeployError, OSError, ftplib.Error) as error:
+    except (DeployError, OSError, EOFError, ftplib.Error) as error:
         # Do not include login commands, credentials or arbitrary FTP server text.
         detail = str(error) if isinstance(error, DeployError) else 'Check target, permissions, TLS and the local artifact.'
         print(f'Deployment failed ({type(error).__name__}): {detail}', file=sys.stderr)
