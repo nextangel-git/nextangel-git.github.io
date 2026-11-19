@@ -1,6 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
 ---
 <Base title="Оставить заявку — УК «Жилкомсервис»"
       description="Онлайн-заявка в управляющую компанию «Жилкомсервис», Сосновоборск.">
@@ -12,7 +11,7 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
         <p class="disc-intro">Опишите проблему — отправим обращение на электронную почту УК. Если аварийная ситуация (прорыв, затопление, запах газа) — звоните сразу: <strong>8 (391-31) 2-00-62</strong> (круглосуточно).</p>
 
         <p id="request-unavailable" class="house__note">Если форма не появилась, включите JavaScript или напишите на <a href="mailto:uk@jks.ooo">uk@jks.ooo</a>. Телефон приёмной: 8 (391-31) 2-13-74.</p>
-        <form id="request-form" class="form" data-target={formTarget} method="post" novalidate hidden>
+        <form id="request-form" class="form" method="post" novalidate hidden>
           <fieldset id="request-fields" class="request-fields" aria-label="Обращение в УК" disabled>
           <label class="form__field">
             <span>ФИО *</span>
@@ -28,8 +27,8 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
             <div class="house-search__results" id="req-house-results" hidden></div>
           </label>
           <label class="form__field">
-            <span>Квартира</span>
-            <input type="text" name="flat" maxlength="20" placeholder="№ квартиры (необязательно)" />
+            <span>Квартира *</span>
+            <input type="text" name="flat" maxlength="20" required placeholder="№ квартиры" />
           </label>
           <label class="form__field">
             <span>Тема *</span>
@@ -55,8 +54,10 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
           </label>
           <!-- ханипот: людям не видно, боты заполняют -->
           <input type="text" name="company" id="req-company" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true" />
+          <div id="request-captcha" class="form__field--wide"></div>
+          <p id="request-error" class="form__field--wide" role="alert"></p>
           <div class="form__field--wide">
-            <button type="submit" class="btn btn--primary">Отправить заявку</button>
+            <button type="submit" disabled class="btn btn--primary">Отправить заявку</button>
           </div>
           </fieldset>
         </form>
@@ -93,6 +94,12 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
 
   <script>
     import housesAll from '../data/houses.json';
+    import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
+    function initRequestForm() {
+    if (location.hostname.endsWith('.github.io')) {
+      document.getElementById('request-unavailable').innerHTML = 'Отправить заявку можно на основном сайте: <a href="https://jks.ooo/request">Открыть форму jks.ooo</a>.';
+      return;
+    }
     const houses = housesAll.filter(h => !h.archived);
     const houseInput = document.getElementById('req-house');
     const houseResults = document.getElementById('req-house-results');
@@ -126,13 +133,16 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
 
     const form = document.getElementById('request-form');
     let submitting = false;
+    const btn = form.querySelector('button[type=submit]');
+    const errorNote = document.getElementById('request-error');
+    const captcha = mountSmartCaptcha(document.getElementById('request-captcha'), token => { btn.disabled = submitting || !token; });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (submitting) return;
       const phone = form.elements.phone;
-      phone.setCustomValidity(phone.value.replace(/\D/g, '').length >= 10 ? '' : 'Введите телефон с кодом города или мобильного оператора.');
-      for (const name of ['fio', 'text']) {
+      phone.setCustomValidity(/^\d{10,15}$/.test(phone.value.replace(/\D/g, '')) ? '' : 'Введите телефон с кодом города или мобильного оператора.');
+      for (const name of ['fio', 'flat', 'text']) {
         const field = form.elements[name];
         field.setCustomValidity(field.value.trim() ? '' : 'Заполните это поле.');
       }
@@ -143,36 +153,37 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
       }
       // Honeypot blocks automated submissions without silently discarding quick human input.
       if (form.elements.company.value !== '') return;
+      if (!captcha.token) { errorNote.textContent = 'Пройдите проверку «Я не робот».'; return; }
+      errorNote.textContent = '';
       const num = 'ЖКС-' + crypto.randomUUID();
-      const btn = form.querySelector('button[type=submit]');
       submitting = true;
       btn.disabled = true;
       btn.textContent = 'Отправляем…';
 
-      const FORM_TARGET = form.dataset.target;
       const fd = new FormData(form);
-      const payload = {
-        _subject: `Заявка ${num} с сайта: ${fd.get('topic')}`,
-        'Номер заявки': num,
-        'ФИО': fd.get('fio'),
-        'Телефон': fd.get('phone'),
-        'Дом': houseInput.value,
-        'Квартира': fd.get('flat') || '—',
-        'Тема': fd.get('topic'),
-        'Описание': fd.get('text'),
-        _template: 'table',
-      };
+      const payload = Object.fromEntries(['fio', 'phone', 'house', 'flat', 'topic', 'text'].map(name => [name, String(fd.get(name)).trim()]));
+      Object.assign(payload, { pdn: true, company: '', captchaToken: captcha.token, requestId: num });
       let sent = false;
       try {
-        const res = await fetch(`https://formsubmit.co/ajax/${FORM_TARGET}`, {
-          method: 'POST',
+        const res = await fetch('/api/request.php', {
+          method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(20000),
+          signal: AbortSignal.timeout(35000),
         });
         const data = await res.json().catch(() => null);
-        sent = res.ok && data && String(data.success) === 'true';
+        if (res.status >= 400 && res.status < 500) {
+          errorNote.textContent = data?.message || 'Обращение не отправлено. Проверьте поля и пройдите проверку «Я не робот» снова.';
+          return;
+        }
+        sent = res.ok && data?.success === true && data.requestId === num;
       } catch { sent = false; }
+      finally {
+        submitting = false;
+        captcha.reset();
+        btn.disabled = true;
+        btn.textContent = 'Отправить заявку';
+      }
 
       form.hidden = true;
       const done = document.getElementById('request-done');
@@ -217,7 +228,7 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
       document.getElementById('request-back').hidden = true;
       form.hidden = false;
       const button = form.querySelector('button[type=submit]');
-      button.disabled = false;
+      button.disabled = !captcha.token;
       button.textContent = 'Отправить заявку';
       form.elements.fio.focus();
     });
@@ -227,6 +238,8 @@ const formTarget = import.meta.env.PUBLIC_FORM_TARGET || 'uk@jks.ooo';
     document.getElementById('request-fields').disabled = false;
     form.hidden = false;
     document.getElementById('request-unavailable').hidden = true;
+    }
+    initRequestForm();
   </script>
   <style>
     .request-fields { grid-column: 1 / -1; display: grid; grid-template-columns: inherit; gap: inherit; min-width: 0; margin: 0; padding: 0; border: 0; }

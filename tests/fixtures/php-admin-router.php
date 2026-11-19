@@ -11,7 +11,10 @@ try {
     };
     $config = getenv('JKS_PHP_TEST_DIR') . '/config.php';
     if (isset($_GET['missing_config'])) $config .= '.missing';
-    $api = new JksAdminApi($config, $transport);
+    $captchaTransport = static function ($url, $payload, $form) {
+        return ['status'=>200, 'data'=>['status'=>($payload['token'] ?? '') === 'TEST_CAPTCHA_TOKEN' ? 'ok' : 'failed', 'host'=>'jks.ooo']];
+    };
+    $api = new JksAdminApi($config, $transport, $captchaTransport);
     JksAdminApi::reply(200, $api->dispatch());
 } catch (JksApiError $error) {
     JksAdminApi::reply($error->status, ['error'=>$error->errorCode,'message'=>$error->getMessage()]);

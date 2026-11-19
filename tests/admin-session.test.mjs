@@ -19,11 +19,11 @@ test('login obtains an anonymous CSRF token and uses same-origin cookies without
     { body: { authenticated: false, user: null, csrf: 'anonymous' } },
     { body: { authenticated: true, user: { username: 'editor', name: 'Редактор' }, csrf: 'signed-in' } },
   ]);
-  await login('editor', 'a real user password');
+  await login('editor', 'a real user password', 'captcha-token');
   assert.equal(calls[0].url, '/api/admin.php?action=session');
   assert.equal(calls[1].url, '/api/admin.php?action=login');
   assert.equal(calls[1].headers['X-CSRF-Token'], 'anonymous');
-  assert.deepEqual(JSON.parse(calls[1].body), { username: 'editor', password: 'a real user password' });
+  assert.deepEqual(JSON.parse(calls[1].body), { username: 'editor', password: 'a real user password', captchaToken: 'captcha-token' });
   for (const call of calls) {
     assert.equal(call.credentials, 'same-origin');
     assert.equal(call.cache, 'no-store');

@@ -8,6 +8,8 @@ import Base from '../layouts/Base.astro';
     import { mergeRecord, validateKey, validateUpload, recordAt, updateHouseGeo } from '../lib/admin-data.js';
     import { getSessionState, clearSession, refreshSession, login, logout, changePassword, readDataFile, writeDataFile, commitFiles } from '../lib/server-admin.js';
 
+    import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
+
     const rootEl = document.getElementById('admin-root');
     let FILESHA = {};
     let CACHE = {};
@@ -49,6 +51,7 @@ import Base from '../layouts/Base.astro';
     });
     new MutationObserver(syncAccessibilityButtons).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
+    let loginCaptcha;
     let authVersion = 0;
     let sessionReady = false;
     function removeLegacyBinding() {
@@ -114,6 +117,7 @@ import Base from '../layouts/Base.astro';
     /* ---------- каркас ---------- */
     function shell(title, inner, active = '') {
       if (!getSessionState().authenticated) return;
+      loginCaptcha?.destroy(); loginCaptcha = null;
       const navItem = (name, cfg) => `<a href="#/c/${name}" aria-label="${esc(cfg.label)}" title="${esc(cfg.label)}" class="${active === name ? 'on' : ''}">${icon(name)}<span class="t">${esc(cfg.label)}</span>${CNT[name] != null ? `<span class="n">${CNT[name]}</span>` : ''}</a>`;
       const crumbs = !active || active === 'dash' ? 'Дашборд' : `<a href="#/">Дашборд</a> → ${esc(COLLECTIONS[active]?.label || title)}`;
       rootEl.innerHTML = `
@@ -160,6 +164,7 @@ import Base from '../layouts/Base.astro';
 
     /* ---------- вход ---------- */
     function showLogin(message = '') {
+      loginCaptcha?.destroy();
       rootEl.innerHTML = `
         <div class="authpage"><div class="authcard">
           <div class="alogo"><img src="/logo.svg" alt="ЖКС"><h1>Вход в админку</h1><p class="muted" style="margin:0">УК «Жилкомсервис» · Сосновоборск</p></div>
@@ -167,8 +172,9 @@ import Base from '../layouts/Base.astro';
           <form id="admin-login-form">
             <label for="username">Логин</label><input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="100">
             <label for="pass">Пароль</label><input id="pass" name="password" type="password" autocomplete="current-password" required>
+            <div id="admin-captcha"></div>
             <p id="login-message" role="alert" class="muted" style="overflow-wrap:anywhere">${esc(message)}</p>
-            <button class="btn" id="adm-login" type="submit" style="width:100%;justify-content:center">Войти</button>
+            <button class="btn" id="adm-login" type="submit" disabled style="width:100%;justify-content:center">Войти</button>
           </form>
           <p class="muted" style="margin-bottom:0">Данные для входа выдаёт администратор сайта.</p>
         </div></div>`;
@@ -177,20 +183,23 @@ import Base from '../layouts/Base.astro';
       const button = document.getElementById('adm-login');
       const note = document.getElementById('login-message');
       let submitting = false;
+      const captcha = mountSmartCaptcha(document.getElementById('admin-captcha'), token => { button.disabled = submitting || !token; });
+      loginCaptcha = captcha;
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (submitting || !form.reportValidity()) return;
+        if (!captcha.token) { note.textContent = 'Пройдите проверку «Я не робот».'; return; }
         submitting = true; button.disabled = true; button.textContent = 'Входим…';
         note.textContent = ''; form.setAttribute('aria-busy', 'true');
         try {
-          await login(document.getElementById('username').value.trim(), document.getElementById('pass').value);
+          await login(document.getElementById('username').value.trim(), document.getElementById('pass').value, captcha.token);
           removeLegacyBinding(); clearViewCache(); sessionReady = true;
           await route();
         } catch (error) {
           note.textContent = error.message;
           document.getElementById('pass')?.focus();
         } finally {
-          submitting = false; button.disabled = false; button.textContent = 'Войти';
+          submitting = false; captcha.reset(); button.disabled = !captcha.token; button.textContent = 'Войти';
           form.removeAttribute('aria-busy');
         }
       });

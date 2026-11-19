@@ -49,9 +49,9 @@ export async function refreshSession() {
   return updateSession(await api('session'));
 }
 
-export async function login(username, password) {
+export async function login(username, password, captchaToken) {
   await refreshSession();
-  const result = await api('login', { method: 'POST', body: { username, password } });
+  const result = await api('login', { method: 'POST', body: { username, password, captchaToken } });
   if (!session.authenticated) throw new Error('Вход не подтверждён сервером. Попробуйте снова.');
   return result;
 }

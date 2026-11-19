@@ -70,6 +70,7 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
   const hashed = spawnSync(php, ['-r', 'echo password_hash($argv[1], PASSWORD_BCRYPT, ["cost"=>4]);', password], { encoding: 'utf8', windowsHide: true });
   assert.equal(hashed.status, 0, hashed.stderr);
   await fs.writeFile(path.join(directory, 'config.php'), `<?php return ['github_token'=>'TEST_ONLY_NO_NETWORK_TOKEN','users'=>['test'=>['password_hash'=>'${hashed.stdout}','name'=>'Test','enabled'=>true]]];`);
+  await fs.writeFile(path.join(directory, 'captcha.php'), "<?php return ['secret'=>'TEST_ONLY_NO_NETWORK_CAPTCHA','sitekey'=>'ysc1_c1z811srDG3allSQnw0xpIy1ubAve2lTWfeKJrLe29c108b2'];");
   const probe = net.createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
   const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
   const child = spawn(php, ['-S', `127.0.0.1:${port}`, 'tests/fixtures/php-admin-router.php'], {
@@ -81,6 +82,7 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
   assert.match(output, /Development Server/);
   let cookie = '', csrf = '';
   async function request(action, body, extra = {}) {
+    if (action === 'login' && body && !Object.hasOwn(body, 'captchaToken')) body = { ...body, captchaToken: 'TEST_CAPTCHA_TOKEN' };
     const payload = body === undefined ? undefined : JSON.stringify(body);
     const { res, text } = await new Promise((resolve, reject) => {
       const req = http.request({ hostname: '127.0.0.1', port, path: `/api/admin.php?action=${action}`, method: body === undefined ? 'GET' : 'POST',
@@ -110,6 +112,11 @@ test('PHP sessions, login, CSRF, password rotation, rate limits and missing conf
   reply = await request('login', { username: 'test', password }, { Origin: 'https://attacker.invalid' }); assert.equal(reply.res.status, 403);
   reply = await request('login', { username: 'test', password }, { 'X-CSRF-Token': 'bad' }); assert.equal(reply.res.status, 403);
   reply = await request('read&file=houses.json'); assert.equal(reply.res.status, 401);
+  reply = await request('login', { username: 'test', password, captchaToken: '' }); assert.equal(reply.res.status, 422);
+  reply = await request('login', { username: 'test', password, captchaToken: 'invalid-token' }); assert.equal(reply.res.status, 403);
+  reply = await request('session'); assert.equal(reply.data.authenticated, false);
+  // Clear only fixture rate state so the remaining password/expiry cases have their own budget.
+  await fs.writeFile(path.join(directory, 'login-limits.json'), '{}');
   reply = await request('login', { username: 'test', password }); assert.equal(reply.res.status, 200); assert.equal(reply.data.authenticated, true);
   assert.notEqual(cookie, anonymousCookie); assert.notEqual(csrf, anonymousCsrf); assert.equal(reply.data.user.username, 'test');
   reply = await request('read&file=houses.json'); assert.equal(reply.res.status, 200); assert.deepEqual(reply.data.data, []);

@@ -14,6 +14,7 @@ const htmlFiles = files.filter((file) => file.endsWith('.html'));
 const robots = read('robots.txt');
 const sitemapUrl = new URL(robots.match(/^Sitemap:\s*(\S+)/m)?.[1]);
 const origin = sitemapUrl.origin;
+const publicPhpFiles = ['admin.php', 'admin-core.php', 'admin-schema.php', 'captcha-core.php', 'request.php', 'request-core.php'];
 
 test('robots and sitemap use one configured origin and omit non-indexable routes', () => {
   assert.equal(sitemapUrl.pathname, '/sitemap-index.xml');
@@ -82,9 +83,9 @@ test('private configuration and source data are absent from public output', () =
     const relative = path.relative(dist, file).replaceAll('\\', '/');
     assert.ok(!/(^|\/)(\.env(?:\..*)?|\.secret|users\.json|server\.mjs|package-lock\.json)$/.test(relative), relative);
     assert.ok(!relative.startsWith('.git/'), relative);
-    assert.ok(!/(^|\/)(?:config\.(?:php|json)|credentials\.json|secrets\.json)$|\.(?:sql|sqlite3?|db)$/i.test(relative), relative);
+    assert.ok(!/(^|\/)(?:config\.(?:php|json)|captcha\.php|credentials\.json|secrets\.json)$|\.(?:sql|sqlite3?|db)$/i.test(relative), relative);
     assert.ok(!relative.split('/').includes('.jks-admin'), relative);
-    if (/\.(?:php[0-9]*|phtml|phar|inc)(?:\.|$)/i.test(relative)) assert.ok(['api/admin.php', 'api/admin-core.php', 'api/admin-schema.php'].includes(relative), relative);
+    if (/\.(?:php[0-9]*|phtml|phar|inc)(?:\.|$)/i.test(relative)) assert.ok(publicPhpFiles.some(name => relative === 'api/' + name), relative);
     if (/\.(?:html|js|mjs|json|php)$/.test(relative)) {
       assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,})\b/, `GitHub credential in ${relative}`);
     }
@@ -92,11 +93,10 @@ test('private configuration and source data are absent from public output', () =
 });
 
 test('public PHP endpoint is copied unchanged and runtime configuration remains outside the artifact', () => {
-  const source = path.join(root, 'public', 'api', 'admin.php');
-  if (!fs.existsSync(source)) return; // Static-only releases remain valid before the endpoint is introduced.
-  for (const name of ['admin.php', 'admin-core.php', 'admin-schema.php']) {
+  for (const name of publicPhpFiles) {
     assert.deepEqual(fs.readFileSync(path.join(dist, 'api', name)), fs.readFileSync(path.join(root, 'public', 'api', name)));
   }
   assert.equal(fs.existsSync(path.join(dist, '.jks-admin')), false);
   assert.equal(fs.existsSync(path.join(dist, 'config.php')), false);
+  assert.equal(fs.existsSync(path.join(dist, 'captcha.php')), false);
 });

@@ -40,7 +40,6 @@ jobs:
       - run: npm run build
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://jks.ooo' }}
-          PUBLIC_FORM_TARGET: ${{ vars.PUBLIC_FORM_TARGET || 'uk@jks.ooo' }}
       - run: npm run test:build
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'

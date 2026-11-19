@@ -533,3 +533,11 @@ html.vi .shutdowns, html.vi .shutdown-card { background: #fff; color: #000; }
   .doc-item { flex-wrap: wrap; }
   .doc-item__meta { margin-left: 0; }
 }
+
+/* Keep the visible vendor widget and its notice unobscured on narrow screens. */
+.jks-captcha { min-width: 0; max-width: 100%; margin-top: 16px; }
+.jks-captcha-widget { width: 100%; min-width: 0; min-height: 100px; }
+.jks-captcha-status { font-size: .9rem; overflow-wrap: anywhere; margin: 8px 0; }
+.jks-captcha-retry { max-width: 100%; white-space: normal; min-height: 44px; padding: 8px 12px; font: inherit; color: #0f172a; background: #fff; border: 1px solid #64748b; border-radius: 8px; cursor: pointer; }
+html.vi .jks-captcha-status, html.vi .jks-captcha-retry { color: #000; background: #fff; font-size: inherit; }
+html.vi .jks-captcha-retry { border: 2px solid #000; }

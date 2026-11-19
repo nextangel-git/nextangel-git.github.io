@@ -205,8 +205,10 @@ class DeploymentTests(unittest.TestCase):
         ftp = self.initialized()
         artifact = {'index.html': b'home', **{name: b'<?php /* public code */' for name in deploy.PUBLIC_PHP_FILES}}
         deploy.deploy(ftp, artifact)
-        self.assertEqual(ftp.files['api/admin.php'], artifact['api/admin.php'])
+        for name in deploy.PUBLIC_PHP_FILES:
+            self.assertEqual(ftp.files[name], artifact[name])
         for name in ['config.php', 'api/config.php', 'config.json', 'api/credentials.json',
+                     'captcha.php', 'api/captcha.php', 'captcha.php.bak', '.jks-admin/captcha.php', '../.jks-admin/captcha.php',
                      'users.json', 'api/admin.php.bak', 'api/unknown.php', 'uploads/test.phtml', 'archive.sql',
                      'sessions.sqlite', '../.jks-admin/config.php', '.jks-admin/config.php']:
             with self.assertRaises(deploy.DeployError, msg=name):

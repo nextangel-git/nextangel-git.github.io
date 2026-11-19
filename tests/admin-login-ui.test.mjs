@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { COLLECTIONS } from '../src/lib/collections.mjs';
+import { mountSmartCaptcha } from '../src/lib/smartcaptcha.js';
+import { mockSmartCaptcha } from './helpers/smartcaptcha.mjs';
 import * as dataHelpers from '../src/lib/admin-data.js';
 
 const source = fs.readFileSync(new URL('../src/pages/admin.astro', import.meta.url), 'utf8');
@@ -12,23 +14,24 @@ const viScript = baseSource.match(/<script>\s*([\s\S]*?)<\/script>/)[1].split('/
 const styles = source.match(/<style is:global>([\s\S]*?)<\/style>/)[1];
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup(t, url = 'https://jks.ooo/admin') {
+async function setup(t, url = 'https://jks.ooo/admin', authenticated = false) {
   const dom = new JSDOM(`<style>${styles}</style><button id="vi-toggle" aria-pressed="false">Версия для слабовидящих</button><div id="vi-panel"><button id="vi-img"></button><button id="vi-off"></button></div><div id="admin-root">Загрузка…</div>`, { url, runScripts: 'outside-only', pretendToBeVisual: true });
   t.after(() => dom.window.close());
   const { window } = dom;
+  const captcha = mockSmartCaptcha(window);
   window.innerWidth = 390;
   window.TextEncoder = TextEncoder;
   window.structuredClone = structuredClone;
   window.localStorage.setItem('jks_vault', 'old encrypted binding');
-  let state = { authenticated: false, user: null, csrf: 'session' };
+  let state = { authenticated, user: authenticated ? { username: 'editor' } : null, csrf: 'session' };
   const calls = { session: 0, login: [], read: [], password: [], logout: 0 };
   const deps = {
-    COLLECTIONS, ...dataHelpers,
+    COLLECTIONS, ...dataHelpers, mountSmartCaptcha,
     getSessionState: () => ({ ...state }),
     clearSession: () => { state = { authenticated: false, user: null, csrf: '' }; },
     refreshSession: async () => { calls.session++; return { ...state }; },
-    login: async (username, password) => {
-      calls.login.push({ username, password });
+    login: async (username, password, captchaToken) => {
+      calls.login.push({ username, password, captchaToken });
       await tick();
       if (password === 'wrong') throw new Error('Неверный логин или пароль');
       state = { authenticated: true, user: { username, name: 'Редактор' }, csrf: 'authenticated' };
@@ -44,7 +47,8 @@ async function setup(t, url = 'https://jks.ooo/admin') {
   window.__testdeps = deps;
   window.eval(`const { ${Object.keys(deps).join(',')} } = window.__testdeps;\n${script}`);
   await tick();
-  return { window, calls };
+  if (captcha.widgets.size) captcha.solve();
+  return { window, calls, captcha };
 }
 
 function submit(window, id) {
@@ -67,12 +71,12 @@ test('login form has two labeled password-manager fields; failed login retains l
   submit(window, 'admin-login-form');
   await tick(); await tick();
   assert.match(document.getElementById('login-message').textContent, /Неверный/);
-  assert.equal(document.getElementById('adm-login').disabled, false);
+  assert.equal(document.getElementById('adm-login').disabled, true);
   assert.equal(window.localStorage.getItem('jks_vault'), 'old encrypted binding');
 });
 
 test('double submit is blocked; successful login cleans old binding and logout clears collection cache', async t => {
-  const { window, calls } = await setup(t);
+  const { window, calls, captcha } = await setup(t);
   const document = window.document;
   document.getElementById('username').value = 'editor';
   document.getElementById('pass').value = 'correct password';
@@ -89,6 +93,7 @@ test('double submit is blocked; successful login cleans old binding and logout c
   assert.equal(calls.logout, 1);
   assert.ok(document.getElementById('admin-login-form'));
   assert.doesNotMatch(document.body.textContent, /Дашборд/);
+  captcha.solve('next-login-token');
   document.getElementById('username').value = 'editor';
   document.getElementById('pass').value = 'correct password';
   submit(window, 'admin-login-form');
@@ -191,4 +196,34 @@ test('mobile icon navigation keeps explicit accessible names and tooltips when t
   for (const [name, cfg] of Object.entries(COLLECTIONS)) {
     assert.equal(document.querySelector(`.snav a[href="#/c/${name}"]`).getAttribute('aria-label'), cfg.label);
   }
+});
+
+
+test('login requires a fresh widget token after expiration and every failed attempt', async t => {
+  const { window, calls, captcha } = await setup(t);
+  const document = window.document;
+  document.getElementById('username').value = 'editor';
+  document.getElementById('pass').value = 'wrong';
+  captcha.emit('token-expired');
+  submit(window, 'admin-login-form');
+  assert.equal(calls.login.length, 0);
+  assert.equal(document.getElementById('adm-login').disabled, true);
+  captcha.solve('fresh-login-token');
+  submit(window, 'admin-login-form');
+  await tick(); await tick();
+  assert.equal(calls.login[0].captchaToken, 'fresh-login-token');
+  assert.equal(captcha.calls.reset.length, 1);
+  assert.equal(document.getElementById('adm-login').disabled, true);
+  submit(window, 'admin-login-form');
+  assert.equal(calls.login.length, 1);
+});
+
+
+test('an existing server session restores the dashboard without loading a CAPTCHA', async t => {
+  const { window, calls, captcha } = await setup(t, 'https://jks.ooo/admin', true);
+  assert.match(window.document.body.textContent, /Дашборд/);
+  assert.equal(calls.session, 1);
+  assert.equal(calls.login.length, 0);
+  assert.equal(captcha.widgets.size, 0);
+  assert.equal(window.document.querySelector('script[src*="smartcaptcha"]'), null);
 });

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/admin-schema.php';
+require_once __DIR__ . '/captcha-core.php';
 
 final class JksAdminApi {
     const ORIGIN = 'https://jks.ooo';
@@ -14,12 +15,14 @@ final class JksAdminApi {
     private $privateDir;
     private $config;
     private $transport;
+    private $captcha;
 
     // The production entry point fixes configPath outside webroot and never injects transport.
-    public function __construct(string $configPath, ?callable $transport = null) {
+    public function __construct(string $configPath, ?callable $transport = null, ?callable $captchaTransport = null) {
         $this->configPath = $configPath;
         $this->privateDir = dirname($configPath);
         $this->transport = $transport;
+        $this->captcha = new JksCaptcha($this->privateDir . '/captcha.php', $captchaTransport);
     }
     public static function reply(int $status, array $payload): void {
         http_response_code($status);
@@ -145,6 +148,7 @@ final class JksAdminApi {
         $username = isset($body->username) && is_string($body->username) ? strtolower(trim($body->username)) : '';
         if (!preg_match('/\A[a-z0-9_.-]{1,64}\z/D', $username)) $username = '';
         $this->rateLimit($username);
+        $this->captcha->verify($body->captchaToken ?? null);
         $password = isset($body->password) && is_string($body->password) ? $body->password : '';
         $user = $this->config['users'][$username] ?? null;
         $firstUser = reset($this->config['users']);
