@@ -312,6 +312,7 @@ jks.ooo/
 <!-- jks-source-sync:start -->
 ## Журнал автоматического обновления
 
+- 25.11.2026 04:17 (Красноярск): cron NIC.RU, VK; получено записей: 10; обновлены src/data/vk_posts.json. Сборку и доставку выполняет GitHub Actions.
 - 24.11.2026 17:17 (Красноярск): cron NIC.RU, VK; получено записей: 10; обновлены src/data/vk_posts.json. Сборку и доставку выполняет GitHub Actions.
 - 23.11.2026 17:17 (Красноярск): cron NIC.RU, VK; получено записей: 10; обновлены src/data/vk_posts.json. Сборку и доставку выполняет GitHub Actions.
 - 23.11.2026 08:17 (Красноярск): cron NIC.RU, VK; получено записей: 10; обновлены src/data/vk_posts.json. Сборку и доставку выполняет GitHub Actions.
