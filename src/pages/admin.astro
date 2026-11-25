@@ -11,6 +11,7 @@ import Base from '../layouts/Base.astro';
     import { mountSmartCaptcha } from '../lib/smartcaptcha.js';
     import { photoSize } from '../lib/request-photos.js';
     import { usefulEntries } from '../lib/useful-order.js';
+    import { mountRichEditors } from '../lib/rich-editor.js';
 
     const rootEl = document.getElementById('admin-root');
     let FILESHA = {};
@@ -335,7 +336,7 @@ import Base from '../layouts/Base.astro';
     /* ---------- поля формы ---------- */
     function fieldHtml(f, val, extra) {
       const v = val ?? (typeof f.defaults === 'string' ? f.defaults : '');
-      if (f.type === 'textarea') return `<textarea name="${esc(f.key)}" ${f.required ? 'required' : ''}>${esc(v)}</textarea>`;
+      if (f.type === 'textarea') return `<textarea name="${esc(f.key)}" ${f.richText ? `data-rich-text="${esc(f.label)}"` : ''} ${f.required ? 'required' : ''}>${esc(v)}</textarea>`;
       if (f.type === 'checkbox') return `<label style="display:flex;gap:9px;align-items:center;font-weight:500;margin-top:6px"><input type="checkbox" name="${esc(f.key)}" ${v ? 'checked' : ''} style="width:18px;height:18px"> да</label>`;
       if (f.type === 'select') return `<select name="${esc(f.key)}">${f.options.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
       if (f.type === 'datetime') return `<input name="${esc(f.key)}" type="datetime-local" value="${esc(toIsoDT(v))}" ${f.required ? 'required' : ''}>`;
@@ -396,6 +397,7 @@ import Base from '../layouts/Base.astro';
           <p id="form-msg" style="margin-top:10px"></p>
         </form></div>`, name);
 
+      const syncEditors = mountRichEditors(document.getElementById('adm-form'));
       if (extra.streets) {
         const MAP = extra.streets;
         const st = document.getElementById('fld_street'), nm = document.getElementById('fld_num'),
@@ -435,8 +437,9 @@ import Base from '../layouts/Base.astro';
         submit.disabled = true;
         const msg = document.getElementById('form-msg');
         msg.style.color = '#64748b'; msg.textContent = 'Сохраняю…';
-        const fd = new FormData(e.target);
         try {
+          syncEditors();
+          const fd = new FormData(e.target);
           let recNew = {};
           for (const f of fields) {
             if (f.type === 'checkbox') recNew[f.key] = !!fd.get(f.key);
@@ -748,6 +751,17 @@ import Base from '../layouts/Base.astro';
     .adm-fixed input,.adm-fixed textarea,.adm-fixed select{width:100%;padding:11px 14px;border:1.5px solid #e5eaf2;border-radius:10px;font:inherit;background:#fff;transition:border-color .15s,box-shadow .15s}
     .adm-fixed input:focus,.adm-fixed textarea:focus,.adm-fixed select:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
     .adm-fixed textarea{min-height:130px;resize:vertical}
+    .rich-editor{border:1.5px solid #cbd5e1;border-radius:10px;overflow:hidden;min-width:0}
+    .rich-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f1f5f9;border-bottom:1px solid #cbd5e1}
+    .rich-toolbar button,.rich-toolbar select{width:auto;max-width:100%;padding:8px 10px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#0f172a;font:inherit;cursor:pointer}
+    .rich-toolbar button:hover{background:#dbeafe}
+    .rich-toolbar button:focus-visible,.rich-content:focus-visible{outline:3px solid #2563eb;outline-offset:-3px}
+    .rich-content{min-height:300px;padding:16px;line-height:1.65;overflow-wrap:anywhere;overflow-x:auto;background:#fff;color:#0f172a}
+    .rich-content p{margin:0 0 1em}.rich-content ul,.rich-content ol{padding-left:26px}.rich-content img{max-width:100%;height:auto}.rich-content a{color:#1d4ed8;text-decoration:underline}
+    .rich-content blockquote{border-left:3px solid #64748b;padding-left:16px;margin:16px 0}.rich-content table{border-collapse:collapse}.rich-content td,.rich-content th{border:1px solid #94a3b8;padding:6px}
+    .rich-content[aria-invalid=true]{outline:2px solid #dc2626}
+    .rich-hint{padding:8px 12px;margin:0;font-size:13px;color:#475569;background:#f8fafc}
+    html.vi .rich-editor,html.vi .rich-toolbar,html.vi .rich-toolbar button,html.vi .rich-toolbar select,html.vi .rich-content,html.vi .rich-hint{background:#fff;color:#000;border-color:#000}
     .adm-fixed label{display:block;font-weight:600;font-size:.9rem;margin:16px 0 6px}
     .adm-fixed .hint{font-weight:400;color:#64748b;font-size:.8rem;margin-left:6px}
     .adm-fixed .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;background:#1d4ed8;color:#fff;text-decoration:none;transition:filter .15s}

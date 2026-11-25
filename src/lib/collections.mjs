@@ -9,7 +9,7 @@ export const COLLECTIONS = {
       { key: 'desc', label: 'Анонс', type: 'textarea' },
       { key: 'date', label: 'Дата (ДД.ММ.ГГГГ)', type: 'text', required: true, placeholder: '09.11.2026' },
       { key: 'url', label: 'Ссылка (необязательно)', type: 'url' },
-      { key: 'body', label: 'Полный текст (HTML)', type: 'textarea' },
+      { key: 'body', label: 'Полный текст', type: 'textarea', richText: true },
     ],
     defaults: () => ({ date: new Date().toLocaleDateString('ru-RU'), id: Date.now() }),
     display: (x) => `${x.date || ''} — ${x.title}`,
@@ -61,7 +61,7 @@ export const COLLECTIONS = {
     fields: [
       { key: 'title', label: 'Заголовок', type: 'text', required: true },
       { key: 'publishedAt', label: 'Дата и время публикации', type: 'datetime', required: true },
-      { key: 'body', label: 'Текст (HTML)', type: 'textarea', required: true },
+      { key: 'body', label: 'Текст статьи', type: 'textarea', richText: true, required: true },
       { key: 'source', label: 'Источник (ссылка)', type: 'url' },
     ],
     defaults: () => ({ publishedAt: publicationNow() }),

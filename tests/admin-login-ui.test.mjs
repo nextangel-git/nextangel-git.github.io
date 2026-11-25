@@ -6,6 +6,7 @@ import { COLLECTIONS } from '../src/lib/collections.mjs';
 import { mountSmartCaptcha } from '../src/lib/smartcaptcha.js';
 import { photoSize } from '../src/lib/request-photos.js';
 import { usefulEntries } from '../src/lib/useful-order.js';
+import { mountRichEditors } from '../src/lib/rich-editor.js';
 import { mockSmartCaptcha } from './helpers/smartcaptcha.mjs';
 import * as dataHelpers from '../src/lib/admin-data.js';
 
@@ -28,7 +29,7 @@ async function setup(t, url = 'https://jks.ooo/admin', authenticated = false, re
   let state = { authenticated, user: authenticated ? { username: 'editor' } : null, csrf: 'session' };
   const calls = { session: 0, login: [], read: [], password: [], logout: 0, requests: [] };
   const deps = {
-    COLLECTIONS, ...dataHelpers, mountSmartCaptcha, photoSize, usefulEntries,
+    COLLECTIONS, ...dataHelpers, mountSmartCaptcha, photoSize, usefulEntries, mountRichEditors,
     getSessionState: () => ({ ...state }),
     clearSession: () => { state = { authenticated: false, user: null, csrf: '' }; },
     refreshSession: async () => { calls.session++; return { ...state }; },
@@ -253,4 +254,15 @@ test('an existing server session restores the dashboard without loading a CAPTCH
   assert.equal(calls.login.length, 0);
   assert.equal(captcha.widgets.size, 0);
   assert.equal(window.document.querySelector('script[src*="smartcaptcha"]'), null);
+});
+
+test('news and useful edit forms mount visual body editor', async t => {
+  for (const name of ['news', 'useful']) {
+    const { window } = await setup(t, `https://jks.ooo/admin#/c/${name}/edit/new`, true);
+    const doc = window.document;
+    assert.ok(doc.querySelector('.rich-content[contenteditable=true]'));
+    assert.equal(doc.querySelector('textarea[name=body]').hidden, true);
+    assert.equal(doc.querySelectorAll('.rich-toolbar button').length, 10);
+    if (name === 'news') assert.equal(doc.querySelector('textarea[name=desc]').hidden, false);
+  }
 });
