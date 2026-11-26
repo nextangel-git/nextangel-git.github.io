@@ -26,7 +26,7 @@ export function mountRichEditors(form) {
   for (const textarea of form.querySelectorAll('textarea[data-rich-text]')) {
     const box = document.createElement('div'); box.className = 'rich-editor';
     box.innerHTML = `<div class="rich-toolbar" role="group" aria-label="Форматирование текста">
-      <select aria-label="Стиль абзаца"><option value="p">Обычный текст</option><option value="h2">Заголовок</option><option value="h3">Подзаголовок</option><option value="blockquote">Цитата</option></select>
+      <span class="rich-select"><select aria-label="Стиль абзаца"><option value="p">Обычный текст</option><option value="h2">Заголовок</option><option value="h3">Подзаголовок</option><option value="blockquote">Цитата</option></select></span>
       ${[['bold','Жирный','Ж'],['italic','Курсив','К'],['underline','Подчёркнутый','Ч'],['insertUnorderedList','Маркированный список','• Список'],['insertOrderedList','Нумерованный список','1. Список'],['createLink','Добавить ссылку','Ссылка'],['unlink','Убрать ссылку','Без ссылки'],['removeFormat','Очистить оформление','Очистить'],['undo','Отменить действие','↶'],['redo','Повторить действие','↷']].map(([command,label,text])=>`<button type="button" data-command="${command}" title="${label}" aria-label="${label}">${text}</button>`).join('')}
       </div><div class="rich-content" contenteditable="true" role="textbox" aria-multiline="true"></div><p class="rich-hint">Выделите текст и выберите инструмент. Ctrl+Z — отменить действие. Вставка из буфера — без чужого оформления.</p>`;
     const content = box.querySelector('.rich-content');

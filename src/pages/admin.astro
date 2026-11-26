@@ -754,6 +754,10 @@ import Base from '../layouts/Base.astro';
     .rich-editor{border:1.5px solid #cbd5e1;border-radius:10px;overflow:hidden;min-width:0}
     .rich-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#f1f5f9;border-bottom:1px solid #cbd5e1}
     .rich-toolbar button,.rich-toolbar select{width:auto;max-width:100%;padding:8px 10px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#0f172a;font:inherit;cursor:pointer}
+    .rich-select{position:relative;display:inline-flex;max-width:100%;color:#0f172a}
+    .rich-toolbar .rich-select select{appearance:none;-webkit-appearance:none;padding-right:36px}
+    .rich-select::after{content:'';position:absolute;right:14px;top:50%;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+    html.vi .rich-select{color:#000}
     .rich-toolbar button:hover{background:#dbeafe}
     .rich-toolbar button:focus-visible,.rich-content:focus-visible{outline:3px solid #2563eb;outline-offset:-3px}
     .rich-content{min-height:300px;padding:16px;line-height:1.65;overflow-wrap:anywhere;overflow-x:auto;background:#fff;color:#0f172a}
